@@ -27,7 +27,7 @@ The whole product in one flow. When this works end to end, the product is done.
 5. Ask a question on that page. The answer comes from the PDF.
 6. Open Conversations. The chat is there.
 7. Open Customize. Paywall.
-8. Upgrade to Pro with a Clerk Billing test card. Customize unlocks.
+8. Upgrade to Pro with a Cashfree sandbox payment. Customize unlocks.
 9. Change the button color. Reload the HTML page. The new color shows.
 
 ---
@@ -44,7 +44,7 @@ The whole product in one flow. When this works end to end, the product is done.
 | File storage     | Supabase Storage (`supabase-js`)             | Private `knowledge` bucket (10 MB, PDF/Markdown/TXT), created by a migration. The browser uploads straight to Storage with a one-time signed URL. |
 | Hosting          | Vercel                                       | Preview deployment per PR; production from `main`. Request bodies are capped at 4.5 MB, so files never pass through our routes. |
 | Auth             | Clerk                                        | Sign in / sign up UI, sessions, middleware. Supabase accepts Clerk session tokens (third-party auth), so RLS reads the user ID from `auth.jwt()->>'sub'`. |
-| Payments         | Clerk Billing (Clerk payment gateway, test mode) | Clerk's pricing table, Clerk's account portal, Clerk webhook. No Stripe account.    |
+| Payments         | Cashfree Subscriptions (sandbox first)       | A monthly Pro subscription charged in INR, on Cashfree's hosted checkout: UPI Autopay, Indian cards, international Visa and Mastercard, eNACH. Cashfree webhook with signature check. No Stripe, no Clerk Billing. |
 | AI               | Groq (chat) + Ollama on our own server (embeddings), through the Vercel AI SDK | Chat: Groq `openai/gpt-oss-20b`, falling back to other Groq models when one is throttled (set `GROQ_CHAT_MODEL` to change it), so a visitor waits seconds, not a minute. Embeddings: `nomic-embed-text` on our Ollama server (768 dims, zero-padded to the 1536-wide column; cosine results are unchanged), reached over HTTPS with a Bearer key. |
 | Security         | Arcjet                                       | On the public widget routes: a fixed-window rate limit per route + public key + IP, and prompt injection detection on chat messages before any AI call. Fails open: an Arcjet error or timeout lets the request through and is logged. The monthly message quota stays in Postgres. |
 | Analytics        | PostHog                                      | Product analytics, session replay, error tracking, AI tracing                           |
@@ -206,10 +206,11 @@ Two parts: a small loader script + an iframe.
 
 | Item      | Detail                                                                                                    |
 | --------- | --------------------------------------------------------------------------------------------------------- |
-| Upgrade   | Clerk's pricing table on the Billing page (Clerk payment gateway, test mode)                              |
-| Webhook   | `POST /api/clerk/webhook`, signature verified. Pro plan's subscription item active → `accounts.plan = pro`. Subscription item ended → `free`. A cancellation keeps Pro until the paid period ends. Other plans' events are ignored. |
-| Manage    | Clerk's account portal (opened from "Manage subscription")                                                |
-| Done when | Test card payment → Customize unlocks                                                                     |
+| Upgrade   | "Upgrade to Pro" on the Billing page. The server creates a Cashfree subscription for the signed-in owner (their email and phone, the Pro plan, the price from one constant) and the browser opens Cashfree's hosted checkout with the returned session ID. We never see card or bank details. |
+| Webhook   | `POST /api/cashfree/webhook`, signature verified (HMAC SHA-256 over timestamp + raw body, 5 minute window). Authorisation succeeded or subscription `ACTIVE` → `accounts.plan = pro`. `CANCELLED`, `COMPLETED`, `EXPIRED`, `CARD_EXPIRED`, `CUSTOMER_CANCELLED`, `LINK_EXPIRED` → `free`. `ON_HOLD` (a failed charge) keeps Pro through Cashfree's retries. A cancellation keeps Pro until the paid period ends. The owner is found from our own `subscription_id`; the plan is never taken from the browser. |
+| Manage    | "Cancel subscription" on the Billing page calls Cashfree's manage API (`CANCEL`). The owner can also cancel from their UPI app or bank. |
+| Currency  | INR. International cards are accepted and billed in rupees by the issuer's rate. Cashfree needs the customer's phone number, so the upgrade form asks for it. |
+| Done when | Sandbox payment → Customize unlocks                                                                       |
 
 ### 6.11 Analytics
 
@@ -237,7 +238,7 @@ Two parts: a small loader script + an iframe.
 
 | Table               | Columns                                                                                                                              | Notes                                               |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------- |
-| `accounts`          | `clerk_user_id` (PK), `plan` (`free`/`pro`), `created_at`                                                                            | One per Clerk user. Plan lives here, kept in sync by the Clerk webhook. |
+| `accounts`          | `clerk_user_id` (PK), `plan` (`free`/`pro`), `cashfree_subscription_id` (nullable), `created_at`                                      | One per Clerk user. Plan lives here, kept in sync by the Cashfree webhook. `cashfree_subscription_id` is our own ID for the owner's subscription (added with the billing migration); it lets the webhook find the owner and lets the owner cancel. |
 | `projects`          | `id`, `owner_id` → accounts, `name`, `about`, `public_key`, `messages_used`, `period_start`, `created_at`                            | `public_key` unique. `about`: the owner's description of the business (up to 600 characters), used by the chat to tell on-topic questions from off-topic ones. |
 | `widget_configs`    | `project_id` (PK), `button_color`, `position`, `label`, `animation`, `header_text`, `show_badge`                                     | One per project                                     |
 | `knowledge_sources` | `id`, `project_id`, `title`, `type` (`text`/`pdf`/`md`/`txt`), `storage_key`, `status` (`uploading`/`processing`/`ready`/`failed`), `created_at` | `storage_key` null for pasted text                  |
@@ -279,14 +280,15 @@ Limits run inside Postgres functions only `service_role` may execute: `create_pr
 | `DELETE /api/knowledge/:id`                                         | Delete source, file, chunks         |
 | `GET /api/projects/:id/conversations`, `GET /api/conversations/:id` | Read conversations                  |
 | `PATCH /api/projects/:id/config`                                    | Update config (402 if Free)         |
+| `POST /api/billing/subscribe`, `POST /api/billing/cancel`           | Start the Pro subscription (returns the Cashfree session ID) / cancel it |
 
-Checkout and subscription management are Clerk's own components, not routes we own.
+Checkout is Cashfree's hosted page; the two billing routes above only create and cancel the subscription.
 
 ### System
 
 | Route                     | Purpose                                                                                |
 | ------------------------- | -------------------------------------------------------------------------------------- |
-| `POST /api/clerk/webhook` | Signature verified; updates `accounts.plan`                                            |
+| `POST /api/cashfree/webhook` | Signature verified; updates `accounts.plan`                                         |
 | `GET /api/posthog-config` | PostHog's public project key and host, read at request time                          |
 
 Request and response types for every route live in `packages/shared`.
@@ -344,7 +346,7 @@ docs/
 | `CLERK_SECRET_KEY`                                                               | Server          | No      |
 | `OLLAMA_BASE_URL`, `OLLAMA_API_KEY`                                              | Server          | No      |
 | `GROQ_API_KEY` (optional `GROQ_CHAT_MODEL`)                                      | Server          | No      |
-| `CLERK_WEBHOOK_SIGNING_SECRET`                                                   | Server          | No      |
+| `CASHFREE_APP_ID`, `CASHFREE_SECRET_KEY` (also signs and verifies the webhook), `CASHFREE_ENV` (`sandbox` or `production`) | Server          | No      |
 | `ARCJET_KEY`                                                                     | Server          | No      |
 | `POSTHOG_KEY`, `POSTHOG_HOST` (the `NEXT_PUBLIC_` names also work). Read at request time by `GET /api/posthog-config`; the key is public by design. | Client + server | Yes     |
 | `NEXT_PUBLIC_APP_URL`                                                            | Client + server | Yes     |
