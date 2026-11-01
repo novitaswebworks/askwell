@@ -12,9 +12,17 @@ const nextConfig: NextConfig = {
   transpilePackages: ["@askwell/shared"],
   cacheComponents: true,
   partialPrefetching: true,
-  // Only /embed may be framed by other websites (project.md section 9).
+  // Security headers: clickjacking, frame-ancestors, MIME sniffing, HSTS (project.md section 9).
   async headers() {
     return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains; preload" },
+        ],
+      },
       { source: "/embed", headers: [{ key: "Content-Security-Policy", value: "frame-ancestors *" }] },
       {
         source: "/((?!embed).*)",
