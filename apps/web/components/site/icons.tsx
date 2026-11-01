@@ -113,3 +113,17 @@ export const Edit = ({ className }: IconProps) => (
     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
   </svg>
 );
+
+export const Upload = ({ className }: IconProps) => (
+  <svg {...base} className={className}>
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="17 8 12 3 7 8" />
+    <line x1="12" y1="3" x2="12" y2="15" />
+  </svg>
+);
+
+export const Sparkles = ({ className }: IconProps) => (
+  <svg {...base} className={className}>
+    <path d="M12 3l1.9 5.9a2 2 0 0 0 1.2 1.2L21 12l-5.9 1.9a2 2 0 0 0-1.2 1.2L12 21l-1.9-5.9a2 2 0 0 0-1.2-1.2L3 12l5.9-1.9a2 2 0 0 0 1.2-1.2L12 3z" />
+  </svg>
+);
