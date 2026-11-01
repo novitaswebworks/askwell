@@ -64,7 +64,7 @@ describe("POST /api/billing/subscribe", () => {
       name: "Asha Rao",
       email: "asha@example.com",
       phone: "919876543210",
-      returnUrl: "https://app.example.com/dashboard/billing?checkout=return",
+      returnUrl: "https://app.example.com/api/billing/return",
     });
     expect(update).toHaveBeenCalledWith({ cashfree_subscription_id: "askwell_fixed" });
     expect(eq).toHaveBeenCalledWith("clerk_user_id", "user_1");

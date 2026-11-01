@@ -34,7 +34,8 @@ export async function POST(req: Request) {
       name: user?.fullName?.trim() || email.split("@")[0] || "Askwell owner",
       email,
       phone: parsed.data.phone,
-      returnUrl: `${appUrl}/dashboard/billing?checkout=return`,
+      // Cashfree returns the customer with a POST, so it goes to a route, not a page.
+      returnUrl: `${appUrl}/api/billing/return`,
     });
 
     // Remember it, so the webhook can find this owner when payment completes.
