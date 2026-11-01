@@ -7,13 +7,17 @@ import { Logo } from "./logo";
 export const clerkAppearance = {
   variables: {
     colorPrimary: "#ff7a45",
+    colorPrimaryForeground: "#1a0a02",
     colorBackground: "#111111",
-    colorText: "#f5f5f4",
-    colorTextSecondary: "#9a9a94",
-    colorInputBackground: "#1a1a1a",
-    colorInputText: "#f5f5f4",
-    colorTextOnPrimaryBackground: "#1a0a02",
+    colorForeground: "#f5f5f4",
+    colorMutedForeground: "#a3a39d",
+    colorMuted: "#1a1a1a",
+    colorInput: "#1a1a1a",
+    colorInputForeground: "#f5f5f4",
     colorNeutral: "#f5f5f4",
+    colorBorder: "#2a2a2a",
+    colorDanger: "#ff6b6b",
+    colorRing: "#ff7a45",
     borderRadius: "0.75rem",
   },
 } as const;
