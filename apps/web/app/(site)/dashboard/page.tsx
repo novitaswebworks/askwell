@@ -8,18 +8,33 @@ import { usageThisMonth } from "@/lib/usage";
 import { createOwnerClient } from "@/lib/supabase/owner";
 
 function Skeleton() {
-  return <div className="glass h-40 animate-pulse" aria-busy="true" aria-label="Loading" />;
+  return (
+    <div className="flex flex-col gap-6" aria-busy="true" aria-label="Loading projects">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="glass h-24 animate-pulse rounded-2xl" />
+        <div className="glass h-24 animate-pulse rounded-2xl" />
+        <div className="glass h-24 animate-pulse rounded-2xl" />
+      </div>
+      <div className="glass h-36 animate-pulse rounded-2xl" />
+      <div className="glass h-48 animate-pulse rounded-2xl" />
+    </div>
+  );
 }
 
 // The heading is the instant shell; the data streams in behind the skeleton.
 export default function ProjectsPage() {
   return (
-    <>
-      <h1 className="mb-4 text-2xl font-semibold tracking-tight">Projects</h1>
+    <div className="flex flex-col gap-6">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Projects</h1>
+        <p className="mt-1 text-sm text-muted">
+          Manage your AI chat widgets, training data, and appearance.
+        </p>
+      </div>
       <Suspense fallback={<Skeleton />}>
         <ProjectsContent />
       </Suspense>
-    </>
+    </div>
   );
 }
 
@@ -54,6 +69,7 @@ async function ProjectsContent() {
       maxProjects={limits.maxProjects}
       usage={usage}
       conversations={conversations}
+      plan={plan}
     />
   );
 }
