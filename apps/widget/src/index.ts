@@ -72,7 +72,11 @@ async function start(scriptSrc: string, key: string) {
   panel.append(frame);
 
   let open = false;
+  // Until the panel page has loaded, the iframe is an empty document on the
+  // host's own origin, and posting to it with our origin as target is refused.
+  let ready = false;
   function tellPanel() {
+    if (!ready) return;
     frame.contentWindow?.postMessage({ source: MESSAGE_SOURCE, type: "visibility", open }, appOrigin);
   }
   function setOpen(next: boolean) {
@@ -87,7 +91,12 @@ async function start(scriptSrc: string, key: string) {
   }
 
   button.addEventListener("click", () => setOpen(!open));
-  frame.addEventListener("load", tellPanel);
+  frame.addEventListener("load", () => {
+    // Some browsers fire load for the empty iframe too; only our panel counts.
+    if (!frame.src) return;
+    ready = true;
+    tellPanel();
+  });
   window.addEventListener("message", (event) => {
     const message = parsePanelMessage(event, appOrigin, frame.contentWindow);
     if (!message) return;
