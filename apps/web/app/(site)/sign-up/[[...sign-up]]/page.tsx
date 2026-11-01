@@ -1,12 +1,13 @@
 import { SignUp } from "@clerk/nextjs";
 import { Suspense } from "react";
+import { AuthShell, clerkAppearance } from "@/components/site/auth-shell";
 
 export default function SignUpPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center">
+    <AuthShell>
       <Suspense>
-        <SignUp fallbackRedirectUrl="/dashboard" />
+        <SignUp appearance={clerkAppearance} fallbackRedirectUrl="/dashboard" />
       </Suspense>
-    </div>
+    </AuthShell>
   );
 }
