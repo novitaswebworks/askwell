@@ -70,7 +70,7 @@ The build order for Askwell. `docs/project.md` describes each feature in detail.
 
 **Goal:** the bot answers real questions from the owner's documents.
 
-**Keys needed:** `OPENAI_API_KEY`, `ARCJET_KEY` (the `knowledge` Storage bucket is created by a migration)
+**Keys needed:** `OLLAMA_BASE_URL`, `OLLAMA_API_KEY`, `ARCJET_KEY` (the `knowledge` Storage bucket is created by a migration)
 
 | Lane              | Includes                                                                                                                              | project.md |
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
@@ -138,11 +138,11 @@ Lane B builds the 402 path first, then tests Pro by setting `accounts.plan` by h
 
 **Goal:** the product can take real money from real customers. Added by the product owner after Phase 6; billing stays on Clerk Billing with Stripe (see below).
 
-**Keys needed:** a Stripe account for Novitas WebWorks (sole proprietorship, Udyam registered), connected to Clerk Billing in live mode, with the pricing set by the product owner. Production keys for Clerk, OpenAI, Arcjet and PostHog on paid plans where the free tier is not enough. A domain, and an email sender for transactional email.
+**Keys needed:** a Stripe account for Novitas WebWorks (sole proprietorship, Udyam registered), connected to Clerk Billing in live mode, with the pricing set by the product owner. Production keys for Clerk, Arcjet and PostHog, and a production Ollama server on paid plans where the free tier is not enough. A domain, and an email sender for transactional email.
 
 | Lane | Includes | project.md |
 | --- | --- | --- |
-| **A — Billing + cost** | Clerk Billing live mode on Stripe, Pro price, check OpenAI cost per message against the price, move paid-only services off free tiers, optional provider-neutral plan webhook if Stripe declines (fallback: Merchant of Record) | §3, §6.10 |
+| **A — Billing + cost** | Clerk Billing live mode on Stripe, Pro price, check the Ollama server cost per message against the price, move paid-only services off free tiers, optional provider-neutral plan webhook if Stripe declines (fallback: Merchant of Record) | §3, §6.10 |
 | **B — Trust + comms** | Terms, privacy policy, refund policy, cookie notice, transactional emails (welcome, receipt, quota warning, failed payment), support contact | §6.1 |
 
 **Done when:** a real card payment upgrades an account to Pro in production, the legal pages are live and linked from the footer, and the emails send.
