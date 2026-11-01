@@ -3,7 +3,7 @@ import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { embedMany } from "ai";
 import { requireEnv } from "@/lib/supabase/env";
 import { AiUnavailableError } from "./errors";
-import { padEmbedding, toVectorLiteral } from "./vectors";
+import { padEmbedding, toVectorLiteral, withEmbedPrefix, type EmbedKind } from "./vectors";
 
 export const EMBEDDING_MODEL = "nomic-embed-text";
 
@@ -21,7 +21,7 @@ function provider() {
 }
 
 // Returns one vector literal per text, padded to the column width.
-export async function embedTexts(texts: string[]): Promise<string[]> {
+export async function embedTexts(texts: string[], kind: EmbedKind = "document"): Promise<string[]> {
   if (texts.length === 0) return [];
   const model = provider().embeddingModel(EMBEDDING_MODEL);
   const out: string[] = [];
@@ -29,7 +29,7 @@ export async function embedTexts(texts: string[]): Promise<string[]> {
     for (let i = 0; i < texts.length; i += EMBED_BATCH_SIZE) {
       const { embeddings } = await embedMany({
         model,
-        values: texts.slice(i, i + EMBED_BATCH_SIZE),
+        values: texts.slice(i, i + EMBED_BATCH_SIZE).map((t) => withEmbedPrefix(kind, t)),
         abortSignal: AbortSignal.timeout(EMBED_TIMEOUT_MS),
         maxRetries: 1,
       });

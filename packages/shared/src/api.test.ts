@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { chatRequestSchema, knowledgeUploadUrlRequestSchema, updateConfigSchema } from "./api";
+import {
+  chatRequestSchema,
+  knowledgeUploadUrlRequestSchema,
+  updateConfigSchema,
+  updateProjectSchema,
+} from "./api";
 import { MAX_KNOWLEDGE_FILE_BYTES, MAX_MESSAGE_LENGTH } from "./constants";
 
 const base = { key: "pk_abcdefgh1234", visitorId: "visitor-1234" };
@@ -37,5 +42,21 @@ describe("updateConfigSchema", () => {
     expect(updateConfigSchema.safeParse({ buttonColor: "#ff0000" }).success).toBe(true);
     expect(updateConfigSchema.safeParse({}).success).toBe(false);
     expect(updateConfigSchema.safeParse({ buttonColor: "red" }).success).toBe(false);
+  });
+});
+
+describe("updateProjectSchema", () => {
+  it("accepts a name, a description, or both", () => {
+    expect(updateProjectSchema.safeParse({ name: "Shop" }).success).toBe(true);
+    expect(updateProjectSchema.safeParse({ about: "A travel advisor." }).success).toBe(true);
+    expect(updateProjectSchema.safeParse({ name: "Shop", about: "x" }).success).toBe(true);
+  });
+  it("allows clearing the description", () => {
+    expect(updateProjectSchema.parse({ about: "   " })).toEqual({ about: "" });
+  });
+  it("rejects an empty body, a blank name and a description over 600 characters", () => {
+    expect(updateProjectSchema.safeParse({}).success).toBe(false);
+    expect(updateProjectSchema.safeParse({ name: " " }).success).toBe(false);
+    expect(updateProjectSchema.safeParse({ about: "x".repeat(601) }).success).toBe(false);
   });
 });

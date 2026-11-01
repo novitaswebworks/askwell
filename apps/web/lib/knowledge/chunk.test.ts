@@ -32,4 +32,32 @@ describe("chunkText", () => {
   it("always terminates, even with no break points", () => {
     expect(chunkText("x".repeat(5000), 500, 100).length).toBeGreaterThan(9);
   });
+
+  describe("markdown sections", () => {
+    const section = (title: string, n: number) => `### ${title}\n${`${title} is lovely. `.repeat(n)}`.trim();
+
+    it("makes each section its own chunk, starting with its heading", () => {
+      const doc = ["# Guide", section("Bali", 20), section("Japan", 20), section("Cape Town", 20)].join("\n\n");
+      const chunks = chunkText(doc);
+      expect(chunks.map((c) => c.split("\n")[0])).toEqual(["# Guide", "### Japan", "### Cape Town"]);
+      expect(chunks[0]).toContain("### Bali");
+      expect(chunks[2]).not.toContain("Japan");
+    });
+
+    it("keeps a short section together with the next one so a heading is never alone", () => {
+      const chunks = chunkText(`## Destinations\n\n${section("Bali", 20)}\n\n${section("Japan", 20)}`);
+      expect(chunks[0]).toMatch(/^## Destinations\n\n### Bali/);
+      expect(chunks).toHaveLength(2);
+    });
+
+    it("still splits a section that is longer than the chunk size", () => {
+      const chunks = chunkText(`### Long\n${"Sentence number one is here. ".repeat(80)}`, 500, 50);
+      expect(chunks.length).toBeGreaterThan(3);
+      expect(chunks.every((c) => c.length <= 500)).toBe(true);
+    });
+
+    it("does not treat a # in the middle of a line as a heading", () => {
+      expect(chunkText("Call us about plan #1 today. ".repeat(5))).toHaveLength(1);
+    });
+  });
 });

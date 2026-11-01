@@ -172,6 +172,7 @@ export type Database = {
       }
       projects: {
         Row: {
+          about: string
           created_at: string
           id: string
           messages_used: number
@@ -181,6 +182,7 @@ export type Database = {
           public_key: string
         }
         Insert: {
+          about?: string
           created_at?: string
           id?: string
           messages_used?: number
@@ -190,6 +192,7 @@ export type Database = {
           public_key: string
         }
         Update: {
+          about?: string
           created_at?: string
           id?: string
           messages_used?: number
@@ -263,6 +266,7 @@ export type Database = {
           p_public_key: string
         }
         Returns: {
+          about: string
           created_at: string
           id: string
           messages_used: number
@@ -283,6 +287,20 @@ export type Database = {
           p_match_count?: number
           p_project_id: string
           p_query_embedding: string
+        }
+        Returns: {
+          content: string
+          id: string
+          similarity: number
+          source_id: string
+        }[]
+      }
+      match_chunks_hybrid: {
+        Args: {
+          p_match_count?: number
+          p_project_id: string
+          p_query_embedding: string
+          p_query_text: string
         }
         Returns: {
           content: string

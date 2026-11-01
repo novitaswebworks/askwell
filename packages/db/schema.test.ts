@@ -112,6 +112,26 @@ describe("row level security", () => {
     });
   });
 
+  it("lets owners describe their business, within 600 characters, and nobody else", async () => {
+    await asRole(db, "authenticated", ALICE, async () => {
+      const ok = await db.query(
+        "update public.projects set about = 'A travel advisor.' where owner_id = $1 returning about",
+        [ALICE],
+      );
+      expect(ok.rows.length).toBeGreaterThan(0);
+      await expect(
+        db.query("update public.projects set about = $2 where owner_id = $1", [ALICE, "x".repeat(601)]),
+      ).rejects.toThrow(/check constraint/);
+    });
+    const other = await asRole(db, "authenticated", BOB, () =>
+      db.query("update public.projects set about = 'hacked' where owner_id = $1 returning id", [ALICE]),
+    );
+    expect(other.rows).toHaveLength(0);
+    await asRole(db, "anon", null, async () => {
+      await expect(db.query("update public.projects set about = 'x'")).rejects.toThrow(/permission denied/);
+    });
+  });
+
   it("does not let an owner change another owner's project", async () => {
     const res = await asRole(db, "authenticated", BOB, () =>
       db.query("update public.projects set name = 'hacked' where owner_id = $1 returning id", [ALICE]),
@@ -275,6 +295,92 @@ describe("knowledge", () => {
       db.query<{ content: string }>("select content from public.match_chunks($1, $2, 5)", [p1, vec(1)]),
     );
     expect(res.rows.map((r) => r.content)).toEqual(["near", "far"]);
+  });
+
+  describe("hybrid search (meaning plus keywords)", () => {
+    const axis = (i: number) => `[${Array.from({ length: 1536 }, (_, k) => (k === i ? 1 : 0)).join(",")}]`;
+    let p: string;
+    let other: string;
+
+    beforeAll(async () => {
+      p = await createProject(ALICE, "Hybrid 1", "pk_h1", 10);
+      other = await createProject(ALICE, "Hybrid 2", "pk_h2", 10);
+      await svc(async () => {
+        const src = async (project: string, status: string) =>
+          (
+            await db.query<{ id: string }>(
+              "insert into public.knowledge_sources (project_id, title, type, status) values ($1, 't', 'text', $2) returning id",
+              [project, status],
+            )
+          ).rows[0]!.id;
+        const ready = await src(p, "ready");
+        const pending = await src(p, "processing");
+        const foreign = await src(other, "ready");
+        const add = (project: string, source: string, content: string, i: number) =>
+          db.query(
+            "insert into public.knowledge_chunks (project_id, source_id, content, embedding) values ($1, $2, $3, $4)",
+            [project, source, content, axis(i)],
+          );
+        await add(p, ready, "Bali has lakeside temples and rice terraces.", 0);
+        await add(p, ready, "Cape Town has Table Mountain and wine country.", 5);
+        await add(p, ready, "Japan has pagodas and quiet temple towns.", 7);
+        await add(p, pending, "Cape Town draft that is not ready.", 5);
+        await add(other, foreign, "Cape Town in another project.", 5);
+      });
+    });
+
+    const hybrid = (text: string, count = 2) =>
+      svc(() =>
+        db.query<{ content: string; similarity: number }>(
+          "select content, similarity from public.match_chunks_hybrid($1, $2, $3, $4)",
+          [p, axis(0), text, count],
+        ),
+      );
+
+    it("brings back a chunk the keywords name even when its meaning is far from the question", async () => {
+      const res = await hybrid("cape or town");
+      expect(res.rows.map((r) => r.content)).toEqual(
+        expect.arrayContaining(["Bali has lakeside temples and rice terraces.", "Cape Town has Table Mountain and wine country."]),
+      );
+      expect(res.rows.map((r) => r.content)).not.toContain("Japan has pagodas and quiet temple towns.");
+    });
+
+    it("falls back to meaning alone when there are no keywords", async () => {
+      const res = await hybrid("", 1);
+      expect(res.rows.map((r) => r.content)).toEqual(["Bali has lakeside temples and rice terraces."]);
+    });
+
+    it("reports the meaning similarity, not the fused score", async () => {
+      const res = await hybrid("cape or town", 3);
+      const bali = res.rows.find((r) => r.content.startsWith("Bali"))!;
+      expect(bali.similarity).toBeCloseTo(1, 5);
+      expect(res.rows.find((r) => r.content.startsWith("Cape"))!.similarity).toBeCloseTo(0, 5);
+    });
+
+    it("never returns chunks of another project or of a source that is not ready", async () => {
+      const res = await hybrid("cape or town", 10);
+      expect(res.rows.map((r) => r.content).sort()).toEqual([
+        "Bali has lakeside temples and rice terraces.",
+        "Cape Town has Table Mountain and wine country.",
+        "Japan has pagodas and quiet temple towns.",
+      ]);
+    });
+
+    it("accepts odd keyword text without an error", async () => {
+      for (const text of ["'", '"unclosed', "a & | ! b", "(((", ":*"]) {
+        await expect(hybrid(text)).resolves.toBeDefined();
+      }
+    });
+
+    it("can be executed by the service role only", async () => {
+      for (const role of ["anon", "authenticated"] as const) {
+        await asRole(db, role, ALICE, async () => {
+          await expect(
+            db.query("select * from public.match_chunks_hybrid($1, $2, 'x', 3)", [p, axis(0)]),
+          ).rejects.toThrow(/permission denied/);
+        });
+      }
+    });
   });
 
   it("owner_activity is scoped to the caller", async () => {

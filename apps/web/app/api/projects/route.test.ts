@@ -16,6 +16,7 @@ import { GET, POST } from "./route";
 const row = {
   id: "0b1c2d3e-0000-4000-8000-000000000001",
   name: "Shop",
+  about: "A shop.",
   public_key: "pk_abcdefgh12345678",
   messages_used: 0,
   period_start: "2026-11-01",
@@ -43,6 +44,7 @@ describe("GET /api/projects", () => {
       {
         id: row.id,
         name: "Shop",
+        about: "A shop.",
         publicKey: row.public_key,
         messagesUsed: 0,
         periodStart: "2026-11-01",

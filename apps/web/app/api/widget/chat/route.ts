@@ -3,18 +3,24 @@ import { chatRequestSchema, getPlanLimits, type ChatResponse } from "@askwell/sh
 import { AiUnavailableError } from "@/lib/ai/errors";
 import { generateAnswer } from "@/lib/ai/groq";
 import { embedTexts } from "@/lib/ai/ollama";
+import { understandMessage } from "@/lib/ai/understand";
 import { getAccountPlan } from "@/lib/accounts";
 import { apiError, isUuid, readJson } from "@/lib/api";
 import {
   buildPrompt,
+  buildSystemPrompt,
+  HUMAN_QUERY,
   MATCH_COUNT,
   NO_ANSWER,
+  OFF_TOPIC_REPLY,
   QUOTA_MESSAGE,
   relevantChunks,
-  SYSTEM_PROMPT,
+  SMALLTALK_REPLIES,
   UNAVAILABLE_MESSAGE,
   type MatchedChunk,
 } from "@/lib/chat";
+import { keywordQuery } from "@/lib/search-terms";
+import type { Turn } from "@/lib/understand";
 import { protectChat } from "@/lib/protect";
 import { createServiceClient } from "@/lib/supabase/service";
 
@@ -56,7 +62,7 @@ export async function POST(req: Request) {
   const service = createServiceClient();
   const { data: project, error: projectError } = await service
     .from("projects")
-    .select("id, owner_id")
+    .select("id, owner_id, about")
     .eq("public_key", key)
     .maybeSingle();
   if (projectError) return fail("internal", UNAVAILABLE_MESSAGE);
@@ -84,20 +90,38 @@ export async function POST(req: Request) {
   if (countError) return fail("internal", UNAVAILABLE_MESSAGE);
   if (counted !== true) return fail("quota_exceeded", QUOTA_MESSAGE);
 
-  // 5. Retrieve (this project's ready sources only) and answer.
+  // 5. Understand the message, then answer, decline or chat accordingly.
   let reply: string;
   try {
-    const [embedding] = await embedTexts([message]);
-    const { data: matches, error: matchError } = await service.rpc("match_chunks", {
-      p_project_id: project.id,
-      p_query_embedding: embedding,
-      p_match_count: MATCH_COUNT,
-    });
-    if (matchError) throw new Error(`match_chunks: ${matchError.message}`);
+    const about = (project.about as string | null) ?? "";
+    const history = conversationId ? await loadHistory(service, conversationId) : [];
+    const understanding = await understandMessage(about, history, message);
 
-    const chunks = relevantChunks((matches ?? []) as MatchedChunk[]);
-    reply = chunks.length === 0 ? NO_ANSWER : await generateAnswer(SYSTEM_PROMPT, buildPrompt(chunks, message));
-    if (!reply) reply = NO_ANSWER;
+    if (understanding.type === "smalltalk") {
+      reply = SMALLTALK_REPLIES[understanding.smalltalk];
+    } else if (understanding.type === "off_topic") {
+      reply = OFF_TOPIC_REPLY;
+    } else {
+      // Retrieve (this project's ready sources only) and answer.
+      const query = understanding.type === "human" ? HUMAN_QUERY : understanding.standalone;
+      const [embedding] = await embedTexts([query], "query");
+      // Meaning and keywords together: a chunk that names the place or product
+      // asked about is found even when the embedding ranks it low.
+      const { data: matches, error: matchError } = await service.rpc("match_chunks_hybrid", {
+        p_project_id: project.id,
+        p_query_embedding: embedding,
+        p_query_text: keywordQuery(query),
+        p_match_count: MATCH_COUNT,
+      });
+      if (matchError) throw new Error(`match_chunks_hybrid: ${matchError.message}`);
+
+      const chunks = relevantChunks((matches ?? []) as MatchedChunk[]);
+      reply =
+        chunks.length === 0
+          ? NO_ANSWER
+          : await generateAnswer(buildSystemPrompt(about), buildPrompt(chunks, message, query));
+      if (!reply) reply = NO_ANSWER;
+    }
   } catch (error) {
     // Log why, so a "temporarily unavailable" reply can be traced in the runtime logs.
     const cause = error instanceof AiUnavailableError && error.cause instanceof Error ? error.cause : error;
@@ -117,4 +141,17 @@ export async function POST(req: Request) {
 
   const body: ChatResponse = { conversationId: savedId as string, reply };
   return NextResponse.json(body, { headers: CORS });
+}
+
+// The last few messages of this conversation, oldest first, so a short follow-up
+// like "what about Japan?" can be understood.
+async function loadHistory(service: ReturnType<typeof createServiceClient>, conversationId: string): Promise<Turn[]> {
+  const { data, error } = await service
+    .from("messages")
+    .select("role, body")
+    .eq("conversation_id", conversationId)
+    .order("created_at", { ascending: false })
+    .limit(4);
+  if (error || !data) return [];
+  return (data as Turn[]).reverse();
 }

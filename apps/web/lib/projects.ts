@@ -1,10 +1,11 @@
 import type { Project } from "@askwell/shared";
 
-export const PROJECT_COLUMNS = "id, name, public_key, messages_used, period_start, created_at";
+export const PROJECT_COLUMNS = "id, name, about, public_key, messages_used, period_start, created_at";
 
 export interface ProjectRow {
   id: string;
   name: string;
+  about: string;
   public_key: string;
   messages_used: number;
   period_start: string;
@@ -15,6 +16,7 @@ export function toProject(row: ProjectRow): Project {
   return {
     id: row.id,
     name: row.name,
+    about: row.about,
     publicKey: row.public_key,
     messagesUsed: row.messages_used,
     periodStart: row.period_start,

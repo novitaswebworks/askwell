@@ -14,3 +14,11 @@ export function padEmbedding(values: number[], size = EMBEDDING_COLUMN_DIMENSION
 export function toVectorLiteral(values: number[]): string {
   return `[${values.join(",")}]`;
 }
+
+// nomic-embed-text is trained with a task prefix on every text. Without it,
+// questions rank the right passages noticeably worse.
+export type EmbedKind = "document" | "query";
+
+export function withEmbedPrefix(kind: EmbedKind, text: string): string {
+  return `search_${kind}: ${text}`;
+}
