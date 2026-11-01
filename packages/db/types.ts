@@ -16,16 +16,19 @@ export type Database = {
     Tables: {
       accounts: {
         Row: {
+          cashfree_subscription_id: string | null
           clerk_user_id: string
           created_at: string
           plan: string
         }
         Insert: {
+          cashfree_subscription_id?: string | null
           clerk_user_id: string
           created_at?: string
           plan?: string
         }
         Update: {
+          cashfree_subscription_id?: string | null
           clerk_user_id?: string
           created_at?: string
           plan?: string
