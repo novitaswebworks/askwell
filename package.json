@@ -1,0 +1,15 @@
+{
+  "name": "askwell",
+  "private": true,
+  "packageManager": "pnpm@11.24.0",
+  "scripts": {
+    "dev": "pnpm --filter @askwell/web dev",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "build": "pnpm --filter @askwell/widget build && pnpm --filter @askwell/web build"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
+}
