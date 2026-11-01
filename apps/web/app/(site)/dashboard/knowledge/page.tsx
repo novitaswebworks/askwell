@@ -12,18 +12,29 @@ import { PROJECT_COLUMNS, toProject, type ProjectRow } from "@/lib/projects";
 import { createOwnerClient } from "@/lib/supabase/owner";
 
 function Skeleton() {
-  return <div className="glass h-40 animate-pulse" aria-busy="true" aria-label="Loading" />;
+  return (
+    <div className="flex flex-col gap-6" aria-busy="true" aria-label="Loading knowledge">
+      <div className="glass h-48 animate-pulse rounded-2xl" />
+      <div className="glass h-80 animate-pulse rounded-2xl" />
+      <div className="glass h-44 animate-pulse rounded-2xl" />
+    </div>
+  );
 }
 
 // The heading is the instant shell; the data streams in behind the skeleton.
 export default function KnowledgePage({ searchParams }: { searchParams: Promise<{ project?: string }> }) {
   return (
-    <>
-      <h1 className="mb-4 text-2xl font-semibold tracking-tight">Knowledge</h1>
+    <div className="flex flex-col gap-6">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Knowledge Base</h1>
+        <p className="mt-1 text-sm text-muted">
+          Train your AI assistant with business context, documentation, and answers.
+        </p>
+      </div>
       <Suspense fallback={<Skeleton />}>
         <KnowledgeContent searchParams={searchParams} />
       </Suspense>
-    </>
+    </div>
   );
 }
 
@@ -58,20 +69,22 @@ async function KnowledgeContent({ searchParams }: { searchParams: Promise<{ proj
       {!project ? (
         <EmptyState
           title="No project yet"
-          description="Create a project, then add the text or files the bot should answer from."
+          description="Create a project first, then add the knowledge documents your bot should answer from."
           action={<ButtonLink href="/dashboard">Create a project</ButtonLink>}
         />
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-6">
           {projects.length > 1 && (
-            <nav aria-label="Project" className="flex flex-wrap gap-2">
+            <nav aria-label="Project selector" className="flex flex-wrap gap-2">
               {projects.map((p) => (
                 <Link
                   key={p.id}
                   href={`/dashboard/knowledge?project=${p.id}`}
                   aria-current={p.id === project.id ? "page" : undefined}
-                  className={`rounded-full px-4 py-2 text-sm ${
-                    p.id === project.id ? "bg-accent text-accent-foreground" : "glass"
+                  className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                    p.id === project.id
+                      ? "bg-foreground text-background shadow-xs"
+                      : "glass hover:text-foreground"
                   }`}
                 >
                   {p.name}
@@ -79,11 +92,14 @@ async function KnowledgeContent({ searchParams }: { searchParams: Promise<{ proj
               ))}
             </nav>
           )}
+
           <AboutForm key={project.id} projectId={project.id} about={project.about} />
+
           <KnowledgeManager
             projectId={project.id}
             sources={sources}
             maxSources={getPlanLimits(plan).maxKnowledgeSources}
+            plan={plan}
           />
         </div>
       )}
