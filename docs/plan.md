@@ -104,16 +104,16 @@ Lane B tests retrieval with seeded chunks until Lane A is merged.
 
 **Goal:** Free vs Pro works end to end.
 
-**Keys needed:** `CLERK_WEBHOOK_SIGNING_SECRET`. In the Clerk dashboard: Billing on with the Clerk payment gateway (test mode), plans `free` and `pro`, and a webhook to `/api/clerk/webhook` with the subscription events.
+**Keys needed:** `CASHFREE_APP_ID`, `CASHFREE_SECRET_KEY`, `CASHFREE_ENV=sandbox`. In the Cashfree dashboard (sandbox): Subscriptions enabled, API keys created, and a webhook to `/api/cashfree/webhook` (version 2025-01-01 or later) with the subscription events.
 
 | Lane              | Includes                                                                                                                       | project.md |
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------ | ---------- |
-| **A — Billing**   | Clerk webhook → `accounts.plan`, billing page with Clerk's pricing table and account portal | §6.10      |
+| **A — Billing**   | `POST /api/billing/subscribe` and `/cancel`, Cashfree webhook → `accounts.plan`, billing page with Upgrade and Cancel, the `accounts.cashfree_subscription_id` migration | §6.10      |
 | **B — Customize** | Customize page with live preview, `PATCH /api/projects/:id/config` with 402 for Free, plan-applied config in the widget, badge | §6.8       |
 
 Lane B builds the 402 path first, then tests Pro by setting `accounts.plan` by hand until Lane A is merged.
 
-**Done when:** Free save → 402 → upgrade with a test card → save works → the widget shows the new color on reload.
+**Done when:** Free save → 402 → upgrade with a Cashfree sandbox payment → save works → the widget shows the new color on reload.
 
 
 ---
@@ -136,18 +136,18 @@ Lane B builds the 402 path first, then tests Pro by setting `accounts.plan` by h
 
 ## Phase 7 — Sellable
 
-**Goal:** the product can take real money from real customers. Added by the product owner after Phase 6; billing stays on Clerk Billing with Stripe (see below).
+**Goal:** the product can take real money from real customers. Added by the product owner after Phase 6; billing is Cashfree Subscriptions (see below).
 
-**Keys needed:** a Stripe account for Novitas WebWorks (sole proprietorship, Udyam registered), connected to Clerk Billing in live mode, with the pricing set by the product owner. Production keys for Clerk, Arcjet and PostHog, and a production Ollama server on paid plans where the free tier is not enough. A domain, and an email sender for transactional email.
+**Keys needed:** a Cashfree merchant account for Novitas WebWorks (sole proprietorship, Udyam registered) with Subscriptions activated for live use, its live API keys, and the Pro price in INR set by the product owner. Production keys for Clerk, Arcjet and PostHog, and a production Ollama server on paid plans where the free tier is not enough. A domain, and an email sender for transactional email.
 
 | Lane | Includes | project.md |
 | --- | --- | --- |
-| **A — Billing + cost** | Clerk Billing live mode on Stripe, Pro price, check the Ollama server cost per message against the price, move paid-only services off free tiers, optional provider-neutral plan webhook if Stripe declines (fallback: Merchant of Record) | §3, §6.10 |
+| **A — Billing + cost** | Cashfree live mode, Pro price, check the Groq and Ollama cost per message against the price, move paid-only services off free tiers, run the Cashfree go-live checklist (domain whitelisting, webhook verification, live keys) | §3, §6.10 |
 | **B — Trust + comms** | Terms, privacy policy, refund policy, cookie notice, transactional emails (welcome, receipt, quota warning, failed payment), support contact | §6.1 |
 
 **Done when:** a real card payment upgrades an account to Pro in production, the legal pages are live and linked from the footer, and the emails send.
 
 **Notes**
-- Customers are mostly outside India, so UPI is not part of launch. Razorpay can be added later if Indian customers ask.
+- Cashfree Subscriptions charges in INR. Indian customers can pay with UPI Autopay, cards or eNACH; customers abroad can pay with an international Visa or Mastercard and are billed in rupees at their card issuer's rate. The product owner confirms with Cashfree that international cards are activated on the merchant account.
 - The product owner checks GST and export-of-services rules with a CA before the first live payment.
 - Any change to the billing provider needs the product owner's approval and an update to `project.md` §3 and §6.10.
