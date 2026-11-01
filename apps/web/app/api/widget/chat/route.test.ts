@@ -8,19 +8,17 @@ const getAccountPlan = vi.fn();
 vi.mock("@/lib/accounts", () => ({ getAccountPlan: (...a: unknown[]) => getAccountPlan(...a) }));
 const embedTexts = vi.fn();
 const generateAnswer = vi.fn();
-vi.mock("@/lib/ai/ollama", () => {
+vi.mock("@/lib/ai/errors", () => {
   class AiUnavailableError extends Error {}
-  return {
-    AiUnavailableError,
-    embedTexts: (...a: unknown[]) => embedTexts(...a),
-    generateAnswer: (...a: unknown[]) => generateAnswer(...a),
-  };
+  return { AiUnavailableError };
 });
+vi.mock("@/lib/ai/ollama", () => ({ embedTexts: (...a: unknown[]) => embedTexts(...a) }));
+vi.mock("@/lib/ai/groq", () => ({ generateAnswer: (...a: unknown[]) => generateAnswer(...a) }));
 const from = vi.fn();
 const rpc = vi.fn();
 vi.mock("@/lib/supabase/service", () => ({ createServiceClient: () => ({ from, rpc }) }));
 
-import { AiUnavailableError } from "@/lib/ai/ollama";
+import { AiUnavailableError } from "@/lib/ai/errors";
 import { NO_ANSWER } from "@/lib/chat";
 import { OPTIONS, POST } from "./route";
 

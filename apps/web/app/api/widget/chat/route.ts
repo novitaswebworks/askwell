@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { chatRequestSchema, getPlanLimits, type ChatResponse } from "@askwell/shared";
-import { AiUnavailableError, embedTexts, generateAnswer } from "@/lib/ai/ollama";
+import { AiUnavailableError } from "@/lib/ai/errors";
+import { generateAnswer } from "@/lib/ai/groq";
+import { embedTexts } from "@/lib/ai/ollama";
 import { getAccountPlan } from "@/lib/accounts";
 import { apiError, isUuid, readJson } from "@/lib/api";
 import {
@@ -19,8 +21,8 @@ import { createServiceClient } from "@/lib/supabase/service";
 // Public route, called from any website. The key only identifies a project.
 const CORS = { "Access-Control-Allow-Origin": "*" };
 
-// A cold model can take over a minute to load.
-export const maxDuration = 300;
+// Embedding on a cold Ollama model can take a while.
+export const maxDuration = 120;
 
 export function OPTIONS() {
   return new NextResponse(null, {
@@ -97,7 +99,9 @@ export async function POST(req: Request) {
     reply = chunks.length === 0 ? NO_ANSWER : await generateAnswer(SYSTEM_PROMPT, buildPrompt(chunks, message));
     if (!reply) reply = NO_ANSWER;
   } catch (error) {
-    if (!(error instanceof AiUnavailableError)) console.error("[chat] failed", error);
+    // Log why, so a "temporarily unavailable" reply can be traced in the runtime logs.
+    const cause = error instanceof AiUnavailableError && error.cause instanceof Error ? error.cause : error;
+    console.error("[chat] failed:", cause instanceof Error ? cause.message : cause);
     return fail("internal", UNAVAILABLE_MESSAGE);
   }
 

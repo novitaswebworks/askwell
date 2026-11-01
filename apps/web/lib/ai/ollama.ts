@@ -1,25 +1,16 @@
 import "server-only";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import { embedMany, generateText } from "ai";
+import { embedMany } from "ai";
 import { requireEnv } from "@/lib/supabase/env";
+import { AiUnavailableError } from "./errors";
 import { padEmbedding, toVectorLiteral } from "./vectors";
 
-export const CHAT_MODEL = "llama3.2:3b";
 export const EMBEDDING_MODEL = "nomic-embed-text";
 
 // The server has little memory, so the first call after a quiet period loads
-// the model and can take over a minute. Warm calls take a few seconds.
+// the model and can take a while. Warm calls take a few seconds.
 const EMBED_TIMEOUT_MS = 120_000;
-const CHAT_TIMEOUT_MS = 120_000;
 const EMBED_BATCH_SIZE = 16;
-
-// Thrown for any failure reaching or using the model; routes show a friendly message.
-export class AiUnavailableError extends Error {
-  constructor(cause: unknown) {
-    super("The AI service is unavailable.", { cause });
-    this.name = "AiUnavailableError";
-  }
-}
 
 function provider() {
   return createOpenAICompatible({
@@ -48,21 +39,4 @@ export async function embedTexts(texts: string[]): Promise<string[]> {
     throw new AiUnavailableError(error);
   }
   return out;
-}
-
-export async function generateAnswer(system: string, prompt: string): Promise<string> {
-  try {
-    const { text } = await generateText({
-      model: provider().chatModel(CHAT_MODEL),
-      system,
-      prompt,
-      temperature: 0.2,
-      maxOutputTokens: 400,
-      abortSignal: AbortSignal.timeout(CHAT_TIMEOUT_MS),
-      maxRetries: 0,
-    });
-    return text.trim();
-  } catch (error) {
-    throw new AiUnavailableError(error);
-  }
 }
