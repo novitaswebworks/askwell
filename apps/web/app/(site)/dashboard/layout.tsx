@@ -1,7 +1,7 @@
 import { APP_NAME } from "@askwell/shared";
 import Link from "next/link";
 import { Suspense } from "react";
-import { AuthControls } from "@/components/auth-controls";
+import { Show, UserButton } from "@clerk/nextjs";
 import { DashboardNav } from "@/components/dashboard-nav";
 import { EnsureAccount } from "@/components/ensure-account";
 
@@ -16,8 +16,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <Suspense>
           <DashboardNav />
         </Suspense>
-        <div className="flex items-center gap-3 px-2 md:mt-4">
-          <AuthControls />
+        <div className="flex items-center justify-between gap-3 px-2 md:mt-4">
+          <Suspense>
+            <Show when="signed-in">
+              <UserButton />
+            </Show>
+          </Suspense>
+          <Link href="/" className="text-sm text-muted transition-colors hover:text-foreground">
+            Home
+          </Link>
         </div>
       </aside>
       <main className="flex-1">{children}</main>
