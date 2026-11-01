@@ -1,8 +1,12 @@
-import { loadEnvConfig } from "@next/env";
+import { existsSync } from "node:fs";
 import type { NextConfig } from "next";
 
-// Also read env files from the monorepo root (apps/web/.env.local still wins).
-loadEnvConfig(`${process.cwd()}/../..`);
+// Also read env files from the monorepo root. Next has already loaded apps/web,
+// and loadEnvFile never overrides a variable that is already set, so apps/web wins.
+for (const name of [".env.local", ".env"]) {
+  const path = `${process.cwd()}/../../${name}`;
+  if (existsSync(path)) process.loadEnvFile(path);
+}
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@askwell/shared"],
