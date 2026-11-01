@@ -3,6 +3,7 @@ import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { generateText } from "ai";
 import { requireEnv } from "@/lib/supabase/env";
 import { AiUnavailableError } from "./errors";
+import type { Generation } from "@/lib/analytics";
 
 // Chat runs on Groq: fast enough for a visitor waiting on a reply. Embeddings
 // stay on our own Ollama server (see ollama.ts).
@@ -36,7 +37,7 @@ export function chatModelNames(env: Env = process.env): string[] {
 export async function generateAnswer(
   system: string,
   prompt: string,
-  options: { maxOutputTokens?: number; timeoutMs?: number } = {},
+  options: { maxOutputTokens?: number; timeoutMs?: number; onGeneration?: (g: Generation) => void } = {},
 ): Promise<string> {
   let lastError: unknown;
   try {
@@ -53,8 +54,9 @@ export async function generateAnswer(
       if (remaining < 500) break;
       // A whole number of milliseconds: AbortSignal.timeout rejects fractions.
       const attemptMs = Math.floor(Math.max(MIN_ATTEMPT_MS, remaining / (models.length - index)));
+      const startedAt = Date.now();
       try {
-        const { text } = await generateText({
+        const { text, usage } = await generateText({
           model: groq.chatModel(name),
           system,
           prompt,
@@ -65,6 +67,12 @@ export async function generateAnswer(
           maxOutputTokens: options.maxOutputTokens ?? 800,
           abortSignal: AbortSignal.timeout(Math.min(attemptMs, Math.floor(remaining))),
           maxRetries: 0, // a throttled model is skipped, not waited on
+        });
+        options.onGeneration?.({
+          model: name,
+          inputTokens: usage?.inputTokens,
+          outputTokens: usage?.outputTokens,
+          latencyMs: Date.now() - startedAt,
         });
         return text.trim();
       } catch (error) {

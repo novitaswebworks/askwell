@@ -4,11 +4,13 @@ import { Suspense } from "react";
 import { Show, UserButton } from "@clerk/nextjs";
 import { DashboardNav } from "@/components/dashboard-nav";
 import { EnsureAccount } from "@/components/ensure-account";
+import { PostHogIdentify } from "@/components/posthog-identify";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 p-4 md:flex-row md:p-8">
       <EnsureAccount />
+      <PostHogIdentify />
       <aside className="glass flex flex-col gap-4 p-4 md:w-56 md:self-start">
         <Link href="/dashboard" className="px-2 text-lg font-semibold">
           {APP_NAME}

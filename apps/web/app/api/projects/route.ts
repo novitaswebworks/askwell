@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { createProjectSchema, getPlanLimits } from "@askwell/shared";
 import { getAccountPlan } from "@/lib/accounts";
+import { track } from "@/lib/analytics";
 import { apiError, readJson } from "@/lib/api";
 import { PROJECT_COLUMNS, toProject, type ProjectRow } from "@/lib/projects";
 import { generatePublicKey } from "@/lib/public-key";
@@ -41,7 +42,10 @@ export async function POST(req: Request) {
       p_public_key: generatePublicKey(),
       p_max_projects: maxProjects,
     });
-    if (!error) return NextResponse.json(toProject(data as ProjectRow), { status: 201 });
+    if (!error) {
+      track({ distinctId: userId, event: "project_created", properties: { plan } });
+      return NextResponse.json(toProject(data as ProjectRow), { status: 201 });
+    }
     if (error.code === "P0001") {
       return apiError(
         "limit_reached",

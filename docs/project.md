@@ -346,7 +346,7 @@ docs/
 | `GROQ_API_KEY` (optional `GROQ_CHAT_MODEL`)                                      | Server          | No      |
 | `CLERK_WEBHOOK_SIGNING_SECRET`                                                   | Server          | No      |
 | `ARCJET_KEY`                                                                     | Server          | No      |
-| `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST`                            | Client + server | Yes     |
+| `POSTHOG_KEY`, `POSTHOG_HOST` (the `NEXT_PUBLIC_` names also work). Read at request time by `GET /api/posthog-config`; the key is public by design. | Client + server | Yes     |
 | `NEXT_PUBLIC_APP_URL`                                                            | Client + server | Yes     |
 | `LANDING_WIDGET_KEY`                                                             | Server (read at request time) | No (it is a public key, but per-environment config) |
 

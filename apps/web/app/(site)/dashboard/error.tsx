@@ -1,8 +1,16 @@
 "use client";
 
+import { useEffect } from "react";
 import { EmptyState } from "@/components/empty-state";
+import { withPostHog } from "@/lib/posthog-client";
 
-export default function DashboardError({ reset }: { error: Error; reset: () => void }) {
+export default function DashboardError({ error, reset }: { error: Error; reset: () => void }) {
+  // React hands render errors to this boundary, so PostHog's automatic capture
+  // does not see them. Report them here.
+  useEffect(() => {
+    withPostHog((ph) => ph.captureException(error));
+  }, [error]);
+
   return (
     <EmptyState
       title="Something went wrong"
