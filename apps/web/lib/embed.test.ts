@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { VISITOR_ID_KEY, getVisitorId, mockReply, parseParentOrigin } from "./embed";
+import { VISITOR_ID_KEY, getVisitorId, parseParentOrigin } from "./embed";
 
 describe("parseParentOrigin", () => {
   it("returns the origin of an http(s) URL", () => {
@@ -26,12 +26,5 @@ describe("getVisitorId", () => {
     const storage = { getItem: vi.fn(() => { throw new Error("blocked"); }), setItem: vi.fn() };
     expect(getVisitorId(storage).length).toBeGreaterThanOrEqual(8);
     expect(getVisitorId(null).length).toBeGreaterThanOrEqual(8);
-  });
-});
-
-describe("mockReply", () => {
-  it("cycles through canned replies", () => {
-    expect(mockReply(0)).toBe(mockReply(3));
-    expect(mockReply(0)).not.toBe(mockReply(1));
   });
 });
