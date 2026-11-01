@@ -394,6 +394,24 @@ describe("knowledge", () => {
   });
 });
 
+describe("billing", () => {
+  it("keeps the Cashfree subscription ID on accounts, unique, and server-only", async () => {
+    await svc(() =>
+      db.exec(`insert into public.accounts (clerk_user_id, cashfree_subscription_id) values ('user_cf1', 'sub_1'), ('user_cf2', null), ('user_cf3', null)`),
+    );
+    await svc(async () => {
+      await expect(
+        db.exec(`insert into public.accounts (clerk_user_id, cashfree_subscription_id) values ('user_cf4', 'sub_1')`),
+      ).rejects.toThrow(/duplicate key|unique/);
+    });
+    for (const role of ["anon", "authenticated"] as const) {
+      await asRole(db, role, "user_cf1", async () => {
+        await expect(db.query("select cashfree_subscription_id from public.accounts")).rejects.toThrow(/permission denied/);
+      });
+    }
+  });
+});
+
 describe("knowledge bucket", () => {
   it("is private, capped at 10 MB, and limited to PDF, Markdown and text", async () => {
     const res = await db.query<{

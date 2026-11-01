@@ -207,8 +207,8 @@ Two parts: a small loader script + an iframe.
 | Item      | Detail                                                                                                    |
 | --------- | --------------------------------------------------------------------------------------------------------- |
 | Upgrade   | "Upgrade to Pro" on the Billing page. The server creates a Cashfree subscription for the signed-in owner (their email and phone, the Pro plan, the price from one constant) and the browser opens Cashfree's hosted checkout with the returned session ID. We never see card or bank details. |
-| Webhook   | `POST /api/cashfree/webhook`, signature verified (HMAC SHA-256 over timestamp + raw body, 5 minute window). Authorisation succeeded or subscription `ACTIVE` → `accounts.plan = pro`. `CANCELLED`, `COMPLETED`, `EXPIRED`, `CARD_EXPIRED`, `CUSTOMER_CANCELLED`, `LINK_EXPIRED` → `free`. `ON_HOLD` (a failed charge) keeps Pro through Cashfree's retries. A cancellation keeps Pro until the paid period ends. The owner is found from our own `subscription_id`; the plan is never taken from the browser. |
-| Manage    | "Cancel subscription" on the Billing page calls Cashfree's manage API (`CANCEL`). The owner can also cancel from their UPI app or bank. |
+| Webhook   | `POST /api/cashfree/webhook`, signature verified (HMAC SHA-256 over timestamp + raw body, 5 minute window). Authorisation succeeded or subscription `ACTIVE` → `accounts.plan = pro`. `CANCELLED`, `COMPLETED`, `EXPIRED`, `CARD_EXPIRED`, `CUSTOMER_CANCELLED`, `LINK_EXPIRED` → `free`. `ON_HOLD` (a failed charge) keeps Pro through Cashfree's retries. The owner is found from our own `subscription_id`; the plan is never taken from the browser. |
+| Manage    | "Cancel subscription" on the Billing page calls Cashfree's manage API (`CANCEL`). Cancelling ends Pro at once: future charges stop and the month already paid is not refunded. The owner can also cancel from their UPI app or bank, which ends Pro when Cashfree reports it. |
 | Currency  | INR. International cards are accepted and billed in rupees by the issuer's rate. Cashfree needs the customer's phone number, so the upgrade form asks for it. |
 | Done when | Sandbox payment → Customize unlocks                                                                       |
 
@@ -346,7 +346,7 @@ docs/
 | `CLERK_SECRET_KEY`                                                               | Server          | No      |
 | `OLLAMA_BASE_URL`, `OLLAMA_API_KEY`                                              | Server          | No      |
 | `GROQ_API_KEY` (optional `GROQ_CHAT_MODEL`)                                      | Server          | No      |
-| `CASHFREE_APP_ID`, `CASHFREE_SECRET_KEY` (also signs and verifies the webhook), `CASHFREE_ENV` (`sandbox` or `production`) | Server          | No      |
+| `CASHFREE_APP_ID`, `CASHFREE_SECRET_KEY` (also verifies the webhook unless `CASHFREE_WEBHOOK_SECRET` is set), `CASHFREE_ENV` (`sandbox` or `production`) | Server          | No      |
 | `ARCJET_KEY`                                                                     | Server          | No      |
 | `POSTHOG_KEY`, `POSTHOG_HOST` (the `NEXT_PUBLIC_` names also work). Read at request time by `GET /api/posthog-config`; the key is public by design. | Client + server | Yes     |
 | `NEXT_PUBLIC_APP_URL`                                                            | Client + server | Yes     |

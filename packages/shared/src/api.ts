@@ -147,6 +147,20 @@ export const messageSchema = z.object({
 });
 export type Message = z.infer<typeof messageSchema>;
 
+// POST /api/billing/subscribe: Cashfree needs the owner's phone number.
+export const subscribeRequestSchema = z.object({
+  phone: z
+    .string()
+    .trim()
+    .regex(/^\+?[0-9][0-9 ()-]{6,19}$/, "Enter a valid phone number.")
+    .transform((v) => v.replace(/\D/g, ""))
+    .pipe(z.string().min(8).max(15)),
+});
+export type SubscribeRequest = z.infer<typeof subscribeRequestSchema>;
+
+export const subscribeResponseSchema = z.object({ sessionId: z.string().min(1) });
+export type SubscribeResponse = z.infer<typeof subscribeResponseSchema>;
+
 // GET /api/conversations/:id
 export const conversationThreadSchema = z.object({
   id: z.uuid(),

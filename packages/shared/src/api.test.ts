@@ -4,6 +4,7 @@ import {
   knowledgeUploadUrlRequestSchema,
   updateConfigSchema,
   conversationThreadSchema,
+  subscribeRequestSchema,
   updateProjectSchema,
 } from "./api";
 import { MAX_KNOWLEDGE_FILE_BYTES, MAX_MESSAGE_LENGTH } from "./constants";
@@ -86,5 +87,17 @@ describe("conversationThreadSchema", () => {
         messages: [{ id, role: "system", body: "x", createdAt: "x" }],
       }).success,
     ).toBe(false);
+  });
+});
+
+describe("subscribeRequestSchema", () => {
+  it("keeps only the digits of a phone number", () => {
+    expect(subscribeRequestSchema.parse({ phone: " +91 98765-43210 " }).phone).toBe("919876543210");
+    expect(subscribeRequestSchema.parse({ phone: "9876543210" }).phone).toBe("9876543210");
+  });
+  it("rejects letters, too short and too long numbers", () => {
+    for (const phone of ["", "abc", "12345", "1".repeat(16), "98765 4321a"]) {
+      expect(subscribeRequestSchema.safeParse({ phone }).success).toBe(false);
+    }
   });
 });
