@@ -8,3 +8,4 @@ dist
 *.tsbuildinfo
 .DS_Store
 .claude-flow
+apps/web/public/widget.js

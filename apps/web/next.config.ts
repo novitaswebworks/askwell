@@ -12,6 +12,19 @@ const nextConfig: NextConfig = {
   transpilePackages: ["@askwell/shared"],
   cacheComponents: true,
   partialPrefetching: true,
+  // Only /embed may be framed by other websites (project.md section 9).
+  async headers() {
+    return [
+      { source: "/embed", headers: [{ key: "Content-Security-Policy", value: "frame-ancestors *" }] },
+      {
+        source: "/((?!embed).*)",
+        headers: [
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+        ],
+      },
+    ];
+  },
   turbopack: {
     rules: {
       "*.css": {
