@@ -19,9 +19,9 @@ afterEach(() => {
 });
 
 describe("chatModelName", () => {
-  it("defaults to llama-3.3-70b-versatile and can be overridden", () => {
+  it("defaults to openai/gpt-oss-120b and can be overridden", () => {
     expect(chatModelName({})).toBe(DEFAULT_CHAT_MODEL);
-    expect(DEFAULT_CHAT_MODEL).toBe("llama-3.3-70b-versatile");
+    expect(DEFAULT_CHAT_MODEL).toBe("openai/gpt-oss-120b");
     expect(chatModelName({ GROQ_CHAT_MODEL: " llama-3.1-8b-instant " })).toBe("llama-3.1-8b-instant");
     expect(chatModelName({ GROQ_CHAT_MODEL: "  " })).toBe(DEFAULT_CHAT_MODEL);
   });
@@ -37,7 +37,13 @@ describe("generateAnswer", () => {
       apiKey: "gsk_test",
     });
     expect(chatModel).toHaveBeenCalledWith(DEFAULT_CHAT_MODEL);
-    expect(generateText).toHaveBeenCalledWith(expect.objectContaining({ system: "system", prompt: "prompt" }));
+    expect(generateText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        system: "system",
+        prompt: "prompt",
+        providerOptions: { groq: { reasoningEffort: "low" } },
+      }),
+    );
   });
 
   it("wraps any provider failure so the route shows a friendly message", async () => {
