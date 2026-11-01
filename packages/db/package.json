@@ -1,0 +1,11 @@
+{
+  "name": "@askwell/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "echo 'no sources yet'",
+    "lint": "echo 'no sources yet'",
+    "test": "echo 'no tests yet'"
+  }
+}
