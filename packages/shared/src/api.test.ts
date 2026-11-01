@@ -3,6 +3,7 @@ import {
   chatRequestSchema,
   knowledgeUploadUrlRequestSchema,
   updateConfigSchema,
+  conversationThreadSchema,
   updateProjectSchema,
 } from "./api";
 import { MAX_KNOWLEDGE_FILE_BYTES, MAX_MESSAGE_LENGTH } from "./constants";
@@ -58,5 +59,32 @@ describe("updateProjectSchema", () => {
     expect(updateProjectSchema.safeParse({}).success).toBe(false);
     expect(updateProjectSchema.safeParse({ name: " " }).success).toBe(false);
     expect(updateProjectSchema.safeParse({ about: "x".repeat(601) }).success).toBe(false);
+  });
+});
+
+describe("conversationThreadSchema", () => {
+  const id = "0b1c2d3e-0000-4000-8000-000000000001";
+  it("accepts a thread with visitor and bot messages", () => {
+    expect(
+      conversationThreadSchema.safeParse({
+        id,
+        projectId: id,
+        createdAt: "2026-11-01T00:00:00Z",
+        messages: [
+          { id, role: "visitor", body: "Hi", createdAt: "2026-11-01T00:00:00Z" },
+          { id, role: "bot", body: "Hello!", createdAt: "2026-11-01T00:00:01Z" },
+        ],
+      }).success,
+    ).toBe(true);
+  });
+  it("rejects an unknown role", () => {
+    expect(
+      conversationThreadSchema.safeParse({
+        id,
+        projectId: id,
+        createdAt: "x",
+        messages: [{ id, role: "system", body: "x", createdAt: "x" }],
+      }).success,
+    ).toBe(false);
   });
 });
