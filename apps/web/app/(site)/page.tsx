@@ -1,5 +1,8 @@
 import Link from "next/link";
-import { APP_NAME, PLAN_LIMITS } from "@askwell/shared";
+import Script from "next/script";
+import { connection } from "next/server";
+import { Suspense } from "react";
+import { APP_NAME, PLAN_LIMITS, PRO_PRICE_INR } from "@askwell/shared";
 import { ButtonLink } from "@/components/button-link";
 import { Faq } from "@/components/site/faq";
 import { HeroChat } from "@/components/site/hero-chat";
@@ -74,6 +77,20 @@ function PlanCard({
         {cta}
       </ButtonLink>
     </div>
+  );
+}
+
+export async function LandingWidget() {
+  await connection();
+  const landingWidgetKey = process.env.LANDING_WIDGET_KEY;
+  if (!landingWidgetKey) return null;
+
+  return (
+    <Script
+      src="/widget.js"
+      data-key={landingWidgetKey}
+      strategy="afterInteractive"
+    />
   );
 }
 
@@ -178,8 +195,21 @@ export default function Home() {
             Start free. Grow when you need to.
           </h2>
           <div className="mt-12 grid gap-4 md:grid-cols-2">
-            <PlanCard name="Free" price="$0" note="For trying it on your site" plan="free" cta="Start free" />
-            <PlanCard name="Pro" price="Coming soon" note="Pricing announced at launch" plan="pro" cta="Get started" featured />
+            <PlanCard
+              name="Free"
+              price="$0"
+              note="Free forever · no card required"
+              plan="free"
+              cta="Start free"
+            />
+            <PlanCard
+              name="Pro"
+              price={`₹${PRO_PRICE_INR.toLocaleString("en-IN")}`}
+              note="per month · cancel anytime"
+              plan="pro"
+              cta="Get started"
+              featured
+            />
           </div>
         </section>
 
@@ -220,6 +250,10 @@ export default function Home() {
           <p className="text-sm text-muted">© {APP_NAME}</p>
         </div>
       </footer>
+
+      <Suspense fallback={null}>
+        <LandingWidget />
+      </Suspense>
     </div>
   );
 }
