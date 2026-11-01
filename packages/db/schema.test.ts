@@ -426,3 +426,101 @@ describe("knowledge bucket", () => {
     expect([...bucket.allowed_mime_types].sort()).toEqual(["application/pdf", "text/markdown", "text/plain"]);
   });
 });
+
+describe("cross-tenant isolation", () => {
+  const TENANT_A = "user_sec_a";
+  const TENANT_B = "user_sec_b";
+  let aliceProj: string;
+  let aliceSource: string;
+  let aliceConv: string;
+
+  beforeAll(async () => {
+    await svc(() =>
+      db.exec(`insert into public.accounts (clerk_user_id) values ('${TENANT_A}'), ('${TENANT_B}')`),
+    );
+    aliceProj = await createProject(TENANT_A, "Alice Private Corp", "pk_alice_sec", 5);
+    aliceSource = await svc(async () => {
+      const res = await db.query<{ id: string }>(
+        "insert into public.knowledge_sources (project_id, title, type, status) values ($1, 'Alice Secret Doc', 'text', 'ready') returning id",
+        [aliceProj],
+      );
+      return res.rows[0]!.id;
+    });
+    aliceConv = await svc(async () => {
+      const res = await db.query<{ c: string }>(
+        "select public.save_chat_turn($1, 'visitor-1', null, 'secret question', 'secret answer') as c",
+        [aliceProj],
+      );
+      return res.rows[0]!.c;
+    });
+  });
+
+  it("prevents Bob from reading or modifying Alice's project", async () => {
+    const read = await asRole(db, "authenticated", TENANT_B, () =>
+      db.query("select * from public.projects where id = $1", [aliceProj]),
+    );
+    expect(read.rows).toHaveLength(0);
+
+    const update = await asRole(db, "authenticated", TENANT_B, () =>
+      db.query("update public.projects set name = 'Hacked' where id = $1 returning id", [aliceProj]),
+    );
+    expect(update.rows).toHaveLength(0);
+
+    const del = await asRole(db, "authenticated", TENANT_B, () =>
+      db.query("delete from public.projects where id = $1 returning id", [aliceProj]),
+    );
+    expect(del.rows).toHaveLength(0);
+  });
+
+  it("prevents Bob from reading or modifying Alice's widget configs", async () => {
+    const read = await asRole(db, "authenticated", TENANT_B, () =>
+      db.query("select * from public.widget_configs where project_id = $1", [aliceProj]),
+    );
+    expect(read.rows).toHaveLength(0);
+
+    await asRole(db, "authenticated", TENANT_B, async () => {
+      await expect(
+        db.query("update public.widget_configs set button_color = '#000000' where project_id = $1", [aliceProj]),
+      ).rejects.toThrow(/permission denied/);
+      await expect(
+        db.query("delete from public.widget_configs where project_id = $1", [aliceProj]),
+      ).rejects.toThrow(/permission denied/);
+    });
+  });
+
+  it("prevents Bob from reading or deleting Alice's knowledge sources", async () => {
+    const read = await asRole(db, "authenticated", TENANT_B, () =>
+      db.query("select * from public.knowledge_sources where project_id = $1", [aliceProj]),
+    );
+    expect(read.rows).toHaveLength(0);
+
+    // Direct deletes are revoked from authenticated API users
+    await asRole(db, "authenticated", TENANT_B, async () => {
+      await expect(
+        db.query("delete from public.knowledge_sources where id = $1", [aliceSource]),
+      ).rejects.toThrow(/permission denied/);
+    });
+  });
+
+  it("prevents Bob from reading Alice's conversations and messages", async () => {
+    const readConv = await asRole(db, "authenticated", TENANT_B, () =>
+      db.query("select * from public.conversations where id = $1", [aliceConv]),
+    );
+    expect(readConv.rows).toHaveLength(0);
+
+    const readMsgs = await asRole(db, "authenticated", TENANT_B, () =>
+      db.query("select * from public.messages where conversation_id = $1", [aliceConv]),
+    );
+    expect(readMsgs.rows).toHaveLength(0);
+
+    // Direct deletes are revoked from authenticated API users
+    await asRole(db, "authenticated", TENANT_B, async () => {
+      await expect(
+        db.query("delete from public.conversations where id = $1", [aliceConv]),
+      ).rejects.toThrow(/permission denied/);
+      await expect(
+        db.query("delete from public.messages where conversation_id = $1", [aliceConv]),
+      ).rejects.toThrow(/permission denied/);
+    });
+  });
+});

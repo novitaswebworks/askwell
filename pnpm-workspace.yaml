@@ -1,6 +1,8 @@
 packages:
   - "apps/*"
   - "packages/*"
+overrides:
+  tinypool: ">=2.1.2"
 allowBuilds:
   sharp: false
   unrs-resolver: false
