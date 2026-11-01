@@ -164,8 +164,10 @@ html {
 }
 
 /* Soft brand glow behind the hero. A real light source, not a decoration. */
+/* background-image, not the shorthand: the shorthand would reset the page's
+   background colour and turn a dark page light. */
 .hero-glow {
-  background:
+  background-image:
     radial-gradient(60% 50% at 78% 18%, rgb(255 122 69 / 0.22), transparent 70%),
     radial-gradient(40% 40% at 12% 0%, rgb(255 255 255 / 0.06), transparent 70%);
 }
