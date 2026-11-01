@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { MAX_KNOWLEDGE_FILE_BYTES, MAX_MESSAGE_LENGTH } from "./constants";
+import { MAX_ABOUT_LENGTH, MAX_KNOWLEDGE_FILE_BYTES, MAX_MESSAGE_LENGTH } from "./constants";
 
 // ---------------------------------------------------------------- common
 
@@ -76,6 +76,7 @@ export type ChatResponse = z.infer<typeof chatResponseSchema>;
 export const projectSchema = z.object({
   id: z.uuid(),
   name: z.string(),
+  about: z.string(),
   publicKey: publicKeySchema,
   messagesUsed: z.number().int().nonnegative(),
   periodStart: z.string(),
@@ -88,6 +89,15 @@ export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 
 export const renameProjectSchema = createProjectSchema;
 export type RenameProjectInput = z.infer<typeof renameProjectSchema>;
+
+// PATCH /api/projects/:id: rename, describe the business, or both.
+export const updateProjectSchema = z
+  .object({
+    name: createProjectSchema.shape.name.optional(),
+    about: z.string().trim().max(MAX_ABOUT_LENGTH).optional(),
+  })
+  .refine((v) => v.name !== undefined || v.about !== undefined, "Provide a name or a description");
+export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
 
 export const addTextKnowledgeSchema = z.object({
   title: z.string().trim().min(1).max(200),

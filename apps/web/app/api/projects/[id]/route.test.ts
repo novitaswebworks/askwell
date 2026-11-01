@@ -37,12 +37,34 @@ describe("PATCH /api/projects/:id", () => {
   it("renames an owned project", async () => {
     ownerFrom.mockReturnValue(
       queryResult({
-        data: { id, name: "New", public_key: "pk_abcdefgh12345678", messages_used: 0, period_start: "d", created_at: "d" },
+        data: { id, name: "New", about: "", public_key: "pk_abcdefgh12345678", messages_used: 0, period_start: "d", created_at: "d" },
       }),
     );
     const res = await patch({ name: "New" });
     expect(res.status).toBe(200);
     expect((await res.json()).name).toBe("New");
+  });
+  it("saves the business description", async () => {
+    const update = vi.fn().mockReturnValue(
+      queryResult({
+        data: { id, name: "Shop", about: "A travel advisor.", public_key: "pk_abcdefgh12345678", messages_used: 0, period_start: "d", created_at: "d" },
+      }),
+    );
+    ownerFrom.mockReturnValue({ update });
+    const res = await patch({ about: "  A travel advisor.  " });
+    expect(res.status).toBe(200);
+    expect((await res.json()).about).toBe("A travel advisor.");
+    expect(update).toHaveBeenCalledWith({ about: "A travel advisor." });
+  });
+  it("only ever updates name and about, never other columns", async () => {
+    const update = vi.fn().mockReturnValue(queryResult({ data: null }));
+    ownerFrom.mockReturnValue({ update });
+    await patch({ name: "N", messages_used: 0, owner_id: "user_2", public_key: "pk_x" });
+    expect(update).toHaveBeenCalledWith({ name: "N" });
+  });
+  it("rejects a description over 600 characters and an empty body", async () => {
+    expect((await patch({ about: "x".repeat(601) })).status).toBe(400);
+    expect((await patch({})).status).toBe(400);
   });
 });
 

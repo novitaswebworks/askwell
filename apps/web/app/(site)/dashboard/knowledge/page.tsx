@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { Suspense } from "react";
 import { getPlanLimits } from "@askwell/shared";
+import { AboutForm } from "@/components/about-form";
 import { ButtonLink } from "@/components/button-link";
 import { EmptyState } from "@/components/empty-state";
 import { KnowledgeManager } from "@/components/knowledge-manager";
@@ -78,6 +79,7 @@ async function KnowledgeContent({ searchParams }: { searchParams: Promise<{ proj
               ))}
             </nav>
           )}
+          <AboutForm key={project.id} projectId={project.id} about={project.about} />
           <KnowledgeManager
             projectId={project.id}
             sources={sources}

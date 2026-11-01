@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { padEmbedding, toVectorLiteral } from "./vectors";
+import { padEmbedding, toVectorLiteral, withEmbedPrefix } from "./vectors";
 
 describe("padEmbedding", () => {
   it("pads a 768-wide vector with zeros to 1536", () => {
@@ -26,5 +26,12 @@ describe("padEmbedding", () => {
 describe("toVectorLiteral", () => {
   it("formats a pgvector text literal", () => {
     expect(toVectorLiteral([1, 0.5, -2])).toBe("[1,0.5,-2]");
+  });
+});
+
+describe("withEmbedPrefix", () => {
+  it("adds nomic's task prefix for documents and for questions", () => {
+    expect(withEmbedPrefix("document", "Refunds take 5 days.")).toBe("search_document: Refunds take 5 days.");
+    expect(withEmbedPrefix("query", "How long?")).toBe("search_query: How long?");
   });
 });
