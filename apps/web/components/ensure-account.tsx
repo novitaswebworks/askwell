@@ -1,9 +1,13 @@
-import { auth } from "@clerk/nextjs/server";
-import { ensureAccount } from "@/lib/accounts";
+"use client";
 
-// Creates the accounts row on first sign-in. Renders nothing.
-export async function EnsureAccount() {
-  const { userId } = await auth();
-  if (userId) await ensureAccount(userId);
+import { useEffect } from "react";
+import { ensureAccountAction } from "@/lib/account-action";
+
+// Creates the accounts row on first sign-in. Renders nothing. A failure here is
+// harmless: every action that needs the account (getAccountPlan) creates it too.
+export function EnsureAccount() {
+  useEffect(() => {
+    ensureAccountAction().catch(() => {});
+  }, []);
   return null;
 }
