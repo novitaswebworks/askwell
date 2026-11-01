@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import type { Project } from "@askwell/shared";
 import { EmptyState } from "@/components/empty-state";
+import { UsageMeter } from "@/components/usage-meter";
+import type { Usage } from "@/lib/usage";
 
 const inputStyles =
   "h-11 min-w-0 flex-1 rounded-full border border-border bg-glass-strong px-4 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent";
@@ -16,7 +18,17 @@ async function errorMessage(res: Response) {
   return body?.error?.message ?? "Something went wrong. Try again.";
 }
 
-export function ProjectsManager({ projects, maxProjects }: { projects: Project[]; maxProjects: number }) {
+export function ProjectsManager({
+  projects,
+  maxProjects,
+  usage,
+  conversations,
+}: {
+  projects: Project[];
+  maxProjects: number;
+  usage: Record<string, Usage>;
+  conversations: Record<string, number>;
+}) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -139,9 +151,16 @@ export function ProjectsManager({ projects, maxProjects }: { projects: Project[]
                 <>
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{project.name}</p>
-                    <p className="text-xs text-muted">{project.messagesUsed} messages this month</p>
+                    {usage[project.id] && (
+                      <div className="mt-2">
+                        <UsageMeter usage={usage[project.id]!} compact />
+                      </div>
+                    )}
                   </div>
                   <div className="flex flex-wrap gap-2">
+                    <Link href={`/dashboard/conversations?project=${project.id}`} className={`${buttonStyles} glass`}>
+                      Conversations{conversations[project.id] ? ` (${conversations[project.id]})` : ""}
+                    </Link>
                     <Link href={`/dashboard/install?project=${project.id}`} className={`${buttonStyles} glass`}>
                       Install
                     </Link>

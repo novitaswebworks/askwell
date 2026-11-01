@@ -147,6 +147,15 @@ export const messageSchema = z.object({
 });
 export type Message = z.infer<typeof messageSchema>;
 
+// GET /api/conversations/:id
+export const conversationThreadSchema = z.object({
+  id: z.uuid(),
+  projectId: z.uuid(),
+  createdAt: z.string(),
+  messages: z.array(messageSchema),
+});
+export type ConversationThread = z.infer<typeof conversationThreadSchema>;
+
 export const updateConfigSchema = widgetConfigSchema.partial().refine(
   (v) => Object.keys(v).length > 0,
   "Provide at least one field",
