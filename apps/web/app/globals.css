@@ -1,26 +1,80 @@
 @import "tailwindcss";
 
+/* One set of design tokens for every page (project.md section 13).
+   Light is the default (dashboard). `.theme-dark` is used by the landing page. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f5f5f4;
+  --foreground: #0a0a0a;
+  --muted: #6b6b66;
+  --border: rgb(0 0 0 / 0.08);
+  --glass: rgb(255 255 255 / 0.6);
+  --glass-strong: rgb(255 255 255 / 0.85);
+  --accent: #0a0a0a;
+  --accent-foreground: #ffffff;
+  --radius: 14px;
+  --blur: 16px;
+  --shadow-glass: 0 8px 32px rgb(0 0 0 / 0.08);
+}
+
+.theme-dark {
+  --background: #050505;
+  --foreground: #f5f5f4;
+  --muted: #9a9a94;
+  --border: rgb(255 255 255 / 0.1);
+  --glass: rgb(255 255 255 / 0.06);
+  --glass-strong: rgb(255 255 255 / 0.12);
+  --accent: #f5f5f4;
+  --accent-foreground: #0a0a0a;
+  --shadow-glass: 0 8px 32px rgb(0 0 0 / 0.5);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-glass: var(--glass);
+  --color-glass-strong: var(--glass-strong);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --radius-card: var(--radius);
+  --shadow-glass: var(--shadow-glass);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.glass {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-glass);
+  backdrop-filter: blur(var(--blur));
+  -webkit-backdrop-filter: blur(var(--blur));
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.rise {
+  animation: rise 0.6s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise {
+    animation: none;
+  }
 }
