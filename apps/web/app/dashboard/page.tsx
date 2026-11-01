@@ -1,12 +1,26 @@
-import { EmptyState } from "@/components/empty-state";
+import { auth } from "@clerk/nextjs/server";
+import { getPlanLimits } from "@askwell/shared";
+import { ProjectsManager } from "@/components/projects-manager";
+import { getAccountPlan } from "@/lib/accounts";
+import { PROJECT_COLUMNS, toProject, type ProjectRow } from "@/lib/projects";
+import { createOwnerClient } from "@/lib/supabase/owner";
 
-export default function ProjectsPage() {
+export default async function ProjectsPage() {
+  const { userId } = await auth();
+  if (!userId) return null; // the proxy already sends signed-out visitors to sign-in
+
+  const [plan, { data, error }] = await Promise.all([
+    getAccountPlan(userId),
+    createOwnerClient().from("projects").select(PROJECT_COLUMNS).order("created_at", { ascending: true }),
+  ]);
+  if (error) throw new Error(`Could not load projects: ${error.message}`);
+
   return (
     <>
       <h1 className="mb-4 text-2xl font-semibold tracking-tight">Projects</h1>
-      <EmptyState
-        title="No projects yet"
-        description="Create a project to get a chat widget for your website."
+      <ProjectsManager
+        projects={(data as ProjectRow[]).map(toProject)}
+        maxProjects={getPlanLimits(plan).maxProjects}
       />
     </>
   );
