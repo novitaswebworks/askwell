@@ -9,17 +9,6 @@ export type PanelMessage = { source: typeof MESSAGE_SOURCE; type: "close" } | {
   count: number;
 };
 
-// Phase 2 replies are fake; the real chat route replaces this in Phase 3.
-const MOCK_REPLIES = [
-  "Thanks for your message! This is a preview reply. Real answers from your knowledge arrive soon.",
-  "Got it. In the live version, I'll answer from your own documents.",
-  "That's a good question. This is a preview, so I can't look it up yet.",
-];
-
-export function mockReply(turn: number): string {
-  return MOCK_REPLIES[turn % MOCK_REPLIES.length] as string;
-}
-
 // The host page's origin, passed by the loader. Only an http(s) origin is usable
 // as a postMessage target; anything else means "no parent to talk to".
 export function parseParentOrigin(value: string | null): string | null {

@@ -2,14 +2,8 @@
 
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
-import { APP_NAME, MAX_MESSAGE_LENGTH, type WidgetConfig } from "@askwell/shared";
-import {
-  MESSAGE_SOURCE,
-  getVisitorId,
-  mockReply,
-  parseParentOrigin,
-  type PanelMessage,
-} from "@/lib/embed";
+import { APP_NAME, MAX_MESSAGE_LENGTH, chatResponseSchema, type WidgetConfig } from "@askwell/shared";
+import { MESSAGE_SOURCE, getVisitorId, parseParentOrigin, type PanelMessage } from "@/lib/embed";
 
 type Line = { id: number; role: "visitor" | "bot"; body: string };
 type Load = { state: "loading" } | { state: "error" } | { state: "ready"; config: WidgetConfig };
@@ -26,12 +20,11 @@ export function EmbedPanel() {
   const [typing, setTyping] = useState(false);
   const open = useRef(true);
   const unread = useRef(0);
-  const turn = useRef(0);
+  const conversationId = useRef<string | null>(null);
   const nextId = useRef(1);
   const visitorId = useRef<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const tell = useCallback(
     (message: PanelMessage) => {
@@ -86,27 +79,53 @@ export function EmbedPanel() {
     return () => window.removeEventListener("keydown", onKey);
   }, [tell]);
 
-  useEffect(() => () => clearTimeout(timer.current), []);
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" });
   }, [lines, typing]);
 
-  function send(event: FormEvent) {
-    event.preventDefault();
-    const body = draft.trim();
-    if (!body || typing) return;
-    setDraft("");
-    setLines((prev) => [...prev, { id: nextId.current++, role: "visitor", body }]);
-    setTyping(true);
-    const reply = mockReply(turn.current++);
-    timer.current = setTimeout(() => {
-      setTyping(false);
-      setLines((prev) => [...prev, { id: nextId.current++, role: "bot", body: reply }]);
+  const addBotLine = useCallback(
+    (body: string) => {
+      setLines((prev) => [...prev, { id: nextId.current++, role: "bot", body }]);
       if (!open.current) {
         unread.current += 1;
         tell({ source: MESSAGE_SOURCE, type: "unread", count: unread.current });
       }
-    }, 900);
+    },
+    [tell],
+  );
+
+  async function send(event: FormEvent) {
+    event.preventDefault();
+    const body = draft.trim();
+    if (!body || typing || !key) return;
+    setDraft("");
+    setLines((prev) => [...prev, { id: nextId.current++, role: "visitor", body }]);
+    setTyping(true);
+    try {
+      const res = await fetch("/api/widget/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          key,
+          visitorId: visitorId.current,
+          conversationId: conversationId.current ?? undefined,
+          message: body,
+        }),
+      });
+      const data: unknown = await res.json().catch(() => null);
+      const parsed = chatResponseSchema.safeParse(data);
+      if (res.ok && parsed.success) {
+        conversationId.current = parsed.data.conversationId;
+        addBotLine(parsed.data.reply);
+      } else {
+        const message = (data as { error?: { message?: unknown } } | null)?.error?.message;
+        addBotLine(typeof message === "string" ? message : "Something went wrong. Please try again.");
+      }
+    } catch {
+      addBotLine("Could not reach the server. Check your connection and try again.");
+    } finally {
+      setTyping(false);
+    }
   }
 
   if (load.state === "loading") {
