@@ -11,10 +11,11 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@askwell/shared": "workspace:*",
+    "@clerk/nextjs": "^7.9.23",
     "next": "16.4.3",
     "react": "19.3.0",
-    "react-dom": "19.3.0",
-    "@askwell/shared": "workspace:*"
+    "react-dom": "19.3.0"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
