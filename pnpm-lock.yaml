@@ -64,9 +64,29 @@ importers:
         specifier: ^3.0.0
         version: 3.2.7(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@7.2.0)
 
-  packages/db: {}
+  packages/db:
+    devDependencies:
+      '@electric-sql/pglite':
+        specifier: ^0.5.13
+        version: 0.5.13
+      '@electric-sql/pglite-pgvector':
+        specifier: ^0.0.14
+        version: 0.0.14(@electric-sql/pglite@0.5.13)
+      '@types/node':
+        specifier: ^20.19.43
+        version: 20.19.43
+      typescript:
+        specifier: ^5.6.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.7
+        version: 3.2.7(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@7.2.0)
 
   packages/shared:
+    dependencies:
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
     devDependencies:
       vitest:
         specifier: ^3.0.0
@@ -144,6 +164,14 @@ packages:
   '@babel/types@7.29.11':
     resolution: {integrity: sha512-WCsemW40Cpc6gouC1SrY6PBaZ+oLRlEVY9XBvZBI7il/HyUrb2nJ505wE1MHEFyDZNnrWDEuy4jL50WVHfTTSQ==}
     engines: {node: '>=6.9.0'}
+
+  '@electric-sql/pglite-pgvector@0.0.14':
+    resolution: {integrity: sha512-sJCsaVnuqo18CJyPV32pbVCDlhjV+iFCSlwOW7+kTkzIRJSWkju+LnQ9DlWpRR+S+V5m//LA+w4+Ne2afBQ0wg==}
+    peerDependencies:
+      '@electric-sql/pglite': 0.5.13
+
+  '@electric-sql/pglite@0.5.13':
+    resolution: {integrity: sha512-4rZuxK1k07w6sSpJzjMri0B9+HuXuC7V9pxVB51pR0T9KPqXg6TD0mdaEwBA9rkcL4jdht4tGDf/wYzAiGhT7g==}
 
   '@emnapi/core@1.10.0':
     resolution: {integrity: sha512-yq6OkJ4p82CAfPl0u9mQebQHKPJkY7WrIuk205cTYnYe+k2Z8YBh11FrbRG/H6ihirqcacOgl2BIO8oyMQLeXw==}
@@ -2808,6 +2836,12 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.29.11
       '@babel/helper-validator-identifier': 7.29.7
+
+  '@electric-sql/pglite-pgvector@0.0.14(@electric-sql/pglite@0.5.13)':
+    dependencies:
+      '@electric-sql/pglite': 0.5.13
+
+  '@electric-sql/pglite@0.5.13': {}
 
   '@emnapi/core@1.10.0':
     dependencies:
