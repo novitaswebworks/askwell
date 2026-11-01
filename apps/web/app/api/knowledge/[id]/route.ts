@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { track } from "@/lib/analytics";
 import { apiError, isUuid } from "@/lib/api";
 import { KNOWLEDGE_BUCKET } from "@/lib/knowledge/files";
 import { createOwnerClient } from "@/lib/supabase/owner";
@@ -29,5 +30,6 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   // Chunks go with the source (on delete cascade).
   const { error: deleteError } = await service.from("knowledge_sources").delete().eq("id", source.id);
   if (deleteError) return apiError("internal", "Could not delete the source.");
+  track({ distinctId: userId, event: "knowledge_source_deleted" });
   return NextResponse.json({ ok: true });
 }

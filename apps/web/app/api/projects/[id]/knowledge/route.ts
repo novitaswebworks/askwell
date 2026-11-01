@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { addTextKnowledgeSchema, getPlanLimits } from "@askwell/shared";
 import { getAccountPlan } from "@/lib/accounts";
+import { track } from "@/lib/analytics";
 import { apiError, isUuid, readJson } from "@/lib/api";
 import { processSource } from "@/lib/knowledge/process";
 import { limitMessage, processingMessage, toSource, type SourceRow } from "@/lib/knowledge/sources";
@@ -45,5 +46,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   } catch (e) {
     return apiError("internal", processingMessage(e));
   }
+  track({ distinctId: userId, event: "knowledge_source_added", properties: { source_type: "text", plan } });
   return NextResponse.json(toSource({ ...row, status: "ready" } satisfies SourceRow), { status: 201 });
 }

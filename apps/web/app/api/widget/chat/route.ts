@@ -5,6 +5,7 @@ import { generateAnswer } from "@/lib/ai/groq";
 import { embedTexts } from "@/lib/ai/ollama";
 import { understandMessage } from "@/lib/ai/understand";
 import { getAccountPlan } from "@/lib/accounts";
+import { track, trackGeneration, type Generation } from "@/lib/analytics";
 import { apiError, isUuid, readJson } from "@/lib/api";
 import {
   buildPrompt,
@@ -53,6 +54,12 @@ export async function POST(req: Request) {
   // 2. Protect: rate limit and prompt injection, before any database or AI work.
   const protection = await protectChat(req, key, message);
   if (!protection.ok) {
+    track({
+      distinctId: visitorId,
+      event: "message_blocked",
+      anonymous: true,
+      properties: { reason: protection.reason, public_key: key },
+    });
     return protection.reason === "rate_limit"
       ? fail("rate_limited", "You are sending messages too fast. Wait a moment and try again.")
       : fail("message_blocked", "That message can't be sent.");
@@ -88,14 +95,23 @@ export async function POST(req: Request) {
     p_monthly_limit: getPlanLimits(plan).messagesPerMonth,
   });
   if (countError) return fail("internal", UNAVAILABLE_MESSAGE);
-  if (counted !== true) return fail("quota_exceeded", QUOTA_MESSAGE);
+  if (counted !== true) {
+    track({ distinctId: visitorId, event: "quota_exceeded", anonymous: true, properties: { project_id: project.id } });
+    return fail("quota_exceeded", QUOTA_MESSAGE);
+  }
 
   // 5. Understand the message, then answer, decline or chat accordingly.
   let reply: string;
+  let kind: string = "question";
+  // Token counts and timings only, never the text of a message (project.md section 6.6).
+  const traceId = crypto.randomUUID();
+  const traced = (spanName: string) => (g: Generation) =>
+    trackGeneration({ ...g, distinctId: visitorId, projectId: project.id, traceId, spanName });
   try {
     const about = (project.about as string | null) ?? "";
     const history = conversationId ? await loadHistory(service, conversationId) : [];
-    const understanding = await understandMessage(about, history, message);
+    const understanding = await understandMessage(about, history, message, traced("understand_message"));
+    kind = understanding.type;
 
     if (understanding.type === "smalltalk") {
       reply = SMALLTALK_REPLIES[understanding.smalltalk];
@@ -119,7 +135,9 @@ export async function POST(req: Request) {
       reply =
         chunks.length === 0
           ? NO_ANSWER
-          : await generateAnswer(buildSystemPrompt(about), buildPrompt(chunks, message, query));
+          : await generateAnswer(buildSystemPrompt(about), buildPrompt(chunks, message, query), {
+              onGeneration: traced("answer_question"),
+            });
       if (!reply) reply = NO_ANSWER;
     }
   } catch (error) {
@@ -138,6 +156,19 @@ export async function POST(req: Request) {
     p_bot_reply: reply,
   });
   if (saveError) return fail("internal", UNAVAILABLE_MESSAGE);
+
+  track({
+    distinctId: visitorId,
+    event: "widget_message",
+    anonymous: true,
+    properties: {
+      project_id: project.id,
+      plan,
+      kind,
+      answered: reply !== NO_ANSWER && kind !== "off_topic" && kind !== "smalltalk",
+      is_new_conversation: !conversationId,
+    },
+  });
 
   const body: ChatResponse = { conversationId: savedId as string, reply };
   return NextResponse.json(body, { headers: CORS });

@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { knowledgeFinalizeSchema, MAX_KNOWLEDGE_FILE_BYTES } from "@askwell/shared";
+import { track } from "@/lib/analytics";
 import { apiError, isUuid, readJson } from "@/lib/api";
 import { KNOWLEDGE_BUCKET, type KnowledgeFileType } from "@/lib/knowledge/files";
 import { extractText, looksLikePdf } from "@/lib/knowledge/extract";
@@ -69,5 +70,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   } catch (e) {
     return apiError("internal", processingMessage(e));
   }
+  track({ distinctId: userId, event: "knowledge_source_added", properties: { source_type: type } });
   return NextResponse.json(toSource({ ...claimed, status: "ready" }));
 }

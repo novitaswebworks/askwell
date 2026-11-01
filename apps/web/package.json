@@ -19,6 +19,8 @@
     "@supabase/supabase-js": "^2.118.0",
     "ai": "^7.0.159",
     "next": "16.4.3",
+    "posthog-js": "^1.444.0",
+    "posthog-node": "^5.61.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "server-only": "^0.0.1",

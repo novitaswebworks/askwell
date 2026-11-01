@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { withPostHog } from "@/lib/posthog-client";
 
 export function CopySnippet({ snippet }: { snippet: string }) {
   const [copied, setCopied] = useState(false);
@@ -8,6 +9,7 @@ export function CopySnippet({ snippet }: { snippet: string }) {
   async function copy() {
     try {
       await navigator.clipboard.writeText(snippet);
+      withPostHog((ph) => ph.capture("install_snippet_copied"));
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {

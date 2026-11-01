@@ -14,6 +14,9 @@ vi.mock("@/lib/ai/errors", () => {
 });
 vi.mock("@/lib/ai/ollama", () => ({ embedTexts: (...a: unknown[]) => embedTexts(...a) }));
 vi.mock("@/lib/ai/groq", () => ({ generateAnswer: (...a: unknown[]) => generateAnswer(...a) }));
+const track = vi.fn();
+const trackGeneration = vi.fn();
+vi.mock("@/lib/analytics", () => ({ track: (...a: unknown[]) => track(...a), trackGeneration: (...a: unknown[]) => trackGeneration(...a) }));
 const understandMessage = vi.fn();
 vi.mock("@/lib/ai/understand", () => ({ understandMessage: (...a: unknown[]) => understandMessage(...a) }));
 const from = vi.fn();
@@ -195,6 +198,7 @@ describe("POST /api/widget/chat: understanding the message", () => {
       "A travel advisor.",
       [{ role: "bot", body: "Hi" }, { role: "visitor", body: "Hello" }].reverse(),
       body.message,
+      expect.any(Function),
     );
     expect(generateAnswer.mock.calls[0]![0]).toContain("A travel advisor.");
   });
@@ -209,6 +213,53 @@ describe("POST /api/widget/chat: understanding the message", () => {
     const res = await call(body);
     expect((await res.json()).reply).toBe(NO_ANSWER);
     expect(generateAnswer).not.toHaveBeenCalled();
+  });
+});
+
+describe("POST /api/widget/chat: analytics", () => {
+  it("records a widget_message with counts and kinds only, never the text", async () => {
+    await call(body);
+    expect(track).toHaveBeenCalledWith({
+      distinctId: body.visitorId,
+      event: "widget_message",
+      anonymous: true,
+      properties: { project_id: PROJECT, plan: "free", kind: "question", answered: true, is_new_conversation: true },
+    });
+    expect(JSON.stringify(track.mock.calls)).not.toContain(body.message);
+  });
+
+  it("marks off-topic and small talk as not answered from the knowledge", async () => {
+    understandMessage.mockResolvedValue({ type: "off_topic" });
+    await call(body);
+    expect(track).toHaveBeenCalledWith(
+      expect.objectContaining({ event: "widget_message", properties: expect.objectContaining({ kind: "off_topic", answered: false }) }),
+    );
+  });
+
+  it("traces each model call with the project, without any message text", async () => {
+    understandMessage.mockImplementation(async (_a: string, _h: unknown, _m: string, onGeneration: (g: unknown) => void) => {
+      onGeneration({ model: "openai/gpt-oss-20b", inputTokens: 100, outputTokens: 20, latencyMs: 400 });
+      return { type: "question", standalone: "How long do refunds take?" };
+    });
+    await call(body);
+    expect(trackGeneration).toHaveBeenCalledWith(
+      expect.objectContaining({ model: "openai/gpt-oss-20b", projectId: PROJECT, spanName: "understand_message", distinctId: body.visitorId }),
+    );
+    expect(JSON.stringify(trackGeneration.mock.calls)).not.toContain(body.message);
+  });
+
+  it("records a blocked message with the reason", async () => {
+    protectChat.mockResolvedValue({ ok: false, reason: "rate_limit" });
+    await call(body);
+    expect(track).toHaveBeenCalledWith(
+      expect.objectContaining({ event: "message_blocked", properties: { reason: "rate_limit", public_key: KEY } }),
+    );
+  });
+
+  it("records when a project runs out of messages", async () => {
+    rpcs({ consume_message: { data: false, error: null } });
+    await call(body);
+    expect(track).toHaveBeenCalledWith(expect.objectContaining({ event: "quota_exceeded" }));
   });
 });
 
