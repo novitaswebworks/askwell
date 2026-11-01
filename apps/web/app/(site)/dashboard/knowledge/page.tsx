@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
+import { Suspense } from "react";
 import { getPlanLimits } from "@askwell/shared";
 import { ButtonLink } from "@/components/button-link";
 import { EmptyState } from "@/components/empty-state";
@@ -9,11 +10,23 @@ import { SOURCE_COLUMNS, toSource, type SourceRow } from "@/lib/knowledge/source
 import { PROJECT_COLUMNS, toProject, type ProjectRow } from "@/lib/projects";
 import { createOwnerClient } from "@/lib/supabase/owner";
 
-export default async function KnowledgePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ project?: string }>;
-}) {
+function Skeleton() {
+  return <div className="glass h-40 animate-pulse" aria-busy="true" aria-label="Loading" />;
+}
+
+// The heading is the instant shell; the data streams in behind the skeleton.
+export default function KnowledgePage({ searchParams }: { searchParams: Promise<{ project?: string }> }) {
+  return (
+    <>
+      <h1 className="mb-4 text-2xl font-semibold tracking-tight">Knowledge</h1>
+      <Suspense fallback={<Skeleton />}>
+        <KnowledgeContent searchParams={searchParams} />
+      </Suspense>
+    </>
+  );
+}
+
+async function KnowledgeContent({ searchParams }: { searchParams: Promise<{ project?: string }> }) {
   const { userId } = await auth();
   if (!userId) return null; // the proxy already sends signed-out visitors to sign-in
   const { project: selectedId } = await searchParams;
@@ -41,7 +54,6 @@ export default async function KnowledgePage({
 
   return (
     <>
-      <h1 className="mb-4 text-2xl font-semibold tracking-tight">Knowledge</h1>
       {!project ? (
         <EmptyState
           title="No project yet"

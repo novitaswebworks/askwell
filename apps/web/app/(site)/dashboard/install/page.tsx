@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { CopySnippet } from "@/components/copy-snippet";
 import { ButtonLink } from "@/components/button-link";
@@ -6,11 +7,23 @@ import { requireEnv } from "@/lib/supabase/env";
 import { PROJECT_COLUMNS, toProject, type ProjectRow } from "@/lib/projects";
 import { createOwnerClient } from "@/lib/supabase/owner";
 
-export default async function InstallPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ project?: string }>;
-}) {
+function Skeleton() {
+  return <div className="glass h-40 animate-pulse" aria-busy="true" aria-label="Loading" />;
+}
+
+// The heading is the instant shell; the data streams in behind the skeleton.
+export default function InstallPage({ searchParams }: { searchParams: Promise<{ project?: string }> }) {
+  return (
+    <>
+      <h1 className="mb-4 text-2xl font-semibold tracking-tight">Install</h1>
+      <Suspense fallback={<Skeleton />}>
+        <InstallContent searchParams={searchParams} />
+      </Suspense>
+    </>
+  );
+}
+
+async function InstallContent({ searchParams }: { searchParams: Promise<{ project?: string }> }) {
   const { project: selectedId } = await searchParams;
   const { data, error } = await createOwnerClient()
     .from("projects")
@@ -24,7 +37,6 @@ export default async function InstallPage({
 
   return (
     <>
-      <h1 className="mb-4 text-2xl font-semibold tracking-tight">Install</h1>
       {!project ? (
         <EmptyState
           title="Nothing to install yet"
