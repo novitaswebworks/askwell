@@ -287,3 +287,18 @@ describe("knowledge", () => {
     expect(res.rows.map((r) => r.project_id).sort()).toEqual(own.rows.map((r) => r.id).sort());
   });
 });
+
+describe("knowledge bucket", () => {
+  it("is private, capped at 10 MB, and limited to PDF, Markdown and text", async () => {
+    const res = await db.query<{
+      public: boolean;
+      file_size_limit: string;
+      allowed_mime_types: string[];
+    }>("select public, file_size_limit, allowed_mime_types from storage.buckets where id = 'knowledge'");
+    expect(res.rows).toHaveLength(1);
+    const bucket = res.rows[0]!;
+    expect(bucket.public).toBe(false);
+    expect(Number(bucket.file_size_limit)).toBe(10 * 1024 * 1024);
+    expect([...bucket.allowed_mime_types].sort()).toEqual(["application/pdf", "text/markdown", "text/plain"]);
+  });
+});
