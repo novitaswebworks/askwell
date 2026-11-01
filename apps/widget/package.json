@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "esbuild src/index.ts --bundle --minify --format=iife --target=es2020 --outfile=dist/widget.js",
+    "build": "esbuild src/index.ts --bundle --minify --format=iife --target=es2020 --outfile=../web/public/widget.js",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
     "test": "vitest run --passWithNoTests"
@@ -12,5 +12,8 @@
   "devDependencies": {
     "esbuild": "^0.25.0",
     "vitest": "^3.0.0"
+  },
+  "dependencies": {
+    "@askwell/shared": "workspace:*"
   }
 }
