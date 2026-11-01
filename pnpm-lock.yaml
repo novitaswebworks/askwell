@@ -20,6 +20,9 @@ importers:
       '@clerk/nextjs':
         specifier: ^7.9.23
         version: 7.9.23(next@16.4.3(@babel/core@7.29.7(supports-color@7.2.0))(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@next/env':
+        specifier: ^16.4.3
+        version: 16.4.3
       '@supabase/supabase-js':
         specifier: ^2.118.0
         version: 2.118.0
