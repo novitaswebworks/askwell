@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { anchorStyles, embedUrl, isValidKey, parsePanelMessage, readableTextColor } from "./lib";
+import { anchorStyles, embedUrl, isValidKey, parseOffset, parsePanelMessage, readableTextColor } from "./lib";
 
 const APP = "https://app.example.com";
 const frame = {};
@@ -29,13 +29,29 @@ describe("readableTextColor", () => {
 });
 
 describe("anchorStyles", () => {
-  it("anchors the button to the chosen corner", () => {
-    expect(anchorStyles("bottom-right").button).toBe("bottom:20px;right:20px;");
-    expect(anchorStyles("top-left").button).toBe("top:20px;left:20px;");
+  it("anchors the button to the chosen corner, clear of the safe area", () => {
+    expect(anchorStyles("bottom-right").button).toBe(
+      "bottom:calc(var(--ay) + env(safe-area-inset-bottom,0px));right:calc(var(--ax) + env(safe-area-inset-right,0px));",
+    );
+    expect(anchorStyles("top-left").button).toContain("top:calc(var(--ay)");
+    expect(anchorStyles("top-left").button).toContain("left:calc(var(--ax)");
   });
   it("opens the panel on the side with room", () => {
-    expect(anchorStyles("bottom-left").panel).toContain("bottom:84px");
-    expect(anchorStyles("top-right").panel).toContain("top:84px");
+    expect(anchorStyles("bottom-left").panel).toContain("bottom:calc(var(--ay) + env(safe-area-inset-bottom,0px) + 64px)");
+    expect(anchorStyles("top-right").panel).toContain("top:calc(var(--ay) + env(safe-area-inset-top,0px) + 64px)");
+  });
+});
+
+describe("parseOffset", () => {
+  it("reads whole pixel values and clamps big ones", () => {
+    expect(parseOffset("80", 20)).toBe(80);
+    expect(parseOffset("0", 20)).toBe(0);
+    expect(parseOffset("9999", 20)).toBe(300);
+  });
+  it("falls back for anything else", () => {
+    for (const bad of [undefined, null, "", "-5", "12px", "1.5", "calc(1px)", "abc"]) {
+      expect(parseOffset(bad as string | null | undefined, 20)).toBe(20);
+    }
   });
 });
 

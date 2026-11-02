@@ -1,5 +1,5 @@
 import type { WidgetConfig } from "@askwell/shared";
-import { MESSAGE_SOURCE, anchorStyles, embedUrl, isValidKey, parsePanelMessage, readableTextColor } from "./lib";
+import { MESSAGE_SOURCE, anchorStyles, embedUrl, isValidKey, parseOffset, parsePanelMessage, readableTextColor } from "./lib";
 
 // Runs on the customer's site. Reads data-key, fetches the config, draws a button
 // inside a shadow root, and opens the chat panel in an iframe. Bad key: nothing renders.
@@ -24,13 +24,18 @@ async function start(scriptSrc: string, key: string) {
   if (document.getElementById(ROOT_ID)) return;
 
   const { button: buttonAnchor, panel: panelAnchor, from } = anchorStyles(config.position);
+  // The site owner can nudge the widget clear of their own UI (a bottom menu bar, say)
+  // with data-offset-x / data-offset-y, and data-mobile-offset-y for phones only.
+  const offsetX = parseOffset(script?.dataset.offsetX, 20);
+  const offsetY = parseOffset(script?.dataset.offsetY, 20);
+  const mobileOffsetY = parseOffset(script?.dataset.mobileOffsetY, offsetY);
   const host = document.createElement("div");
   host.id = ROOT_ID;
   const shadow = host.attachShadow({ mode: "closed" });
 
   const style = document.createElement("style");
   style.textContent = `
-    :host { all: initial; }
+    :host { all: initial; --ax: ${offsetX}px; --ay: ${offsetY}px; }
     * { box-sizing: border-box; }
     button { position: fixed; ${buttonAnchor} z-index: 2147483646; display: inline-flex; align-items: center;
       height: 52px; padding: 0 22px; border: 0; border-radius: 26px; cursor: pointer;
@@ -42,8 +47,10 @@ async function start(scriptSrc: string, key: string) {
     .dot { display: none; position: absolute; top: -4px; right: -4px; width: 14px; height: 14px;
       border-radius: 50%; background: #e11d48; border: 2px solid #fff; }
     .dot.on { display: block; }
-    .panel { position: fixed; ${panelAnchor} z-index: 2147483647; width: 380px; height: min(600px, calc(100vh - 110px));
-      max-width: calc(100vw - 40px); border-radius: 16px; overflow: hidden; background: #fff;
+    .panel { position: fixed; ${panelAnchor} z-index: 2147483647; width: 380px;
+      --room: calc(var(--ay) + 64px + 24px + env(safe-area-inset-top,0px) + env(safe-area-inset-bottom,0px));
+      height: min(600px, calc(100vh - var(--room))); height: min(600px, calc(100dvh - var(--room)));
+      max-width: calc(100vw - 2 * var(--ax) - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px)); border-radius: 16px; overflow: hidden; background: #fff;
       box-shadow: 0 12px 48px rgb(0 0 0 / 0.28); visibility: hidden; opacity: 0; pointer-events: none;
       transition: opacity .2s ease-out, transform .2s ease-out, visibility 0s linear .2s; }
     .panel.fade { transform: none; }
@@ -52,7 +59,12 @@ async function start(scriptSrc: string, key: string) {
     .panel.open { visibility: visible; opacity: 1; pointer-events: auto; transform: none;
       transition: opacity .2s ease-out, transform .2s ease-out, visibility 0s; }
     iframe { width: 100%; height: 100%; border: 0; display: block; }
-    @media (max-width: 480px) { .panel { left: 10px; right: 10px; width: auto; max-width: none; } }
+    @media (max-width: 480px) {
+      :host { --ay: ${mobileOffsetY}px; }
+      button { height: 48px; padding: 0 18px; font-size: 14px; }
+      .panel { left: calc(10px + env(safe-area-inset-left,0px)); right: calc(10px + env(safe-area-inset-right,0px));
+        width: auto; max-width: none; }
+    }
     @media (prefers-reduced-motion: reduce) { .panel, button { transition: none; } }
   `;
 

@@ -17,13 +17,27 @@ export function readableTextColor(hex: string): "#000000" | "#ffffff" {
   return luminance > 0.179 ? "#000000" : "#ffffff";
 }
 
-// CSS for the button; the panel sits next to it, on the side with room.
+const MAX_OFFSET = 300;
+
+// Optional data-offset-* values from the script tag, in px. Anything else means "use the default".
+export function parseOffset(value: string | null | undefined, fallback: number): number {
+  if (typeof value !== "string" || !/^\d{1,4}$/.test(value.trim())) return fallback;
+  return Math.min(Number(value), MAX_OFFSET);
+}
+
+// CSS for the button; the panel sits next to it, on the side with room. Distances
+// come from --ax / --ay (set on the host, so a phone can override them) plus the
+// device's safe-area inset, which keeps the button clear of notches and home bars.
 export function anchorStyles(position: WidgetConfig["position"]) {
   const top = position.startsWith("top");
   const left = position.endsWith("left");
+  const v = top ? "top" : "bottom";
+  const h = left ? "left" : "right";
+  const edge = (side: string, size: string, extra = "") =>
+    `${side}:calc(${size} + env(safe-area-inset-${side},0px)${extra});`;
   return {
-    button: `${top ? "top" : "bottom"}:20px;${left ? "left" : "right"}:20px;`,
-    panel: `${top ? "top" : "bottom"}:84px;${left ? "left" : "right"}:20px;`,
+    button: edge(v, "var(--ay)") + edge(h, "var(--ax)"),
+    panel: edge(v, "var(--ay)", " + 64px") + edge(h, "var(--ax)"),
     from: top ? "-12px" : "12px",
   };
 }
