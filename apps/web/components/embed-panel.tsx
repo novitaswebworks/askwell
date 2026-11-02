@@ -192,6 +192,13 @@ export function EmbedPanel() {
     await sendMessage(draft);
   }
 
+  const startNewChat = useCallback(() => {
+    conversationId.current = null;
+    setLines([]);
+    setShowLeadForm(null);
+    setDraft("");
+  }, []);
+
   if (load.state === "loading") {
     return <div className="h-full animate-pulse bg-glass" aria-busy="true" aria-label="Loading chat" />;
   }
@@ -209,16 +216,35 @@ export function EmbedPanel() {
     <div className="flex h-full flex-col bg-background">
       <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
         <h1 className="truncate text-base font-semibold">{config.headerText}</h1>
-        <button
-          type="button"
-          onClick={() => tell({ source: MESSAGE_SOURCE, type: "close" })}
-          aria-label="Close chat"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full hover:bg-glass-strong focus-visible:outline-2 focus-visible:outline-accent"
-        >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
-        </button>
+        <div className="flex items-center gap-1">
+          {lines.length > 0 && (
+            <button
+              type="button"
+              onClick={startNewChat}
+              aria-label="Start new chat"
+              title="Start new chat"
+              className="flex h-8 items-center gap-1.5 rounded-full px-2.5 text-xs text-muted hover:bg-glass-strong hover:text-foreground transition"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                <path d="M21 3v5h-5" />
+                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                <path d="M3 21v-5h5" />
+              </svg>
+              <span>New chat</span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => tell({ source: MESSAGE_SOURCE, type: "close" })}
+            aria-label="Close chat"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full hover:bg-glass-strong focus-visible:outline-2 focus-visible:outline-accent"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
       </header>
 
       <div role="log" aria-live="polite" aria-label="Conversation" className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
@@ -253,11 +279,6 @@ export function EmbedPanel() {
                 >
                   {line.body}
                 </p>
-                {line.sources && line.sources.length > 0 && (
-                  <p className="px-1 text-[11px] text-muted">
-                    From: {line.sources.join(", ")}
-                  </p>
-                )}
               </div>
             </div>
             {line.role === "bot" && idx === lines.length - 1 && (
