@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Script from "next/script";
 import { connection } from "next/server";
@@ -9,6 +10,13 @@ import { HeroChat } from "@/components/site/hero-chat";
 import { ArrowRight, Chat, Check, Code, Document, Globe, Shield } from "@/components/site/icons";
 import { Logo } from "@/components/site/logo";
 import { SiteHeader } from "@/components/site/site-header";
+import { HOME_DESCRIPTION, HOME_TITLE } from "@/lib/site";
+
+export const metadata: Metadata = {
+  title: { absolute: HOME_TITLE },
+  description: HOME_DESCRIPTION,
+  alternates: { canonical: "/" },
+};
 
 const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? "https://askwell.novitasweb.works").replace(/\/$/, "");
 const SNIPPET = `<script src="${APP_URL}/widget.js" data-key="pk_your_key"></script>`;
