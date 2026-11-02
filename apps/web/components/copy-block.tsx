@@ -3,7 +3,14 @@
 import { useState } from "react";
 import { withPostHog } from "@/lib/posthog-client";
 
-type Kind = "snippet" | "ai_prompt" | "developer_message";
+type Kind = "snippet" | "ai_prompt" | "developer_message" | "interview_prompt";
+
+const EVENTS: Record<Kind, string> = {
+  snippet: "install_snippet_copied",
+  ai_prompt: "install_ai_prompt_copied",
+  developer_message: "install_developer_message_copied",
+  interview_prompt: "knowledge_interview_prompt_copied",
+};
 
 // Text the owner copies somewhere else. `preview` shows it in full (the code) or
 // folds it away (long prompts and messages).
@@ -23,7 +30,7 @@ export function CopyBlock({
   async function copy() {
     try {
       await navigator.clipboard.writeText(text);
-      withPostHog((ph) => ph.capture(kind === "snippet" ? "install_snippet_copied" : `install_${kind}_copied`));
+      withPostHog((ph) => ph.capture(EVENTS[kind]));
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {

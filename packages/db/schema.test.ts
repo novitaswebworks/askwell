@@ -561,3 +561,42 @@ describe("cross-tenant isolation", () => {
     });
   });
 });
+
+describe("knowledge answers", () => {
+  it("lets an owner read saved answers, but only the server can write them", async () => {
+    await svc(() => db.exec("insert into public.accounts (clerk_user_id) values ('user_ans') on conflict do nothing"));
+    const id = await createProject("user_ans", "Answers", "pk_ans1", 10);
+    const src = await svc(async () => {
+      const r = await db.query<{ id: string }>(
+        "insert into public.knowledge_sources (project_id, title, type, status, answers) values ($1, 'Business answers', 'text', 'ready', $2::jsonb) returning id",
+        [id, JSON.stringify({ template: "shop", items: [{ question: "Hours?", answer: "9 to 5" }] })],
+      );
+      return r.rows[0]!.id;
+    });
+    const own = await asRole(db, "authenticated", "user_ans", () =>
+      db.query<{ answers: { items: { answer: string }[] } }>("select answers from public.knowledge_sources where id = $1", [src]),
+    );
+    expect(own.rows[0]?.answers.items[0]?.answer).toBe("9 to 5");
+
+    const other = await asRole(db, "authenticated", BOB, () =>
+      db.query("select answers from public.knowledge_sources where id = $1", [src]),
+    );
+    expect(other.rows).toHaveLength(0);
+
+    await asRole(db, "authenticated", "user_ans", async () => {
+      await expect(db.query("update public.knowledge_sources set answers = '{}' where id = $1", [src])).rejects.toThrow(/permission denied/);
+    });
+  });
+  it("refuses answers that are too large", async () => {
+    await svc(() => db.exec("insert into public.accounts (clerk_user_id) values ('user_ans') on conflict do nothing"));
+    const id = await createProject("user_ans", "Answers2", "pk_ans2", 10);
+    await svc(async () => {
+      await expect(
+        db.query("insert into public.knowledge_sources (project_id, title, type, status, answers) values ($1, 'x', 'text', 'ready', $2::jsonb)", [
+          id,
+          JSON.stringify({ blob: "a".repeat(100_100) }),
+        ]),
+      ).rejects.toThrow(/check/);
+    });
+  });
+});
