@@ -95,6 +95,10 @@ The whole product in one flow. When this works end to end, the product is done.
 
 ### 6.1 Landing page
 
+Search and sharing: the home page has a descriptive title and description, a canonical URL, Open Graph and Twitter tags with a generated 1200x630 share image, and JSON-LD (Organization, WebSite, SoftwareApplication with the Free and Pro offers, FAQPage built from the visible FAQ). The favicon, 48 px icon and Apple icon are generated from the logo mark. Public pages are listed in `lib/site.ts` (`PUBLIC_PATHS`) and appear in `sitemap.xml`; the app, API and chat panel are blocked in `robots.txt`.
+
+Policy pages: `/terms`, `/privacy`, `/refunds` (cancellation and refunds) and `/contact`, linked from the footer. Their text lives in `lib/legal.ts`. `NEXT_PUBLIC_CONTACT_EMAIL` (optional) shows an email address on the Contact page.
+
 | Item      | Detail                                                                                      |
 | --------- | ------------------------------------------------------------------------------------------- |
 | Sections  | Hero, how it works (3 steps), live demo (the real widget), pricing, install snippet, footer |

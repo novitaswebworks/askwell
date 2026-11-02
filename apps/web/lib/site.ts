@@ -12,7 +12,7 @@ export const HOME_DESCRIPTION =
   "Add an AI support chat to any website in minutes. Askwell answers visitors from your own pages and documents, stays on topic, and is free to start.";
 
 // Pages a search engine may list. Add each new public page here.
-export const PUBLIC_PATHS = ["/"] as const;
+export const PUBLIC_PATHS = ["/", "/terms", "/privacy", "/refunds", "/contact"] as const;
 
 // Never crawled: the signed-in app, the API and the embedded chat panel.
 export const PRIVATE_PATHS = ["/dashboard", "/api/", "/embed"] as const;

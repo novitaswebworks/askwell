@@ -35,8 +35,14 @@ describe("robots.txt", () => {
 });
 
 describe("sitemap.xml", () => {
-  it("lists the home page on the public address", () => {
+  it("lists the home page and the policy pages on the public address", () => {
     process.env.NEXT_PUBLIC_APP_URL = "https://askwell.example";
-    expect(sitemap().map((e) => e.url)).toEqual(["https://askwell.example/"]);
+    expect(sitemap().map((e) => e.url)).toEqual([
+      "https://askwell.example/",
+      "https://askwell.example/terms",
+      "https://askwell.example/privacy",
+      "https://askwell.example/refunds",
+      "https://askwell.example/contact",
+    ]);
   });
 });
