@@ -115,6 +115,10 @@ export const updateProjectSchema = z
   );
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
 
+// POST /api/projects/:id/knowledge/url: read a website into one knowledge source.
+export const addUrlKnowledgeSchema = z.object({ url: z.string().trim().min(1).max(2048) });
+export type AddUrlKnowledgeInput = z.infer<typeof addUrlKnowledgeSchema>;
+
 export const addTextKnowledgeSchema = z.object({
   title: z.string().trim().min(1).max(200),
   text: z.string().trim().min(1).max(200_000),

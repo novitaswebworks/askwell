@@ -150,6 +150,8 @@ describe("row level security", () => {
     );
     const conversationId = conv.rows[0]!.c;
     await svc(() => db.query("select public.save_chat_turn($1, 'rater', $2, 'q2', 'a2')", [projectId, conversationId]));
+    // The test clock is coarse: two turns saved back to back can share a timestamp. Real turns are seconds apart.
+    await svc(() => db.query("update public.messages set created_at = created_at - interval '1 minute' where conversation_id = $1 and body in ('q1', 'a1')", [conversationId]));
 
     await svc(async () => {
       const ok = await db.query("select public.rate_last_reply($1, $2, 1::smallint) as ok", [projectId, conversationId]);

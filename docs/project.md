@@ -130,7 +130,7 @@ Policy pages: `/terms`, `/privacy`, `/refunds` (cancellation and refunds) and `/
 
 | Item       | Detail                                                                                  |
 | ---------- | --------------------------------------------------------------------------------------- |
-| Input      | Paste text with a title, or upload a file                                               |
+| Input      | Paste text with a title, upload a file, or give a website address                       |
 | File types | PDF, Markdown, TXT. Max 10 MB (`MAX_KNOWLEDGE_FILE_BYTES`); the bucket enforces the same size and types. |
 | Upload     | 1. `upload-url` reserves the source as `uploading` (counts toward the limit) and returns a one-time signed URL. 2. The browser uploads straight to Storage. 3. `finalize` claims the source once (`uploading` → `processing`), checks the real size and PDF bytes, then processes it. A refused file is deleted. A reservation not finalized within 2 hours is reclaimed. |
 | Processing | Extract text (PDF: `unpdf`) → split into chunks → embeddings → store in pgvector |
@@ -291,6 +291,7 @@ Limits run inside Postgres functions only `service_role` may execute: `create_pr
 | ------------------------------------------------------------------- | ----------------------------------- |
 | `GET/POST /api/projects`, `PATCH/DELETE /api/projects/:id`          | Projects CRUD + limit check. PATCH changes `name`, `about` and/or `allowedDomains`. |
 | `POST /api/projects/:id/knowledge`                                  | Paste text → process                |
+| `POST /api/projects/:id/knowledge/url`                              | Read a website (same site only, robots.txt respected, private addresses refused; Free 10 pages, Pro 40) into one `text` source titled "Website: host (n pages)" → process |
 | `POST /api/projects/:id/knowledge/upload-url`                       | Reserve a file source → signed upload URL |
 | `POST /api/projects/:id/knowledge/finalize`                         | Check the uploaded file → process   |
 | `DELETE /api/knowledge/:id`                                         | Delete source, file, chunks         |
