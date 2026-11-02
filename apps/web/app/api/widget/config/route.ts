@@ -30,28 +30,24 @@ export async function GET(req: Request) {
   // A bad or unknown key renders nothing in the widget.
   if (!query.success) return apiError("not_found", "Unknown key.", { headers: CORS });
 
+  // One round trip: the project with its widget config and its owner's plan. Each extra
+  // query is a trip to the database, which is what the visitor waits for.
   const service = createServiceClient();
   const { data: project, error } = await service
     .from("projects")
-    .select("id, owner_id, allowed_domains")
+    .select(
+      "id, owner_id, allowed_domains, accounts(plan), widget_configs(button_color, position, label, animation, header_text, show_badge, welcome_message, starter_questions, last_seen_at, last_seen_host)",
+    )
     .eq("public_key", query.data.key)
     .maybeSingle();
   if (error) return apiError("internal", "Could not load the config.", { headers: CORS });
   if (!project) return apiError("not_found", "Unknown key.", { headers: CORS });
 
-  const { data: stored, error: configError } = await service
-    .from("widget_configs")
-    .select("button_color, position, label, animation, header_text, show_badge, welcome_message, starter_questions, last_seen_at, last_seen_host")
-    .eq("project_id", project.id)
-    .single();
-  if (configError) return apiError("internal", "Could not load the config.", { headers: CORS });
-
-  const { data: account, error: accountError } = await service
-    .from("accounts")
-    .select("plan")
-    .eq("clerk_user_id", project.owner_id)
-    .single();
-  if (accountError) return apiError("internal", "Could not load the config.", { headers: CORS });
+  // A to-one relation comes back as an object; accept a one-item list too.
+  const one = <T,>(value: T | T[] | null): T | null => (Array.isArray(value) ? (value[0] ?? null) : value);
+  const stored = one(project.widget_configs);
+  const account = one(project.accounts);
+  if (!stored || !account) return apiError("internal", "Could not load the config.", { headers: CORS });
 
   // Only the owner's listed sites may show the widget (an empty list means any site).
   // The loader on the customer's site sends its own Origin. The /embed panel calls from
@@ -86,5 +82,5 @@ export async function GET(req: Request) {
     },
     planSchema.parse(account.plan),
   );
-  return NextResponse.json(config, { headers: { ...CORS_VARY, "Cache-Control": "public, max-age=30" } });
+  return NextResponse.json(config, { headers: { ...CORS_VARY, "Cache-Control": "public, max-age=60, stale-while-revalidate=300" } });
 }

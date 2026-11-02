@@ -42,24 +42,22 @@ export default function InstallPage({ searchParams }: { searchParams: Promise<{ 
 
 async function InstallContent({ searchParams }: { searchParams: Promise<{ project?: string }> }) {
   const { project: selectedId } = await searchParams;
+  // Projects and each one's "last seen" in a single read: one trip to the database, not two.
   const { data, error } = await createOwnerClient()
     .from("projects")
-    .select(PROJECT_COLUMNS)
+    .select(`${PROJECT_COLUMNS}, widget_configs(last_seen_at, last_seen_host)`)
     .order("created_at", { ascending: true });
   if (error) throw new Error(`Could not load projects: ${error.message}`);
 
-  const projects = (data as ProjectRow[]).map(toProject);
+  type SeenRow = { last_seen_at: string | null; last_seen_host: string | null };
+  const rows = data as unknown as (ProjectRow & { widget_configs: SeenRow | SeenRow[] | null })[];
+  const projects = rows.map(toProject);
   const project = projects.find((p) => p.id === selectedId) ?? projects[0];
   const appUrl = requireEnv("NEXT_PUBLIC_APP_URL", process.env.NEXT_PUBLIC_APP_URL).replace(/\/$/, "");
 
-  const seen = project
-    ? await createOwnerClient()
-        .from("widget_configs")
-        .select("last_seen_at, last_seen_host")
-        .eq("project_id", project.id)
-        .maybeSingle()
-    : null;
-  if (seen?.error) throw new Error(`Could not load install status: ${seen.error.message}`);
+  const seenField = rows.find((r) => r.id === project?.id)?.widget_configs ?? null;
+  const seenRow = Array.isArray(seenField) ? (seenField[0] ?? null) : seenField;
+  const seen = { data: seenRow };
 
   const snippet = project ? buildSnippet(appUrl, project.publicKey) : "";
   const connection = connectionState(seen?.data?.last_seen_at ?? null, seen?.data?.last_seen_host ?? null, currentTime());
