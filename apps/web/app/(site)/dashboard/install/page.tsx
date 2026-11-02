@@ -92,7 +92,7 @@ async function InstallContent({ searchParams }: { searchParams: Promise<{ projec
             </nav>
           )}
 
-          <InstallStatus key={project.id} connection={connection} seenAt={seen?.data?.last_seen_at ?? null} />
+          <InstallStatus projectId={project.id} connection={connection} seenAt={seen?.data?.last_seen_at ?? null} />
 
           <section className="glass flex flex-col gap-3 p-4">
             <h2 className="text-lg font-semibold">1. Copy your code</h2>
