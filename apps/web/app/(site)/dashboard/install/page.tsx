@@ -100,7 +100,7 @@ async function InstallContent({ searchParams }: { searchParams: Promise<{ projec
               This is one line that adds the chat to your website. It is safe to share: it only tells Askwell which
               project it belongs to and gives no access to your account.
             </p>
-            <CopyBlock text={snippet} kind="snippet" label="Copy code" />
+            <CopyBlock key={`snippet-${project.id}`} text={snippet} kind="snippet" label="Copy code" />
           </section>
 
           <AllowedDomainsForm
@@ -113,7 +113,7 @@ async function InstallContent({ searchParams }: { searchParams: Promise<{ projec
           <section className="glass flex flex-col gap-3 p-4">
             <h2 className="text-lg font-semibold">2. Paste it into your website</h2>
             <p className="text-sm text-muted">Choose what your website is built with to see where it goes.</p>
-            <PlatformSteps platforms={PLATFORMS} />
+            <PlatformSteps key={`platforms-${project.id}`} platforms={PLATFORMS} />
           </section>
 
           <section className="glass flex flex-col gap-3 p-4">
@@ -123,6 +123,7 @@ async function InstallContent({ searchParams }: { searchParams: Promise<{ projec
               step at a time.
             </p>
             <CopyBlock
+              key={`ai-${project.id}`}
               text={buildAiPrompt(snippet)}
               kind="ai_prompt"
               label="Copy the AI helper message"
@@ -147,6 +148,7 @@ async function InstallContent({ searchParams }: { searchParams: Promise<{ projec
             <h2 className="text-lg font-semibold">Someone else builds your website?</h2>
             <p className="text-sm text-muted">Send them this message. It has everything they need.</p>
             <CopyBlock
+              key={`message-${project.id}`}
               text={message}
               kind="developer_message"
               label="Copy the message"
