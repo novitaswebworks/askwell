@@ -100,6 +100,8 @@ async function ConversationsContent({ searchParams }: { searchParams: Promise<{ 
                   </p>
                   <p className="mt-1 text-xs text-muted">
                     {c.messageCount} {c.messageCount === 1 ? "message" : "messages"} · <LocalTime iso={c.createdAt} />
+                    {c.notHelpful > 0 && <span className="ml-2 font-medium text-red-700">👎 {c.notHelpful}</span>}
+                    {c.helpful > 0 && <span className="ml-2 font-medium text-emerald-600">👍 {c.helpful}</span>}
                   </p>
                 </Link>
               </li>

@@ -65,6 +65,11 @@ async function Thread({ params, searchParams }: Props) {
             </p>
             <p className="mt-1 text-xs text-muted">
               <LocalTime iso={m.createdAt} />
+              {m.rating !== null && (
+                <span className={`ml-2 font-medium ${m.rating === 1 ? "text-emerald-600" : "text-red-700"}`}>
+                  {m.rating === 1 ? "Visitor found this helpful" : "Visitor found this not helpful"}
+                </span>
+              )}
             </p>
           </li>
         ))}

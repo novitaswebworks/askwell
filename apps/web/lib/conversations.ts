@@ -18,6 +18,7 @@ interface MessageRow {
   conversation_id: string;
   role: string;
   body: string;
+  rating?: number | null;
   created_at: string;
 }
 
@@ -42,6 +43,8 @@ export function summarize(conversations: ConversationRow[], messages: MessageRow
       id: c.id,
       firstMessage: first ? preview(first.body) : "",
       messageCount: list.length,
+      helpful: list.filter((m) => m.rating === 1).length,
+      notHelpful: list.filter((m) => m.rating === -1).length,
       createdAt: c.created_at,
     };
   });
@@ -52,6 +55,7 @@ export function toMessage(row: MessageRow): Message {
     id: row.id,
     role: row.role === "bot" ? "bot" : "visitor",
     body: row.body,
+    rating: row.rating === 1 || row.rating === -1 ? row.rating : null,
     createdAt: row.created_at,
   };
 }
@@ -74,7 +78,7 @@ export async function listConversations(
 
   const { data: messages, error: messagesError } = await client
     .from("messages")
-    .select("id, conversation_id, role, body, created_at")
+    .select("id, conversation_id, role, body, rating, created_at")
     .in("conversation_id", rows.map((c) => c.id))
     .order("created_at", { ascending: true });
   if (messagesError) throw new Error(`Could not load messages: ${messagesError.message}`);
@@ -94,7 +98,7 @@ export async function getThread(client: Reader, conversationId: string): Promise
 
   const { data: messages, error: messagesError } = await client
     .from("messages")
-    .select("id, conversation_id, role, body, created_at")
+    .select("id, conversation_id, role, body, rating, created_at")
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: true });
   if (messagesError) throw new Error(`Could not load messages: ${messagesError.message}`);

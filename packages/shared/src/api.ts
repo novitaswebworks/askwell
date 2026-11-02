@@ -166,6 +166,8 @@ export const conversationSummarySchema = z.object({
   id: z.uuid(),
   firstMessage: z.string(),
   messageCount: z.number().int().nonnegative(),
+  helpful: z.number().int().nonnegative(),
+  notHelpful: z.number().int().nonnegative(),
   createdAt: z.string(),
 });
 export type ConversationSummary = z.infer<typeof conversationSummarySchema>;
@@ -174,6 +176,7 @@ export const messageSchema = z.object({
   id: z.uuid(),
   role: z.enum(["visitor", "bot"]),
   body: z.string(),
+  rating: z.union([z.literal(1), z.literal(-1)]).nullable(),
   createdAt: z.string(),
 });
 export type Message = z.infer<typeof messageSchema>;
@@ -206,6 +209,19 @@ export const updateConfigSchema = widgetConfigSchema.partial().refine(
   "Provide at least one field",
 );
 export type UpdateConfigInput = z.infer<typeof updateConfigSchema>;
+
+// ---------------------------------------------------------------- ratings
+
+// POST /api/widget/rate: thumbs up (1) or down (-1) on the latest answer; 0 takes it back.
+export const rateReplyRequestSchema = z.object({
+  key: publicKeySchema,
+  conversationId: z.uuid(),
+  rating: z.union([z.literal(1), z.literal(-1), z.literal(0)]),
+});
+export type RateReplyRequest = z.infer<typeof rateReplyRequestSchema>;
+
+export const rateReplyResponseSchema = z.object({ rating: z.union([z.literal(1), z.literal(-1)]).nullable() });
+export type RateReplyResponse = z.infer<typeof rateReplyResponseSchema>;
 
 // ---------------------------------------------------------------- leads (PR 2)
 

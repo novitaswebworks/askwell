@@ -40,7 +40,7 @@ describe("GET /api/projects/:id/conversations", () => {
     const res = await call();
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual([
-      { id: ID, firstMessage: "Hello", messageCount: 1, createdAt: "2026-11-01T00:00:00Z" },
+      { id: ID, firstMessage: "Hello", messageCount: 1, helpful: 0, notHelpful: 0, createdAt: "2026-11-01T00:00:00Z" },
     ]);
   });
   it("returns 500 with a friendly message when the database fails", async () => {
