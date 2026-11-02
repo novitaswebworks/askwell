@@ -195,6 +195,7 @@ export type Database = {
           conversation_id: string
           created_at: string
           id: string
+          rating: number | null
           role: string
         }
         Insert: {
@@ -202,6 +203,7 @@ export type Database = {
           conversation_id: string
           created_at?: string
           id?: string
+          rating?: number | null
           role: string
         }
         Update: {
@@ -209,6 +211,7 @@ export type Database = {
           conversation_id?: string
           created_at?: string
           id?: string
+          rating?: number | null
           role?: string
         }
         Relationships: [
@@ -409,6 +412,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      rate_last_reply: {
+        Args: { p_conversation_id: string; p_project_id: string; p_rating: number }
+        Returns: boolean
       }
       save_chat_turn: {
         Args: {

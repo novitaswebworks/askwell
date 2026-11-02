@@ -27,18 +27,18 @@ describe("summarize", () => {
       [msg("1", "a", "visitor", "Which destinations?"), msg("2", "a", "bot", "Many."), msg("3", "b", "visitor", "Hi"), msg("4", "b", "bot", "Hello"), msg("5", "b", "visitor", "Bye")],
     );
     expect(out).toEqual([
-      { id: "b", firstMessage: "Hi", messageCount: 3, createdAt: "2026-11-02" },
-      { id: "a", firstMessage: "Which destinations?", messageCount: 2, createdAt: "2026-11-01" },
+      { id: "b", firstMessage: "Hi", messageCount: 3, helpful: 0, notHelpful: 0, createdAt: "2026-11-02" },
+      { id: "a", firstMessage: "Which destinations?", messageCount: 2, helpful: 0, notHelpful: 0, createdAt: "2026-11-01" },
     ]);
   });
   it("copes with a conversation that has no messages", () => {
-    expect(summarize([conv("a", "x")], [])).toEqual([{ id: "a", firstMessage: "", messageCount: 0, createdAt: "x" }]);
+    expect(summarize([conv("a", "x")], [])).toEqual([{ id: "a", firstMessage: "", messageCount: 0, helpful: 0, notHelpful: 0, createdAt: "x" }]);
   });
 });
 
 describe("toMessage", () => {
   it("maps rows and treats anything but bot as the visitor", () => {
-    expect(toMessage(msg("1", "a", "bot", "Hi"))).toEqual({ id: "1", role: "bot", body: "Hi", createdAt: "2026-11-01T00:00:00Z" });
+    expect(toMessage(msg("1", "a", "bot", "Hi"))).toEqual({ id: "1", role: "bot", body: "Hi", rating: null, createdAt: "2026-11-01T00:00:00Z" });
     expect(toMessage(msg("2", "a", "weird", "x")).role).toBe("visitor");
   });
 });
@@ -54,7 +54,7 @@ describe("listConversations", () => {
         ),
     };
     expect(await listConversations(client, "p1")).toEqual([
-      { id: "a", firstMessage: "Hello", messageCount: 2, createdAt: "2026-11-01" },
+      { id: "a", firstMessage: "Hello", messageCount: 2, helpful: 0, notHelpful: 0, createdAt: "2026-11-01" },
     ]);
   });
   it("returns an empty list without asking for messages", async () => {
@@ -86,5 +86,23 @@ describe("getThread", () => {
   it("returns null when it is not found or not the caller's", async () => {
     const client = { from: () => queryResult({ data: null }) };
     expect(await getThread(client, "a")).toBeNull();
+  });
+});
+
+describe("ratings", () => {
+  it("counts helpful and not-helpful answers per conversation", () => {
+    const rows = [
+      { ...msg("1", "a", "visitor", "Hi"), rating: null },
+      { ...msg("2", "a", "bot", "Hello"), rating: 1 },
+      { ...msg("3", "a", "bot", "More"), rating: -1 },
+      { ...msg("4", "a", "bot", "Again"), rating: -1 },
+    ];
+    expect(summarize([conv("a", "x")], rows)[0]).toMatchObject({ helpful: 1, notHelpful: 2 });
+  });
+  it("only accepts 1 and -1 as a rating", () => {
+    expect(toMessage({ ...msg("1", "a", "bot", "Hi"), rating: 1 }).rating).toBe(1);
+    expect(toMessage({ ...msg("1", "a", "bot", "Hi"), rating: -1 }).rating).toBe(-1);
+    expect(toMessage({ ...msg("1", "a", "bot", "Hi"), rating: 7 }).rating).toBeNull();
+    expect(toMessage(msg("1", "a", "bot", "Hi")).rating).toBeNull();
   });
 });

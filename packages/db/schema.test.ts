@@ -141,6 +141,42 @@ describe("row level security", () => {
     });
   });
 
+  it("rates only the latest bot answer, only inside the right project, service role only", async () => {
+    const alice = await svc(() => db.query<{ id: string }>("select id from public.projects where owner_id = $1 limit 1", [ALICE]));
+    const bob = await svc(() => db.query<{ id: string }>("select id from public.projects where owner_id = $1 limit 1", [BOB]));
+    const projectId = alice.rows[0]!.id;
+    const conv = await svc(() =>
+      db.query<{ c: string }>("select public.save_chat_turn($1, 'rater', null, 'q1', 'a1') as c", [projectId]),
+    );
+    const conversationId = conv.rows[0]!.c;
+    await svc(() => db.query("select public.save_chat_turn($1, 'rater', $2, 'q2', 'a2')", [projectId, conversationId]));
+
+    await svc(async () => {
+      const ok = await db.query("select public.rate_last_reply($1, $2, 1::smallint) as ok", [projectId, conversationId]);
+      expect(ok.rows[0]).toEqual({ ok: true });
+      const rated = await db.query(
+        "select body, rating from public.messages where conversation_id = $1 and rating is not null",
+        [conversationId],
+      );
+      expect(rated.rows).toEqual([{ body: "a2", rating: 1 }]);
+
+      const wrong = await db.query("select public.rate_last_reply($1, $2, -1::smallint) as ok", [bob.rows[0]!.id, conversationId]);
+      expect(wrong.rows[0]).toEqual({ ok: false });
+      await expect(
+        db.query("select public.rate_last_reply($1, $2, 7::smallint)", [projectId, conversationId]),
+      ).rejects.toThrow(/invalid_rating/);
+
+      await db.query("select public.rate_last_reply($1, $2, 0::smallint)", [projectId, conversationId]);
+      const cleared = await db.query("select count(*)::int as n from public.messages where rating is not null");
+      expect(cleared.rows[0]).toEqual({ n: 0 });
+    });
+    await asRole(db, "authenticated", ALICE, async () => {
+      await expect(
+        db.query("select public.rate_last_reply($1, $2, 1::smallint)", [projectId, conversationId]),
+      ).rejects.toThrow(/permission denied/);
+    });
+  });
+
   it("does not let an owner change another owner's project", async () => {
     const res = await asRole(db, "authenticated", BOB, () =>
       db.query("update public.projects set name = 'hacked' where owner_id = $1 returning id", [ALICE]),

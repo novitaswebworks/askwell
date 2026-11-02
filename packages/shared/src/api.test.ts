@@ -92,8 +92,8 @@ describe("conversationThreadSchema", () => {
         projectId: id,
         createdAt: "2026-11-01T00:00:00Z",
         messages: [
-          { id, role: "visitor", body: "Hi", createdAt: "2026-11-01T00:00:00Z" },
-          { id, role: "bot", body: "Hello!", createdAt: "2026-11-01T00:00:01Z" },
+          { id, role: "visitor", body: "Hi", rating: null, createdAt: "2026-11-01T00:00:00Z" },
+          { id, role: "bot", body: "Hello!", rating: 1, createdAt: "2026-11-01T00:00:01Z" },
         ],
       }).success,
     ).toBe(true);

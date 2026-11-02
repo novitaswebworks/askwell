@@ -254,7 +254,7 @@ Two parts: a small loader script + an iframe.
 | `knowledge_sources` | `id`, `project_id`, `title`, `type` (`text`/`pdf`/`md`/`txt`), `storage_key`, `status` (`uploading`/`processing`/`ready`/`failed`), `answers` (jsonb, null except the builder's source), `created_at` | `storage_key` null for pasted text |
 | `knowledge_chunks`  | `id`, `project_id`, `source_id`, `content`, `embedding vector(1536)`                                                                 | Deleted with the source. HNSW index on `embedding`. |
 | `conversations`     | `id`, `project_id`, `visitor_id`, `created_at`                                                                                       |                                                     |
-| `messages`          | `id`, `conversation_id`, `role` (`visitor`/`bot`), `body`, `created_at`                                                              |                                                     |
+| `messages`          | `id`, `conversation_id`, `role` (`visitor`/`bot`), `body`, `rating`, `created_at`                                                              | `rating`: 1, -1 or null; set on a bot answer by the visitor's thumbs, through `rate_last_reply` (service role only) |
 
 **Tenant isolation:** Postgres RLS. The Data API is public, so RLS and grants are the boundary.
 
@@ -278,6 +278,7 @@ Limits run inside Postgres functions only `service_role` may execute: `create_pr
 | ------------------------ | ------------------------------------------------ | ------------------------------------------------- |
 | `GET /api/widget/config` | `key`                                            | Config, plan-applied (Free gets defaults + badge) |
 | `POST /api/widget/chat`  | `key`, `visitorId`, `conversationId?`, `message` | `conversationId`, `reply`                         |
+| `POST /api/widget/rate`  | `key`, `conversationId`, `rating` (1, -1, 0 clears) | `rating`. Rates the latest answer of that conversation |
 
 ### Owner (Clerk session required)
 
