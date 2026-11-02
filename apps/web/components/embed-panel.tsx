@@ -24,6 +24,12 @@ export function EmbedPanel() {
   const [lines, setLines] = useState<Line[]>([]);
   const [draft, setDraft] = useState("");
   const [typing, setTyping] = useState(false);
+  const [showLeadForm, setShowLeadForm] = useState<{ open: boolean; type: "inquiry" | "handoff" } | null>(null);
+  const [leadEmail, setLeadEmail] = useState("");
+  const [leadName, setLeadName] = useState("");
+  const [leadPhone, setLeadPhone] = useState("");
+  const [leadBusy, setLeadBusy] = useState(false);
+  const [leadError, setLeadError] = useState<string | null>(null);
   const open = useRef(true);
   const unread = useRef(0);
   const conversationId = useRef<string | null>(null);
@@ -123,9 +129,19 @@ export function EmbedPanel() {
         if (res.ok && parsed.success) {
           conversationId.current = parsed.data.conversationId;
           addBotLine(parsed.data.reply, parsed.data.sources, parsed.data.followUps);
+          if (
+            parsed.data.reply.includes("leave your email") ||
+            parsed.data.reply.includes("temporarily unavailable")
+          ) {
+            setShowLeadForm({ open: true, type: "inquiry" });
+          }
         } else {
           const message = (data as { error?: { message?: unknown } } | null)?.error?.message;
-          addBotLine(typeof message === "string" ? message : "Something went wrong. Please try again.");
+          const fallback = typeof message === "string" ? message : "Something went wrong. Please try again.";
+          addBotLine(fallback);
+          if (fallback.includes("leave your email") || fallback.includes("temporarily unavailable")) {
+            setShowLeadForm({ open: true, type: "inquiry" });
+          }
         }
       } catch {
         addBotLine("Could not reach the server. Check your connection and try again.");
@@ -135,6 +151,41 @@ export function EmbedPanel() {
     },
     [addBotLine, key, typing],
   );
+
+  async function submitLead(event: FormEvent) {
+    event.preventDefault();
+    if (!leadEmail.trim() || leadBusy || !key || !conversationId.current) return;
+    setLeadBusy(true);
+    setLeadError(null);
+    try {
+      const res = await fetch("/api/widget/lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          key,
+          conversationId: conversationId.current,
+          email: leadEmail.trim(),
+          name: leadName.trim() || undefined,
+          phone: leadPhone.trim() || undefined,
+          type: showLeadForm?.type ?? "inquiry",
+        }),
+      });
+      if (res.ok) {
+        setShowLeadForm(null);
+        setLeadEmail("");
+        setLeadName("");
+        setLeadPhone("");
+        addBotLine("Thank you! We've received your contact info and our team will follow up soon.");
+      } else {
+        const body = (await res.json().catch(() => null)) as { error?: { message?: string } } | null;
+        setLeadError(body?.error?.message ?? "Could not save your contact info. Please try again.");
+      }
+    } catch {
+      setLeadError("Network error. Please try again.");
+    } finally {
+      setLeadBusy(false);
+    }
+  }
 
   async function send(event: FormEvent) {
     event.preventDefault();
@@ -209,23 +260,93 @@ export function EmbedPanel() {
                 )}
               </div>
             </div>
-            {line.role === "bot" && line.followUps && line.followUps.length > 0 && idx === lines.length - 1 && (
+            {line.role === "bot" && idx === lines.length - 1 && (
               <div className="flex flex-wrap gap-1.5 pt-1">
-                {line.followUps.map((fu, fIdx) => (
-                  <button
-                    key={fIdx}
-                    type="button"
-                    onClick={() => sendMessage(fu)}
-                    disabled={typing}
-                    className="rounded-full border border-border bg-glass px-3 py-1 text-xs text-foreground/85 transition hover:bg-glass-strong hover:text-foreground text-left disabled:opacity-50"
-                  >
-                    {fu}
-                  </button>
-                ))}
+                {line.followUps &&
+                  line.followUps.map((fu, fIdx) => (
+                    <button
+                      key={fIdx}
+                      type="button"
+                      onClick={() => sendMessage(fu)}
+                      disabled={typing}
+                      className="rounded-full border border-border bg-glass px-3 py-1 text-xs text-foreground/85 transition hover:bg-glass-strong hover:text-foreground text-left disabled:opacity-50"
+                    >
+                      {fu}
+                    </button>
+                  ))}
+                <button
+                  type="button"
+                  onClick={() => setShowLeadForm({ open: true, type: "handoff" })}
+                  disabled={typing}
+                  className="rounded-full border border-border bg-glass px-3 py-1 text-xs text-foreground/85 transition hover:bg-glass-strong hover:text-foreground text-left disabled:opacity-50"
+                >
+                  Talk to a person
+                </button>
               </div>
             )}
           </div>
         ))}
+        {showLeadForm && (
+          <div className="glass rounded-2xl border border-border p-3.5 space-y-2.5 max-w-[90%]">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold text-foreground">
+                {showLeadForm.type === "handoff" ? "Talk to a person" : "Leave your email"}
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowLeadForm(null)}
+                className="text-xs text-muted hover:text-foreground px-1"
+                aria-label="Dismiss contact form"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-[11px] text-muted leading-relaxed">
+              {showLeadForm.type === "handoff"
+                ? "Leave your details and we'll send your question and transcript to the site owner."
+                : "Leave your email and someone from the team will follow up directly."}
+            </p>
+            <form onSubmit={submitLead} className="space-y-2 pt-1">
+              <input
+                type="email"
+                required
+                placeholder="your@email.com (required)"
+                value={leadEmail}
+                onChange={(e) => setLeadEmail(e.target.value)}
+                disabled={leadBusy}
+                className="h-8 w-full rounded-xl border border-border bg-glass-strong px-3 text-xs outline-none focus-visible:ring-1 focus-visible:ring-accent"
+              />
+              <div className="flex gap-1.5">
+                <input
+                  type="text"
+                  placeholder="Name (optional)"
+                  value={leadName}
+                  onChange={(e) => setLeadName(e.target.value)}
+                  disabled={leadBusy}
+                  maxLength={100}
+                  className="h-8 flex-1 min-w-0 rounded-xl border border-border bg-glass-strong px-3 text-xs outline-none focus-visible:ring-1 focus-visible:ring-accent"
+                />
+                <input
+                  type="tel"
+                  placeholder="Phone (optional)"
+                  value={leadPhone}
+                  onChange={(e) => setLeadPhone(e.target.value)}
+                  disabled={leadBusy}
+                  maxLength={30}
+                  className="h-8 flex-1 min-w-0 rounded-xl border border-border bg-glass-strong px-3 text-xs outline-none focus-visible:ring-1 focus-visible:ring-accent"
+                />
+              </div>
+              {leadError && <p className="text-[11px] text-red-500">{leadError}</p>}
+              <button
+                type="submit"
+                disabled={leadBusy || !leadEmail.trim()}
+                className="h-8 w-full rounded-xl bg-accent px-3 text-xs font-medium text-accent-foreground transition hover:opacity-90 disabled:opacity-50"
+              >
+                {leadBusy ? "Sending..." : "Submit details"}
+              </button>
+            </form>
+          </div>
+        )}
         {typing && (
           <div className="flex justify-start" aria-label="Typing" role="status">
             <span className="glass flex gap-1 rounded-2xl px-4 py-3">
@@ -265,9 +386,22 @@ export function EmbedPanel() {
         </button>
       </form>
 
-      {config.showBadge && (
-        <p className="pb-2 text-center text-xs text-muted">Powered by {APP_NAME}</p>
-      )}
+      <div className="flex flex-col items-center gap-1 pb-2.5 px-3 text-center text-xs text-muted">
+        <p>
+          Chats are stored by the site owner.{" "}
+          <a
+            href="/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-foreground"
+          >
+            Privacy
+          </a>
+        </p>
+        {config.showBadge && (
+          <p className="text-[11px] opacity-80">Powered by {APP_NAME}</p>
+        )}
+      </div>
     </div>
   );
 }

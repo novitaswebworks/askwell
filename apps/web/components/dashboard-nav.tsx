@@ -9,6 +9,7 @@ import {
   Document,
   Grid,
   Sliders,
+  Users,
 } from "@/components/site/icons";
 
 export const DASHBOARD_LINKS = [
@@ -16,6 +17,7 @@ export const DASHBOARD_LINKS = [
   { href: "/dashboard/knowledge", label: "Knowledge", icon: Document },
   { href: "/dashboard/install", label: "Install", icon: Code },
   { href: "/dashboard/conversations", label: "Conversations", icon: Chat },
+  { href: "/dashboard/leads", label: "Leads", icon: Users },
   { href: "/dashboard/customize", label: "Customize", icon: Sliders },
   { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
 ] as const;

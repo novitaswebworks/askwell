@@ -200,3 +200,33 @@ export const updateConfigSchema = widgetConfigSchema.partial().refine(
   "Provide at least one field",
 );
 export type UpdateConfigInput = z.infer<typeof updateConfigSchema>;
+
+// ---------------------------------------------------------------- leads (PR 2)
+
+export const leadSchema = z.object({
+  id: z.uuid(),
+  projectId: z.uuid(),
+  conversationId: z.uuid().nullable(),
+  email: z.string().trim().email().max(255),
+  name: z.string().trim().max(100).nullable(),
+  phone: z.string().trim().max(30).nullable(),
+  createdAt: z.string(),
+});
+export type Lead = z.infer<typeof leadSchema>;
+
+export const captureLeadRequestSchema = z.object({
+  key: publicKeySchema,
+  conversationId: z.uuid(),
+  email: z.string().trim().email("Enter a valid email address.").max(255),
+  name: z.string().trim().max(100).optional(),
+  phone: z.string().trim().max(30).optional(),
+  type: z.enum(["inquiry", "handoff"]).default("inquiry"),
+});
+export type CaptureLeadRequest = z.infer<typeof captureLeadRequestSchema>;
+
+export const captureLeadResponseSchema = z.object({
+  success: z.boolean(),
+  leadId: z.uuid(),
+});
+export type CaptureLeadResponse = z.infer<typeof captureLeadResponseSchema>;
+
