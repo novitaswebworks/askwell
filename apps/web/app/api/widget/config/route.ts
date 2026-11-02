@@ -15,6 +15,11 @@ import { applyPlanToConfig } from "@/lib/widget-config";
 const CORS = { "Access-Control-Allow-Origin": "*" };
 // The answer depends on which site asks, so shared caches must keep them apart.
 const CORS_VARY = { ...CORS, Vary: "Origin" };
+// Browsers keep it for a minute. Vercel's edge keeps it for ten and, after that, serves the old copy
+// instantly while it fetches a fresh one in the background, so a visitor almost never waits for the
+// database. (Vercel only does this for s-maxage, not for max-age.) A changed colour or text can take
+// up to about ten minutes to reach every customer's site.
+const CONFIG_CACHE_CONTROL = "public, max-age=60, s-maxage=600, stale-while-revalidate=86400";
 
 export function OPTIONS() {
   return new NextResponse(null, {
@@ -82,5 +87,5 @@ export async function GET(req: Request) {
     },
     planSchema.parse(account.plan),
   );
-  return NextResponse.json(config, { headers: { ...CORS_VARY, "Cache-Control": "public, max-age=60, stale-while-revalidate=300" } });
+  return NextResponse.json(config, { headers: { ...CORS_VARY, "Cache-Control": CONFIG_CACHE_CONTROL } });
 }

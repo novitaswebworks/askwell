@@ -58,7 +58,7 @@ describe("GET /api/widget/config", () => {
     mockTables("free");
     const res = await get("pk_abcdefgh12345678");
     expect(from).toHaveBeenCalledTimes(1);
-    expect(res.headers.get("cache-control")).toBe("public, max-age=60, stale-while-revalidate=300");
+    expect(res.headers.get("cache-control")).toBe("public, max-age=60, s-maxage=600, stale-while-revalidate=86400");
   });
   it("allows any origin", async () => {
     mockTables("free");
