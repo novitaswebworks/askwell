@@ -127,3 +127,12 @@ export const Sparkles = ({ className }: IconProps) => (
     <path d="M12 3l1.9 5.9a2 2 0 0 0 1.2 1.2L21 12l-5.9 1.9a2 2 0 0 0-1.2 1.2L12 21l-1.9-5.9a2 2 0 0 0-1.2-1.2L3 12l5.9-1.9a2 2 0 0 0 1.2-1.2L12 3z" />
   </svg>
 );
+
+export const Users = ({ className }: IconProps) => (
+  <svg {...base} className={className}>
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+  </svg>
+);

@@ -608,4 +608,53 @@ describe("knowledge answers", () => {
       ).rejects.toThrow(/check/);
     });
   });
+
+  describe("leads", () => {
+    it("lets an owner read leads of their projects, hides them from others", async () => {
+      await svc(() =>
+        db.exec("insert into public.accounts (clerk_user_id) values ('user_leads_alice'), ('user_leads_bob') on conflict do nothing"),
+      );
+      const aliceProj = await createProject("user_leads_alice", "Alice Proj", "pk_leads_alice", 10);
+      const bobProj = await createProject("user_leads_bob", "Bob Proj", "pk_leads_bob", 10);
+
+      // Insert via service_role
+      await svc(async () => {
+        await db.query("insert into public.leads (project_id, email, name, phone) values ($1, $2, $3, $4)", [
+          aliceProj,
+          "lead@alice.com",
+          "Alice Lead",
+          "+1234567890",
+        ]);
+        await db.query("insert into public.leads (project_id, email, name) values ($1, $2, $3)", [
+          bobProj,
+          "lead@bob.com",
+          "Bob Lead",
+        ]);
+      });
+
+      // Alice can read her own lead
+      const aliceLeads = await asRole(db, "authenticated", "user_leads_alice", () =>
+        db.query<{ email: string }>("select email from public.leads where project_id = $1", [aliceProj]),
+      );
+      expect(aliceLeads.rows.map((r) => r.email)).toEqual(["lead@alice.com"]);
+
+      // Alice cannot read Bob's leads
+      const aliceReadBob = await asRole(db, "authenticated", "user_leads_alice", () =>
+        db.query<{ email: string }>("select email from public.leads where project_id = $1", [bobProj]),
+      );
+      expect(aliceReadBob.rows).toEqual([]);
+
+      // Anon cannot read any leads
+      await expect(
+        asRole(db, "anon", null, () => db.query("select * from public.leads")),
+      ).rejects.toThrow(/permission denied/);
+
+      // Authenticated cannot insert directly (service_role only)
+      await expect(
+        asRole(db, "authenticated", "user_leads_alice", () =>
+          db.query("insert into public.leads (project_id, email) values ($1, 'evil@test.com')", [aliceProj]),
+        ),
+      ).rejects.toThrow(/permission denied/);
+    });
+  });
 });

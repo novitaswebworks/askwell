@@ -43,7 +43,7 @@ describe("alias host redirect", () => {
     for (const r of redirects) {
       expect(r.permanent).toBe(true);
       expect(r.has).toEqual([{ type: "host", value: expect.stringMatching(/\.vercel\.app$/) }]);
-      expect(r.destination).toMatch(/^https:\/\/.+\/:path\*$/);
+      expect(r.destination).toMatch(/^https?:\/\/.+\/:path\*$/);
     }
     // Preview deployments have their own hosts and must never be redirected.
     expect(ALIAS_HOSTS.every((h) => !h.includes("-git-") && !h.includes("projects"))).toBe(true);

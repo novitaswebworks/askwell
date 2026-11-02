@@ -8,6 +8,7 @@ import {
   subscribeRequestSchema,
   updateProjectSchema,
   widgetConfigSchema,
+  captureLeadRequestSchema,
 } from "./api";
 import { MAX_KNOWLEDGE_FILE_BYTES, MAX_MESSAGE_LENGTH } from "./constants";
 
@@ -118,5 +119,27 @@ describe("subscribeRequestSchema", () => {
     for (const phone of ["", "abc", "12345", "1".repeat(16), "98765 4321a"]) {
       expect(subscribeRequestSchema.safeParse({ phone }).success).toBe(false);
     }
+  });
+});
+
+describe("captureLeadRequestSchema", () => {
+  it("accepts valid email and conversation id", () => {
+    const valid = captureLeadRequestSchema.safeParse({
+      key: "pk_12345678abcdef",
+      conversationId: "550e8400-e29b-41d4-a716-446655440000",
+      email: "visitor@example.com",
+      name: "Jane Doe",
+      phone: "+1 555-1234",
+    });
+    expect(valid.success).toBe(true);
+  });
+
+  it("rejects invalid email formats", () => {
+    const invalid = captureLeadRequestSchema.safeParse({
+      key: "pk_12345678abcdef",
+      conversationId: "550e8400-e29b-41d4-a716-446655440000",
+      email: "not-an-email",
+    });
+    expect(invalid.success).toBe(false);
   });
 });

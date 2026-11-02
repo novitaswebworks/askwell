@@ -104,7 +104,7 @@ export const PRIVACY: LegalDoc = {
       heading: "What we collect",
       list: [
         "Owners: your sign-in details (email and name, handled by our sign-in provider), the projects, knowledge text and files you add, your widget settings, and your plan.",
-        "Visitors: the messages typed into the chat, the assistant's replies, and a random visitor ID kept in the browser so a conversation continues. We do not ask visitors to sign in.",
+        "Visitors: the messages typed into the chat, the assistant's replies, contact details (such as email, name or phone) if a visitor chooses to leave them or requests a person, and a random visitor ID kept in the browser so a conversation continues. We do not ask visitors to sign in.",
         "Technical data: the website a widget loaded on and when, your IP address (for rate limiting and abuse protection), and basic usage events such as pages opened and buttons clicked. Usage events never include the text of chat messages.",
       ],
     },
