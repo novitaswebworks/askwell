@@ -11,7 +11,17 @@ const POLL_FOR_MS = 3 * 60_000;
 // Tells the owner whether their website has loaded the widget yet. While waiting
 // it re-checks every few seconds for a few minutes, so "Connected" appears by
 // itself right after they paste the code.
-export function InstallStatus({ connection, seenAt }: { connection: Connection; seenAt: string | null }) {
+// It is not re-created when the owner switches project (it just receives the new
+// project's data), so the polling below restarts per project through `projectId`.
+export function InstallStatus({
+  projectId,
+  connection,
+  seenAt,
+}: {
+  projectId: string;
+  connection: Connection;
+  seenAt: string | null;
+}) {
   const router = useRouter();
   const waiting = connection.state === "waiting";
 
@@ -23,7 +33,7 @@ export function InstallStatus({ connection, seenAt }: { connection: Connection; 
       router.refresh();
     }, POLL_MS);
     return () => clearInterval(id);
-  }, [waiting, router]);
+  }, [waiting, projectId, router]);
 
   if (connection.state === "waiting") {
     return (
