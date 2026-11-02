@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, type DragEvent, type FormEvent } from "react";
 import { MAX_KNOWLEDGE_FILE_BYTES, type KnowledgeSource, type Plan } from "@askwell/shared";
 import { EmptyState } from "@/components/empty-state";
+import { KnowledgeUrlForm } from "@/components/knowledge-url-form";
 import { Document, Plus, Trash, Upload } from "@/components/site/icons";
 
 const inputStyles =
@@ -48,9 +49,10 @@ export function KnowledgeManager({
   plan?: Plan;
 }) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"upload" | "text">("upload");
+  const [activeTab, setActiveTab] = useState<"upload" | "text" | "url">("upload");
   const [textTitle, setTextTitle] = useState("");
   const [text, setText] = useState("");
+  const [siteUrl, setSiteUrl] = useState("");
   const [fileTitle, setFileTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -95,6 +97,24 @@ export function KnowledgeManager({
       setTextTitle("");
       setText("");
     }
+  }
+
+  async function addWebsite(e: FormEvent) {
+    e.preventDefault();
+    if (!siteUrl.trim()) return;
+    const ok = await run("Reading the website. This can take a minute...", async () => {
+      const res = await fetch(`${base}/url`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: siteUrl.trim() }),
+      });
+      if (!res.ok) {
+        setError(await errorMessage(res));
+        return false;
+      }
+      return true;
+    });
+    if (ok) setSiteUrl("");
   }
 
   function handleFileSelect(selected: File | null) {
@@ -225,6 +245,16 @@ export function KnowledgeManager({
             >
               <Document className="h-3.5 w-3.5" />
               <span>Paste text</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("url")}
+              className={`flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-medium transition-all ${
+                activeTab === "url" ? "bg-foreground text-background shadow-xs" : "text-muted hover:text-foreground"
+              }`}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>Website</span>
             </button>
           </div>
         </div>
@@ -378,6 +408,17 @@ export function KnowledgeManager({
               <span>{busy ? busy : "Add text source"}</span>
             </button>
           </form>
+        )}
+
+        {activeTab === "url" && (
+          <KnowledgeUrlForm
+            url={siteUrl}
+            onUrl={setSiteUrl}
+            onSubmit={addWebsite}
+            disabled={disabled}
+            busy={busy}
+            maxPages={isPro ? 40 : 10}
+          />
         )}
 
         {busy && (
