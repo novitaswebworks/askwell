@@ -200,7 +200,7 @@ export function EmbedPanel() {
           maxLength={MAX_MESSAGE_LENGTH}
           placeholder="Type your message"
           autoComplete="off"
-          className="h-11 min-w-0 flex-1 rounded-full border border-border bg-glass-strong px-4 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className="h-11 min-w-0 flex-1 rounded-full border border-border bg-glass-strong px-4 text-base outline-none focus-visible:ring-2 focus-visible:ring-accent"
         />
         <button
           type="submit"
