@@ -28,6 +28,12 @@ const proRow = {
   animation: "scale",
   header_text: "Ask our team",
   show_badge: false,
+  welcome_message: "Ask a question and we'll reply right here.",
+  starter_questions: [
+    "What services do you offer?",
+    "How do I get started?",
+    "How can I contact you?",
+  ],
 };
 
 beforeEach(() => {
@@ -103,12 +109,34 @@ describe("PATCH /api/projects/:id/config", () => {
       animation: "scale",
       headerText: "Ask our team",
       showBadge: false,
+      welcomeMessage: "Ask a question and we'll reply right here.",
+      starterQuestions: [
+        "What services do you offer?",
+        "How do I get started?",
+        "How can I contact you?",
+      ],
     });
 
     expect(track).toHaveBeenCalledWith({
       distinctId: "user_1",
       event: "widget_customized",
       properties: { projectId: id },
+    });
+  });
+
+  it("updates welcomeMessage and starterQuestions on Pro plan", async () => {
+    const update = vi.fn().mockReturnValue(queryResult({ data: proRow }));
+    serviceFrom.mockReturnValue({ update });
+
+    const res = await patch({
+      welcomeMessage: "Hello, welcome to our store!",
+      starterQuestions: ["Where are you located?", "What are your hours?"],
+    });
+
+    expect(res.status).toBe(200);
+    expect(update).toHaveBeenCalledWith({
+      welcome_message: "Hello, welcome to our store!",
+      starter_questions: ["Where are you located?", "What are your hours?"],
     });
   });
 

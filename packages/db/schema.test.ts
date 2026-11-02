@@ -40,7 +40,16 @@ describe("projects", () => {
       db.query("select * from public.widget_configs where project_id = $1", [id]),
     );
     expect(cfg.rows).toHaveLength(1);
-    expect(cfg.rows[0]).toMatchObject({ position: "bottom-right", show_badge: true });
+    expect(cfg.rows[0]).toMatchObject({
+      position: "bottom-right",
+      show_badge: true,
+      welcome_message: "Ask a question and we'll reply right here.",
+    });
+    expect((cfg.rows[0] as { starter_questions: unknown }).starter_questions).toEqual([
+      "What services do you offer?",
+      "How do I get started?",
+      "How can I contact you?",
+    ]);
   });
 
   it("refuses a project over the plan limit", async () => {

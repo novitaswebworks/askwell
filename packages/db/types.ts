@@ -228,6 +228,8 @@ export type Database = {
           position: string
           project_id: string
           show_badge: boolean
+          starter_questions: Json
+          welcome_message: string
         }
         Insert: {
           animation?: string
@@ -239,6 +241,8 @@ export type Database = {
           position?: string
           project_id: string
           show_badge?: boolean
+          starter_questions?: Json
+          welcome_message?: string
         }
         Update: {
           animation?: string
@@ -250,6 +254,8 @@ export type Database = {
           position?: string
           project_id?: string
           show_badge?: boolean
+          starter_questions?: Json
+          welcome_message?: string
         }
         Relationships: [
           {

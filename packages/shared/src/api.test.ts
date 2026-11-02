@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   chatRequestSchema,
+  chatResponseSchema,
   knowledgeUploadUrlRequestSchema,
   updateConfigSchema,
   conversationThreadSchema,
   subscribeRequestSchema,
   updateProjectSchema,
+  widgetConfigSchema,
 } from "./api";
 import { MAX_KNOWLEDGE_FILE_BYTES, MAX_MESSAGE_LENGTH } from "./constants";
 
@@ -23,6 +25,21 @@ describe("chatRequestSchema", () => {
   });
   it("rejects a malformed public key", () => {
     expect(chatRequestSchema.safeParse({ ...base, key: "sk_nope", message: "hi" }).success).toBe(false);
+  });
+});
+
+describe("chatResponseSchema", () => {
+  const id = "0b1c2d3e-0000-4000-8000-000000000001";
+  it("accepts reply with optional sources and followUps", () => {
+    expect(chatResponseSchema.safeParse({ conversationId: id, reply: "Hello" }).success).toBe(true);
+    expect(
+      chatResponseSchema.safeParse({
+        conversationId: id,
+        reply: "Hello",
+        sources: ["Refund policy"],
+        followUps: ["How do I return?", "What is the fee?"],
+      }).success,
+    ).toBe(true);
   });
 });
 

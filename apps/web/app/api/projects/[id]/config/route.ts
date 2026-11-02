@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { getPlanLimits, updateConfigSchema, type WidgetConfig } from "@askwell/shared";
+import { DEFAULT_WIDGET_CONFIG, getPlanLimits, updateConfigSchema, type WidgetConfig } from "@askwell/shared";
 import { getAccountPlan } from "@/lib/accounts";
 import { track } from "@/lib/analytics";
 import { apiError, isUuid, readJson } from "@/lib/api";
@@ -39,13 +39,15 @@ export async function PATCH(req: Request, { params }: Context) {
   if (parsed.data.animation !== undefined) updates.animation = parsed.data.animation;
   if (parsed.data.headerText !== undefined) updates.header_text = parsed.data.headerText;
   if (parsed.data.showBadge !== undefined) updates.show_badge = parsed.data.showBadge;
+  if (parsed.data.welcomeMessage !== undefined) updates.welcome_message = parsed.data.welcomeMessage;
+  if (parsed.data.starterQuestions !== undefined) updates.starter_questions = parsed.data.starterQuestions;
 
   const service = createServiceClient();
   const { data, error } = await service
     .from("widget_configs")
     .update(updates)
     .eq("project_id", project.id)
-    .select("button_color, position, label, animation, header_text, show_badge")
+    .select("button_color, position, label, animation, header_text, show_badge, welcome_message, starter_questions")
     .single();
 
   if (error || !data) return apiError("internal", "Could not update the widget configuration.");
@@ -56,13 +58,19 @@ export async function PATCH(req: Request, { params }: Context) {
     properties: { projectId: project.id },
   });
 
+  const rawStarters = Array.isArray(data.starter_questions)
+    ? (data.starter_questions as string[])
+    : DEFAULT_WIDGET_CONFIG.starterQuestions;
+
   const config: WidgetConfig = {
     buttonColor: data.button_color,
-    position: data.position,
+    position: data.position as WidgetConfig["position"],
     label: data.label,
-    animation: data.animation,
+    animation: data.animation as WidgetConfig["animation"],
     headerText: data.header_text,
     showBadge: data.show_badge,
+    welcomeMessage: data.welcome_message ?? DEFAULT_WIDGET_CONFIG.welcomeMessage,
+    starterQuestions: rawStarters,
   };
 
   return NextResponse.json(config);

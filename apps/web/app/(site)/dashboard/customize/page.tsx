@@ -44,18 +44,23 @@ async function CustomizeContent({ searchParams }: { searchParams: Promise<{ proj
   if (project) {
     const { data: row, error: configError } = await owner
       .from("widget_configs")
-      .select("button_color, position, label, animation, header_text, show_badge")
+      .select("button_color, position, label, animation, header_text, show_badge, welcome_message, starter_questions")
       .eq("project_id", project.id)
       .maybeSingle();
     if (configError) throw new Error(`Could not load widget config: ${configError.message}`);
     if (row) {
+      const rawStarters = Array.isArray(row.starter_questions)
+        ? (row.starter_questions as string[])
+        : DEFAULT_WIDGET_CONFIG.starterQuestions;
       config = {
         buttonColor: row.button_color,
-        position: row.position,
+        position: row.position as WidgetConfig["position"],
         label: row.label,
-        animation: row.animation,
+        animation: row.animation as WidgetConfig["animation"],
         headerText: row.header_text,
         showBadge: row.show_badge,
+        welcomeMessage: row.welcome_message ?? DEFAULT_WIDGET_CONFIG.welcomeMessage,
+        starterQuestions: rawStarters,
       };
     }
   }

@@ -137,6 +137,18 @@ describe("generateAnswer with a backup endpoint", () => {
   });
   it("gives up with AiUnavailableError when the backup fails too", async () => {
     generateText.mockRejectedValue(new Error("down"));
-    await expect(generateAnswer("s", "p")).rejects.toThrow();
+    await expect(generateAnswer("s", "p")).rejects.toMatchObject({ name: "AiUnavailableError" });
+  });
+
+  it("fails over to backup when primary model throws 500 error", async () => {
+    // Primary Groq models all throw error
+    generateText
+      .mockRejectedValueOnce(new Error("500 internal server error"))
+      .mockRejectedValueOnce(new Error("500 internal server error"))
+      .mockRejectedValueOnce(new Error("500 internal server error"))
+      .mockResolvedValueOnce({ text: "answer from backup" });
+
+    const result = await generateAnswer("system", "prompt");
+    expect(result).toBe("answer from backup");
   });
 });

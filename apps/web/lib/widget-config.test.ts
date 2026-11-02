@@ -9,6 +9,8 @@ const custom: WidgetConfig = {
   animation: "scale",
   headerText: "Hi there",
   showBadge: false,
+  welcomeMessage: "Custom welcome",
+  starterQuestions: ["Question A", "Question B"],
 };
 
 describe("applyPlanToConfig", () => {
