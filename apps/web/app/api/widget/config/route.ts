@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { planSchema, widgetConfigQuerySchema, type WidgetConfig } from "@askwell/shared";
+import { DEFAULT_WIDGET_CONFIG, planSchema, widgetConfigQuerySchema, type WidgetConfig } from "@askwell/shared";
 import { apiError } from "@/lib/api";
 import { createServiceClient } from "@/lib/supabase/service";
 import { hostFromHeaders, recordSeen, shouldRecordSeen } from "@/lib/seen";
@@ -33,7 +33,7 @@ export async function GET(req: Request) {
 
   const { data: stored, error: configError } = await service
     .from("widget_configs")
-    .select("button_color, position, label, animation, header_text, show_badge, last_seen_at, last_seen_host")
+    .select("button_color, position, label, animation, header_text, show_badge, welcome_message, starter_questions, last_seen_at, last_seen_host")
     .eq("project_id", project.id)
     .single();
   if (configError) return apiError("internal", "Could not load the config.", { headers: CORS });
@@ -51,14 +51,20 @@ export async function GET(req: Request) {
     recordSeen(service, project.id, host);
   }
 
+  const rawStarters = Array.isArray(stored.starter_questions)
+    ? (stored.starter_questions as string[])
+    : DEFAULT_WIDGET_CONFIG.starterQuestions;
+
   const config: WidgetConfig = applyPlanToConfig(
     {
       buttonColor: stored.button_color,
-      position: stored.position,
+      position: stored.position as WidgetConfig["position"],
       label: stored.label,
-      animation: stored.animation,
+      animation: stored.animation as WidgetConfig["animation"],
       headerText: stored.header_text,
       showBadge: stored.show_badge,
+      welcomeMessage: stored.welcome_message ?? DEFAULT_WIDGET_CONFIG.welcomeMessage,
+      starterQuestions: rawStarters,
     },
     planSchema.parse(account.plan),
   );

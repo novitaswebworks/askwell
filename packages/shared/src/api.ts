@@ -39,6 +39,8 @@ export const widgetConfigSchema = z.object({
   animation: animationSchema,
   headerText: z.string().min(1).max(60),
   showBadge: z.boolean(),
+  welcomeMessage: z.string().trim().min(1).max(200),
+  starterQuestions: z.array(z.string().trim().min(1).max(100)).max(4),
 });
 export type WidgetConfig = z.infer<typeof widgetConfigSchema>;
 
@@ -49,6 +51,12 @@ export const DEFAULT_WIDGET_CONFIG: WidgetConfig = {
   animation: "fade",
   headerText: "How can we help?",
   showBadge: true,
+  welcomeMessage: "Ask a question and we'll reply right here.",
+  starterQuestions: [
+    "What services do you offer?",
+    "How do I get started?",
+    "How can I contact you?",
+  ],
 };
 
 // ---------------------------------------------------------------- public routes
@@ -68,6 +76,8 @@ export type ChatRequest = z.infer<typeof chatRequestSchema>;
 export const chatResponseSchema = z.object({
   conversationId: z.uuid(),
   reply: z.string(),
+  sources: z.array(z.string()).optional(),
+  followUps: z.array(z.string()).optional(),
 });
 export type ChatResponse = z.infer<typeof chatResponseSchema>;
 

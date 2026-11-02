@@ -151,6 +151,29 @@ describe("POST /api/widget/chat", () => {
     await call({ ...body, conversationId: CONVO });
     expect(rpc).toHaveBeenCalledWith("save_chat_turn", expect.objectContaining({ p_conversation_id: CONVO }));
   });
+
+  it("returns source attribution and follow-up chips when available", async () => {
+    tables({
+      knowledge_sources: { data: [{ title: "Refund policy" }] },
+    });
+    generateAnswer.mockResolvedValue(
+      "Refunds take 5 days.\n\nFollow-up: How do I initiate a return?\nFollow-up: Who pays shipping?",
+    );
+    const res = await call(body);
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.reply).toBe("Refunds take 5 days.");
+    expect(data.sources).toEqual(["Refund policy"]);
+    expect(data.followUps).toEqual(["How do I initiate a return?", "Who pays shipping?"]);
+  });
+
+  it("provides graceful NO_ANSWER when nothing is relevant", async () => {
+    rpcs({ match_chunks_hybrid: { data: [], error: null } });
+    const res = await call(body);
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.reply).toBe(NO_ANSWER);
+  });
 });
 
 describe("POST /api/widget/chat: understanding the message", () => {

@@ -14,7 +14,9 @@ import {
   MATCH_COUNT,
   NO_ANSWER,
   OFF_TOPIC_REPLY,
+  parseAnswerAndFollowUps,
   QUOTA_MESSAGE,
+  RATE_LIMIT_MESSAGE,
   relevantChunks,
   SMALLTALK_REPLIES,
   UNAVAILABLE_MESSAGE,
@@ -61,7 +63,7 @@ export async function POST(req: Request) {
       properties: { reason: protection.reason, public_key: key },
     });
     return protection.reason === "rate_limit"
-      ? fail("rate_limited", "You are sending messages too fast. Wait a moment and try again.")
+      ? fail("rate_limited", RATE_LIMIT_MESSAGE)
       : fail("message_blocked", "That message can't be sent.");
   }
 
@@ -103,6 +105,8 @@ export async function POST(req: Request) {
   // 5. Understand the message, then answer, decline or chat accordingly.
   let reply: string;
   let kind: string = "question";
+  let sources: string[] | undefined;
+  let followUps: string[] | undefined;
   // Token counts and timings only, never the text of a message (project.md section 6.6).
   const traceId = crypto.randomUUID();
   const traced = (spanName: string) => (g: Generation) =>
@@ -132,13 +136,34 @@ export async function POST(req: Request) {
       if (matchError) throw new Error(`match_chunks_hybrid: ${matchError.message}`);
 
       const chunks = relevantChunks((matches ?? []) as MatchedChunk[]);
-      reply =
-        chunks.length === 0
-          ? NO_ANSWER
-          : await generateAnswer(buildSystemPrompt(about), buildPrompt(chunks, message, query), {
-              onGeneration: traced("answer_question"),
-            });
-      if (!reply) reply = NO_ANSWER;
+      if (chunks.length === 0) {
+        reply = NO_ANSWER;
+      } else {
+        const sourceIds = [...new Set(chunks.map((c) => c.source_id))];
+        const { data: sourcesData } = await service
+          .from("knowledge_sources")
+          .select("title")
+          .in("id", sourceIds);
+        const titles = (sourcesData ?? []).map((s) => s.title).filter(Boolean);
+        if (titles.length > 0) sources = titles;
+
+        const raw = await generateAnswer(buildSystemPrompt(about), buildPrompt(chunks, message, query), {
+          onGeneration: traced("answer_question"),
+        });
+        if (!raw) {
+          reply = NO_ANSWER;
+          sources = undefined;
+        } else {
+          const parsed = parseAnswerAndFollowUps(raw);
+          reply = parsed.reply || NO_ANSWER;
+          if (reply.includes(NO_ANSWER)) {
+            reply = NO_ANSWER;
+            sources = undefined;
+          } else {
+            followUps = parsed.followUps.length > 0 ? parsed.followUps : undefined;
+          }
+        }
+      }
     }
   } catch (error) {
     // Log why, so a "temporarily unavailable" reply can be traced in the runtime logs.
@@ -170,7 +195,12 @@ export async function POST(req: Request) {
     },
   });
 
-  const body: ChatResponse = { conversationId: savedId as string, reply };
+  const body: ChatResponse = {
+    conversationId: savedId as string,
+    reply,
+    ...(sources && sources.length > 0 ? { sources } : {}),
+    ...(followUps && followUps.length > 0 ? { followUps } : {}),
+  };
   return NextResponse.json(body, { headers: CORS });
 }
 

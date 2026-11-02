@@ -5,7 +5,13 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import { APP_NAME, MAX_MESSAGE_LENGTH, chatResponseSchema, type WidgetConfig } from "@askwell/shared";
 import { MESSAGE_SOURCE, getVisitorId, parseParentOrigin, type PanelMessage } from "@/lib/embed";
 
-type Line = { id: number; role: "visitor" | "bot"; body: string };
+type Line = {
+  id: number;
+  role: "visitor" | "bot";
+  body: string;
+  sources?: string[];
+  followUps?: string[];
+};
 type Load = { state: "loading" } | { state: "error" } | { state: "ready"; config: WidgetConfig };
 
 export function EmbedPanel() {
@@ -84,8 +90,8 @@ export function EmbedPanel() {
   }, [lines, typing]);
 
   const addBotLine = useCallback(
-    (body: string) => {
-      setLines((prev) => [...prev, { id: nextId.current++, role: "bot", body }]);
+    (body: string, sources?: string[], followUps?: string[]) => {
+      setLines((prev) => [...prev, { id: nextId.current++, role: "bot", body, sources, followUps }]);
       if (!open.current) {
         unread.current += 1;
         tell({ source: MESSAGE_SOURCE, type: "unread", count: unread.current });
@@ -94,38 +100,45 @@ export function EmbedPanel() {
     [tell],
   );
 
+  const sendMessage = useCallback(
+    async (rawText: string) => {
+      const body = rawText.trim().slice(0, MAX_MESSAGE_LENGTH);
+      if (!body || typing || !key) return;
+      setDraft("");
+      setLines((prev) => [...prev, { id: nextId.current++, role: "visitor", body }]);
+      setTyping(true);
+      try {
+        const res = await fetch("/api/widget/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            key,
+            visitorId: visitorId.current,
+            conversationId: conversationId.current ?? undefined,
+            message: body,
+          }),
+        });
+        const data: unknown = await res.json().catch(() => null);
+        const parsed = chatResponseSchema.safeParse(data);
+        if (res.ok && parsed.success) {
+          conversationId.current = parsed.data.conversationId;
+          addBotLine(parsed.data.reply, parsed.data.sources, parsed.data.followUps);
+        } else {
+          const message = (data as { error?: { message?: unknown } } | null)?.error?.message;
+          addBotLine(typeof message === "string" ? message : "Something went wrong. Please try again.");
+        }
+      } catch {
+        addBotLine("Could not reach the server. Check your connection and try again.");
+      } finally {
+        setTyping(false);
+      }
+    },
+    [addBotLine, key, typing],
+  );
+
   async function send(event: FormEvent) {
     event.preventDefault();
-    const body = draft.trim();
-    if (!body || typing || !key) return;
-    setDraft("");
-    setLines((prev) => [...prev, { id: nextId.current++, role: "visitor", body }]);
-    setTyping(true);
-    try {
-      const res = await fetch("/api/widget/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          key,
-          visitorId: visitorId.current,
-          conversationId: conversationId.current ?? undefined,
-          message: body,
-        }),
-      });
-      const data: unknown = await res.json().catch(() => null);
-      const parsed = chatResponseSchema.safeParse(data);
-      if (res.ok && parsed.success) {
-        conversationId.current = parsed.data.conversationId;
-        addBotLine(parsed.data.reply);
-      } else {
-        const message = (data as { error?: { message?: unknown } } | null)?.error?.message;
-        addBotLine(typeof message === "string" ? message : "Something went wrong. Please try again.");
-      }
-    } catch {
-      addBotLine("Could not reach the server. Check your connection and try again.");
-    } finally {
-      setTyping(false);
-    }
+    await sendMessage(draft);
   }
 
   if (load.state === "loading") {
@@ -159,17 +172,58 @@ export function EmbedPanel() {
 
       <div role="log" aria-live="polite" aria-label="Conversation" className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
         {lines.length === 0 && (
-          <p className="text-sm text-muted">Ask a question and we&apos;ll reply right here.</p>
+          <div className="space-y-3">
+            <p className="text-sm text-muted">{config.welcomeMessage}</p>
+            {config.starterQuestions && config.starterQuestions.length > 0 && (
+              <div className="flex flex-col gap-2 pt-2">
+                {config.starterQuestions.map((q, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => sendMessage(q)}
+                    disabled={typing}
+                    className="rounded-2xl border border-border bg-glass-strong px-4 py-2.5 text-left text-sm text-foreground transition hover:bg-glass hover:border-brand/40 disabled:opacity-50"
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         )}
-        {lines.map((line) => (
-          <div key={line.id} className={`flex ${line.role === "visitor" ? "justify-end" : "justify-start"}`}>
-            <p
-              className={`max-w-[85%] whitespace-pre-wrap break-words rounded-2xl px-4 py-2 text-sm ${
-                line.role === "visitor" ? "bg-accent text-accent-foreground" : "glass"
-              }`}
-            >
-              {line.body}
-            </p>
+        {lines.map((line, idx) => (
+          <div key={line.id} className="space-y-1.5">
+            <div className={`flex ${line.role === "visitor" ? "justify-end" : "justify-start"}`}>
+              <div className="max-w-[85%] space-y-1">
+                <p
+                  className={`whitespace-pre-wrap break-words rounded-2xl px-4 py-2 text-sm ${
+                    line.role === "visitor" ? "bg-accent text-accent-foreground" : "glass"
+                  }`}
+                >
+                  {line.body}
+                </p>
+                {line.sources && line.sources.length > 0 && (
+                  <p className="px-1 text-[11px] text-muted">
+                    From: {line.sources.join(", ")}
+                  </p>
+                )}
+              </div>
+            </div>
+            {line.role === "bot" && line.followUps && line.followUps.length > 0 && idx === lines.length - 1 && (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {line.followUps.map((fu, fIdx) => (
+                  <button
+                    key={fIdx}
+                    type="button"
+                    onClick={() => sendMessage(fu)}
+                    disabled={typing}
+                    className="rounded-full border border-border bg-glass px-3 py-1 text-xs text-foreground/85 transition hover:bg-glass-strong hover:text-foreground text-left disabled:opacity-50"
+                  >
+                    {fu}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         ))}
         {typing && (

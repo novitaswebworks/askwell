@@ -19,6 +19,8 @@ const stored = {
   animation: "scale",
   header_text: "Hi there",
   show_badge: false,
+  welcome_message: "Custom welcome",
+  starter_questions: ["Q1", "Q2"],
   last_seen_at: null,
   last_seen_host: null,
 };
@@ -84,6 +86,15 @@ describe("GET /api/widget/config: last seen", () => {
   it("never lets last-seen data leak into the public config", async () => {
     mockTables("pro");
     const body = await (await get("pk_abcdefgh12345678", { origin: "https://shop.example.com" })).json();
-    expect(Object.keys(body).sort()).toEqual(["animation", "buttonColor", "headerText", "label", "position", "showBadge"]);
+    expect(Object.keys(body).sort()).toEqual([
+      "animation",
+      "buttonColor",
+      "headerText",
+      "label",
+      "position",
+      "showBadge",
+      "starterQuestions",
+      "welcomeMessage",
+    ]);
   });
 });

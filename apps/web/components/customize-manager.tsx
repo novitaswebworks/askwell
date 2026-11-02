@@ -58,7 +58,9 @@ export function CustomizeManager({
     config.label !== initialConfig.label ||
     config.animation !== initialConfig.animation ||
     config.headerText !== initialConfig.headerText ||
-    config.showBadge !== initialConfig.showBadge;
+    config.showBadge !== initialConfig.showBadge ||
+    config.welcomeMessage !== initialConfig.welcomeMessage ||
+    JSON.stringify(config.starterQuestions) !== JSON.stringify(initialConfig.starterQuestions);
 
   async function save(e: FormEvent) {
     e.preventDefault();
@@ -240,6 +242,79 @@ export function CustomizeManager({
           />
         </div>
 
+        {/* Welcome Message */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <label htmlFor="welcome-message" className="text-sm font-medium">
+              Welcome message
+            </label>
+            <span className="text-xs text-muted">{(config.welcomeMessage ?? "").length} of 200</span>
+          </div>
+          <input
+            id="welcome-message"
+            type="text"
+            value={config.welcomeMessage ?? ""}
+            onChange={(e) => setConfig({ ...config, welcomeMessage: e.target.value })}
+            maxLength={200}
+            disabled={!canCustomize || busy}
+            className="h-11 w-full rounded-2xl border border-border bg-glass-strong px-4 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50"
+          />
+        </div>
+
+        {/* Starter Questions */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium">Starter questions</label>
+            <span className="text-xs text-muted">{(config.starterQuestions ?? []).length} of 4</span>
+          </div>
+          <div className="space-y-2">
+            {(config.starterQuestions ?? []).map((sq, idx) => (
+              <div key={idx} className="flex gap-2">
+                <input
+                  type="text"
+                  value={sq}
+                  maxLength={100}
+                  disabled={!canCustomize || busy}
+                  onChange={(e) => {
+                    const next = [...(config.starterQuestions ?? [])];
+                    next[idx] = e.target.value;
+                    setConfig({ ...config, starterQuestions: next });
+                  }}
+                  className="h-10 flex-1 rounded-xl border border-border bg-glass-strong px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50"
+                  placeholder={`Question ${idx + 1}`}
+                />
+                {canCustomize && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = (config.starterQuestions ?? []).filter((_, i) => i !== idx);
+                      setConfig({ ...config, starterQuestions: next });
+                    }}
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-glass text-muted hover:bg-glass-strong hover:text-foreground"
+                    aria-label="Remove question"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            ))}
+            {canCustomize && (config.starterQuestions ?? []).length < 4 && (
+              <button
+                type="button"
+                onClick={() =>
+                  setConfig({
+                    ...config,
+                    starterQuestions: [...(config.starterQuestions ?? []), ""],
+                  })
+                }
+                className="text-xs font-medium text-brand hover:underline"
+              >
+                + Add starter question
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Badge Toggle */}
         <div className="flex items-center justify-between rounded-2xl border border-border bg-glass-strong p-4">
           <div className="space-y-0.5">
@@ -377,8 +452,20 @@ export function CustomizeManager({
 
                 <div className="flex-1 p-3 space-y-2 overflow-y-auto">
                   <p className="rounded-xl bg-glass p-2 text-xs text-muted">
-                    Ask a question and we&apos;ll reply right here.
+                    {config.welcomeMessage || DEFAULT_WIDGET_CONFIG.welcomeMessage}
                   </p>
+                  {(config.starterQuestions ?? []).length > 0 && (
+                    <div className="flex flex-col gap-1.5 pt-1">
+                      {(config.starterQuestions ?? []).map((q, idx) => (
+                        <div
+                          key={idx}
+                          className="rounded-xl border border-border bg-glass-strong px-2.5 py-1.5 text-[11px] text-foreground/80"
+                        >
+                          {q}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="border-t border-border p-2">
