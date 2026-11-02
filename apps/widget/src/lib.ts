@@ -62,9 +62,29 @@ export function parsePanelMessage(
   return null;
 }
 
-export function embedUrl(appOrigin: string, key: string, hostOrigin: string): string {
+export function embedUrl(appOrigin: string, key: string, hostOrigin: string, lang?: string): string {
   const url = new URL("/embed", appOrigin);
   url.searchParams.set("key", key);
   url.searchParams.set("origin", hostOrigin);
+  if (lang) url.searchParams.set("lang", lang);
   return url.toString();
 }
+
+// A data-* switch: present, empty or "true" means on; "false", "0" or "off" means off.
+export function parseFlag(value: string | null | undefined): boolean {
+  if (value === undefined || value === null) return false;
+  return !["false", "0", "off", "no"].includes(value.trim().toLowerCase());
+}
+
+// The panel's language: data-lang on the script tag, else the page's <html lang>, else the
+// browser's. Only the code is passed on; the panel decides what it supports.
+export function pickLang(...candidates: Array<string | null | undefined>): string | undefined {
+  for (const c of candidates) {
+    const value = c?.trim();
+    if (value && /^[A-Za-z]{2,3}([-_][A-Za-z0-9]{2,8})*$/.test(value)) return value;
+  }
+  return undefined;
+}
+
+export type WidgetOp = "open" | "close" | "toggle";
+export const MAX_QUEUED_OPS = 10;

@@ -154,6 +154,10 @@ Two parts: a small loader script + an iframe.
 | On load   | Read `data-key` → fetch config → render the button with config styles                        |
 | On click  | Open an iframe pointing at `/embed?key=pk_...`, with the configured animation                |
 | Messages  | `postMessage` with the iframe: close, resize, unread. Check `event.origin` on every message. |
+| Options   | Optional `data-*` on the script tag: `data-offset-x`, `data-offset-y`, `data-mobile-offset-y` (px, to clear the site's own UI), `data-open-on-load` (open the chat when the page loads), `data-lang` (panel language; default is the page's `<html lang>`, then the browser's) |
+| JS API    | `window.Askwell.open()`, `.close()`, `.toggle()` for the site's own buttons. Calls made before the widget has loaded run once it is ready |
+| Languages | The panel's own labels come in English, Spanish, French, German and Hindi. The owner's words (header, welcome, starters, button label) are never translated; untouched defaults are |
+| Memory    | The panel keeps the current conversation (last 40 lines, 24 hours) in its own localStorage per project, so a page change or reload continues it. "New chat" clears it |
 | Isolation | Button in a shadow root. No global CSS. Nothing else touches the host page.                  |
 | Errors    | Bad key → nothing renders                                                                    |
 
