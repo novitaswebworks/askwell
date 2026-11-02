@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { APP_NAME } from "@askwell/shared";
 import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
@@ -8,6 +9,8 @@ import { EnsureAccount } from "@/components/ensure-account";
 import { PostHogIdentify } from "@/components/posthog-identify";
 import { LogoMark } from "@/components/site/logo";
 import { getAccountPlan } from "@/lib/accounts";
+
+export const metadata: Metadata = { robots: { index: false } };
 
 async function SidebarPlanBadge() {
   const { userId } = await auth();

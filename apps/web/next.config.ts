@@ -8,10 +8,25 @@ for (const name of [".env.local", ".env"]) {
   if (existsSync(path)) process.loadEnvFile(path);
 }
 
+// The production site also answers on its *.vercel.app alias. Send that host to the
+// public address so search engines index one version. Preview deployments use other
+// hosts and are left alone.
+const PUBLIC_URL = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "");
+export const ALIAS_HOSTS = ["askwell-theta.vercel.app"];
+
 const nextConfig: NextConfig = {
   transpilePackages: ["@askwell/shared"],
   cacheComponents: true,
   partialPrefetching: true,
+  async redirects() {
+    if (!PUBLIC_URL) return [];
+    return ALIAS_HOSTS.map((host) => ({
+      source: "/:path*",
+      has: [{ type: "host" as const, value: host }],
+      destination: `${PUBLIC_URL}/:path*`,
+      permanent: true,
+    }));
+  },
   // Security headers: clickjacking, frame-ancestors, MIME sniffing, HSTS (project.md section 9).
   async headers() {
     return [

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import nextConfig from "./next.config";
+import nextConfig, { ALIAS_HOSTS } from "./next.config";
 
 describe("security headers in nextConfig", () => {
   it("defines standard security headers and clickjacking protections", async () => {
@@ -31,5 +31,21 @@ describe("security headers in nextConfig", () => {
         { key: "X-Frame-Options", value: "SAMEORIGIN" },
       ]),
     );
+  });
+});
+
+describe("alias host redirect", () => {
+  it("sends the vercel.app alias to the public address and leaves other hosts alone", async () => {
+    expect(nextConfig.redirects).toBeDefined();
+    const redirects = await nextConfig.redirects!();
+    if (!process.env.NEXT_PUBLIC_APP_URL) return expect(redirects).toEqual([]);
+    expect(redirects).toHaveLength(ALIAS_HOSTS.length);
+    for (const r of redirects) {
+      expect(r.permanent).toBe(true);
+      expect(r.has).toEqual([{ type: "host", value: expect.stringMatching(/\.vercel\.app$/) }]);
+      expect(r.destination).toMatch(/^https:\/\/.+\/:path\*$/);
+    }
+    // Preview deployments have their own hosts and must never be redirected.
+    expect(ALIAS_HOSTS.every((h) => !h.includes("-git-") && !h.includes("projects"))).toBe(true);
   });
 });
