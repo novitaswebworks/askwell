@@ -220,6 +220,8 @@ export type Database = {
           button_color: string
           header_text: string
           label: string
+          last_seen_at: string | null
+          last_seen_host: string | null
           position: string
           project_id: string
           show_badge: boolean
@@ -229,6 +231,8 @@ export type Database = {
           button_color?: string
           header_text?: string
           label?: string
+          last_seen_at?: string | null
+          last_seen_host?: string | null
           position?: string
           project_id: string
           show_badge?: boolean
@@ -238,6 +242,8 @@ export type Database = {
           button_color?: string
           header_text?: string
           label?: string
+          last_seen_at?: string | null
+          last_seen_host?: string | null
           position?: string
           project_id?: string
           show_badge?: boolean

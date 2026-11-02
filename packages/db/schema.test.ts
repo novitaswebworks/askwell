@@ -412,6 +412,43 @@ describe("billing", () => {
   });
 });
 
+describe("widget last seen", () => {
+  it("lets an owner read when their widget last loaded, but only the server can write it", async () => {
+    await svc(() => db.exec("insert into public.accounts (clerk_user_id) values ('user_seen') on conflict do nothing"));
+    const id = await createProject("user_seen", "Seen", "pk_seen1", 10);
+    await svc(() =>
+      db.query("update public.widget_configs set last_seen_at = now(), last_seen_host = 'shop.example.com' where project_id = $1", [id]),
+    );
+    const own = await asRole(db, "authenticated", "user_seen", () =>
+      db.query<{ last_seen_host: string }>("select last_seen_host from public.widget_configs where project_id = $1", [id]),
+    );
+    expect(own.rows[0]?.last_seen_host).toBe("shop.example.com");
+
+    const other = await asRole(db, "authenticated", BOB, () =>
+      db.query("select last_seen_host from public.widget_configs where project_id = $1", [id]),
+    );
+    expect(other.rows).toHaveLength(0);
+
+    await asRole(db, "authenticated", "user_seen", async () => {
+      await expect(
+        db.query("update public.widget_configs set last_seen_host = 'evil.example' where project_id = $1", [id]),
+      ).rejects.toThrow(/permission denied/);
+    });
+    await asRole(db, "anon", null, async () => {
+      await expect(db.query("select last_seen_host from public.widget_configs")).rejects.toThrow(/permission denied/);
+    });
+  });
+  it("refuses a host name longer than a domain can be", async () => {
+    await svc(() => db.exec("insert into public.accounts (clerk_user_id) values ('user_seen') on conflict do nothing"));
+    const id = await createProject("user_seen", "Seen2", "pk_seen2", 10);
+    await svc(async () => {
+      await expect(
+        db.query("update public.widget_configs set last_seen_host = $2 where project_id = $1", [id, "a".repeat(254)]),
+      ).rejects.toThrow(/check constraint/);
+    });
+  });
+});
+
 describe("knowledge bucket", () => {
   it("is private, capped at 10 MB, and limited to PDF, Markdown and text", async () => {
     const res = await db.query<{
