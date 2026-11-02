@@ -177,6 +177,29 @@ describe("row level security", () => {
     });
   });
 
+  it("lets owners list the websites allowed to show their chat, up to 10, and nobody else", async () => {
+    await asRole(db, "authenticated", ALICE, async () => {
+      const ok = await db.query(
+        "update public.projects set allowed_domains = array['a.com','b.com'] where owner_id = $1 returning allowed_domains",
+        [ALICE],
+      );
+      expect(ok.rows.length).toBeGreaterThan(0);
+      await expect(
+        db.query(
+          "update public.projects set allowed_domains = array_fill('x.com'::text, array[11]) where owner_id = $1",
+          [ALICE],
+        ),
+      ).rejects.toThrow(/check constraint/);
+    });
+    const other = await asRole(db, "authenticated", BOB, () =>
+      db.query("update public.projects set allowed_domains = array['evil.com'] where owner_id = $1 returning id", [ALICE]),
+    );
+    expect(other.rows).toHaveLength(0);
+    await asRole(db, "anon", null, async () => {
+      await expect(db.query("update public.projects set allowed_domains = '{}'")).rejects.toThrow(/permission denied/);
+    });
+  });
+
   it("does not let an owner change another owner's project", async () => {
     const res = await asRole(db, "authenticated", BOB, () =>
       db.query("update public.projects set name = 'hacked' where owner_id = $1 returning id", [ALICE]),

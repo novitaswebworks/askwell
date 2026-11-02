@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { anchorStyles, embedUrl, isValidKey, parseOffset, parsePanelMessage, readableTextColor } from "./lib";
+import {
+  anchorStyles,
+  embedUrl,
+  isValidKey,
+  parseFlag,
+  parseOffset,
+  parsePanelMessage,
+  pickLang,
+  readableTextColor,
+} from "./lib";
 
 const APP = "https://app.example.com";
 const frame = {};
@@ -83,5 +92,36 @@ describe("embedUrl", () => {
     expect(url.origin + url.pathname).toBe(`${APP}/embed`);
     expect(url.searchParams.get("key")).toBe("pk_abcdefgh12345678");
     expect(url.searchParams.get("origin")).toBe("https://shop.example");
+  });
+});
+
+describe("parseFlag", () => {
+  it("treats a present attribute as on unless it says no", () => {
+    for (const on of ["", "true", "TRUE", "1", "yes"]) expect(parseFlag(on)).toBe(true);
+    for (const off of ["false", "0", "off", "no", " False "]) expect(parseFlag(off)).toBe(false);
+    expect(parseFlag(undefined)).toBe(false);
+    expect(parseFlag(null)).toBe(false);
+  });
+});
+
+describe("pickLang", () => {
+  it("takes the first usable language code", () => {
+    expect(pickLang(undefined, "", "es-MX", "en")).toBe("es-MX");
+    expect(pickLang("fr", "de")).toBe("fr");
+  });
+  it("skips anything that is not a language code", () => {
+    expect(pickLang("<script>", "x", "hi_IN")).toBe("hi_IN");
+    expect(pickLang(undefined, null, "")).toBeUndefined();
+  });
+});
+
+describe("embedUrl", () => {
+  it("carries the key, the host origin and, when known, the language", () => {
+    const url = new URL(embedUrl(APP, "pk_abcdefgh12345678", "https://site.example", "de"));
+    expect(url.pathname).toBe("/embed");
+    expect(url.searchParams.get("key")).toBe("pk_abcdefgh12345678");
+    expect(url.searchParams.get("origin")).toBe("https://site.example");
+    expect(url.searchParams.get("lang")).toBe("de");
+    expect(new URL(embedUrl(APP, "pk_abcdefgh12345678", "https://s.example")).searchParams.has("lang")).toBe(false);
   });
 });

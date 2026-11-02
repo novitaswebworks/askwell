@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { allowedDomainsSchema } from "./domains";
 import { MAX_ABOUT_LENGTH, MAX_KNOWLEDGE_FILE_BYTES, MAX_MESSAGE_LENGTH } from "./constants";
 
 // ---------------------------------------------------------------- common
@@ -87,6 +88,7 @@ export const projectSchema = z.object({
   id: z.uuid(),
   name: z.string(),
   about: z.string(),
+  allowedDomains: z.array(z.string()),
   publicKey: publicKeySchema,
   messagesUsed: z.number().int().nonnegative(),
   periodStart: z.string(),
@@ -105,8 +107,12 @@ export const updateProjectSchema = z
   .object({
     name: createProjectSchema.shape.name.optional(),
     about: z.string().trim().max(MAX_ABOUT_LENGTH).optional(),
+    allowedDomains: allowedDomainsSchema.optional(),
   })
-  .refine((v) => v.name !== undefined || v.about !== undefined, "Provide a name or a description");
+  .refine(
+    (v) => v.name !== undefined || v.about !== undefined || v.allowedDomains !== undefined,
+    "Provide a name, a description or allowed domains",
+  );
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
 
 export const addTextKnowledgeSchema = z.object({
