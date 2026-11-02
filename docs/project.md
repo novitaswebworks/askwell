@@ -132,6 +132,10 @@ The whole product in one flow. When this works end to end, the product is done.
 | Processing | Extract text (PDF: `unpdf`) → split into chunks → embeddings → store in pgvector |
 | Actions    | List sources with status (`uploading` shows as processing), delete a source (deletes its file and chunks) |
 | Limit      | Free: 3 sources per project. Pro: 25. Files and pasted texts count toward the same limit. |
+| Answers builder | The owner picks a kind of business (shop, services, restaurant, courses, software, other), answers its plain questions, and may add their own. `PUT /api/projects/:id/answers` saves the pairs as the project's one "Business answers" source: created the first time, replaced after that (one source slot). The pairs are kept in `knowledge_sources.answers` (jsonb, set only on this source, written by the service client only) so the owner can reopen and edit them. Indexed as "Question: … Answer: …" blocks. |
+| Unanswered questions | Visitor questions whose reply was the fixed "I don't have that information" message (last 100), grouped, most asked first, up to 10, hidden once the owner has a saved question with the same wording. "Answer this" adds the question to the builder. Read with the owner client. |
+| Interview prompt | A copyable message for any AI chat that interviews the owner one question at a time and writes a document to paste into "Paste text". |
+| Try it | The widget panel (`/embed?key=…`) inside the page. Its messages count toward the monthly limit. |
 | Done when  | Uploading a PDF creates chunks; a related question retrieves them                       |
 
 ### 6.5 Widget
@@ -243,7 +247,7 @@ Two parts: a small loader script + an iframe.
 | `accounts`          | `clerk_user_id` (PK), `plan` (`free`/`pro`), `cashfree_subscription_id` (nullable), `created_at`                                      | One per Clerk user. Plan lives here, kept in sync by the Cashfree webhook. `cashfree_subscription_id` is our own ID for the owner's subscription (added with the billing migration); it lets the webhook find the owner and lets the owner cancel. |
 | `projects`          | `id`, `owner_id` → accounts, `name`, `about`, `public_key`, `messages_used`, `period_start`, `created_at`                            | `public_key` unique. `about`: the owner's description of the business (up to 600 characters), used by the chat to tell on-topic questions from off-topic ones. |
 | `widget_configs`    | `project_id` (PK), `button_color`, `position`, `label`, `animation`, `header_text`, `show_badge`, `last_seen_at`, `last_seen_host`        | One per project                                     |
-| `knowledge_sources` | `id`, `project_id`, `title`, `type` (`text`/`pdf`/`md`/`txt`), `storage_key`, `status` (`uploading`/`processing`/`ready`/`failed`), `created_at` | `storage_key` null for pasted text                  |
+| `knowledge_sources` | `id`, `project_id`, `title`, `type` (`text`/`pdf`/`md`/`txt`), `storage_key`, `status` (`uploading`/`processing`/`ready`/`failed`), `answers` (jsonb, null except the builder's source), `created_at` | `storage_key` null for pasted text |
 | `knowledge_chunks`  | `id`, `project_id`, `source_id`, `content`, `embedding vector(1536)`                                                                 | Deleted with the source. HNSW index on `embedding`. |
 | `conversations`     | `id`, `project_id`, `visitor_id`, `created_at`                                                                                       |                                                     |
 | `messages`          | `id`, `conversation_id`, `role` (`visitor`/`bot`), `body`, `created_at`                                                              |                                                     |

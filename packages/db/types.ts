@@ -105,6 +105,7 @@ export type Database = {
       }
       knowledge_sources: {
         Row: {
+          answers: Json | null
           created_at: string
           id: string
           project_id: string
@@ -114,6 +115,7 @@ export type Database = {
           type: string
         }
         Insert: {
+          answers?: Json | null
           created_at?: string
           id?: string
           project_id: string
@@ -123,6 +125,7 @@ export type Database = {
           type: string
         }
         Update: {
+          answers?: Json | null
           created_at?: string
           id?: string
           project_id?: string

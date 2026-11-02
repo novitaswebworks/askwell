@@ -3,10 +3,14 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { getPlanLimits } from "@askwell/shared";
 import { AboutForm } from "@/components/about-form";
+import { AnswerBuilder } from "@/components/answer-builder";
+import { CopyBlock } from "@/components/copy-block";
 import { ButtonLink } from "@/components/button-link";
 import { EmptyState } from "@/components/empty-state";
 import { KnowledgeManager } from "@/components/knowledge-manager";
 import { getAccountPlan } from "@/lib/accounts";
+import { buildInterviewPrompt, parseSavedAnswers } from "@/lib/answers";
+import { loadUnanswered } from "@/lib/unanswered";
 import { SOURCE_COLUMNS, toSource, type SourceRow } from "@/lib/knowledge/sources";
 import { PROJECT_COLUMNS, toProject, type ProjectRow } from "@/lib/projects";
 import { createOwnerClient } from "@/lib/supabase/owner";
@@ -54,6 +58,8 @@ async function KnowledgeContent({ searchParams }: { searchParams: Promise<{ proj
   const project = projects.find((p) => p.id === selectedId) ?? projects[0];
 
   let sources: ReturnType<typeof toSource>[] = [];
+  let saved: ReturnType<typeof parseSavedAnswers> = null;
+  let unanswered: Awaited<ReturnType<typeof loadUnanswered>> = [];
   if (project) {
     const { data: rows, error: sourcesError } = await owner
       .from("knowledge_sources")
@@ -62,6 +68,17 @@ async function KnowledgeContent({ searchParams }: { searchParams: Promise<{ proj
       .order("created_at", { ascending: false });
     if (sourcesError) throw new Error(`Could not load knowledge: ${sourcesError.message}`);
     sources = (rows as SourceRow[]).map(toSource);
+
+    const { data: answersRow, error: answersError } = await owner
+      .from("knowledge_sources")
+      .select("answers")
+      .eq("project_id", project.id)
+      .not("answers", "is", null)
+      .limit(1)
+      .maybeSingle();
+    if (answersError) throw new Error(`Could not load answers: ${answersError.message}`);
+    saved = parseSavedAnswers(answersRow?.answers);
+    unanswered = await loadUnanswered(project.id, saved?.items.map((i) => i.question) ?? []);
   }
 
   return (
@@ -95,12 +112,46 @@ async function KnowledgeContent({ searchParams }: { searchParams: Promise<{ proj
 
           <AboutForm key={project.id} projectId={project.id} about={project.about} />
 
+          <AnswerBuilder key={`answers-${project.id}`} projectId={project.id} saved={saved} unanswered={unanswered} />
+
           <KnowledgeManager
             projectId={project.id}
             sources={sources}
             maxSources={getPlanLimits(plan).maxKnowledgeSources}
             plan={plan}
           />
+
+          <section className="glass flex flex-col gap-3 p-5" aria-labelledby="interview-heading">
+            <h2 id="interview-heading" className="text-lg font-semibold">
+              Rather talk than type? Let an AI interview you
+            </h2>
+            <p className="text-sm text-muted">
+              Copy this into a free AI chat. It asks about your business one question at a time, then writes a document.
+              Paste that document into &ldquo;Paste text&rdquo; above.
+            </p>
+            <CopyBlock
+              text={buildInterviewPrompt()}
+              kind="interview_prompt"
+              label="Copy the interview message"
+              fold="Show what it says"
+            />
+          </section>
+
+          <section className="glass flex flex-col gap-3 p-5" aria-labelledby="try-heading">
+            <h2 id="try-heading" className="text-lg font-semibold">
+              Try your assistant
+            </h2>
+            <p className="text-sm text-muted">
+              Ask it what a customer would. Questions it can&apos;t answer show up above. These chats count toward your
+              monthly messages.
+            </p>
+            <iframe
+              key={`${project.id}-${sources.length}-${saved?.items.length ?? 0}`}
+              title="Try your assistant"
+              src={`/embed?key=${encodeURIComponent(project.publicKey)}`}
+              className="h-[30rem] w-full max-w-md rounded-2xl border border-border bg-white"
+            />
+          </section>
         </div>
       )}
     </>

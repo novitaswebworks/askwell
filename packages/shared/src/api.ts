@@ -105,6 +105,21 @@ export const addTextKnowledgeSchema = z.object({
 });
 export type AddTextKnowledgeInput = z.infer<typeof addTextKnowledgeSchema>;
 
+export const MAX_ANSWER_ITEMS = 80;
+export const saveAnswersSchema = z.object({
+  template: z.string().trim().min(1).max(40),
+  items: z
+    .array(
+      z.object({
+        question: z.string().trim().min(1).max(300),
+        answer: z.string().trim().min(1).max(2000),
+      }),
+    )
+    .min(1)
+    .max(MAX_ANSWER_ITEMS),
+});
+export type SaveAnswersInput = z.infer<typeof saveAnswersSchema>;
+
 export const knowledgeUploadUrlRequestSchema = z.object({
   title: z.string().trim().min(1).max(200),
   filename: z.string().min(1).max(255),
