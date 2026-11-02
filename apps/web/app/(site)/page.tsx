@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import Script from "next/script";
 import { connection } from "next/server";
 import { Suspense } from "react";
@@ -8,14 +7,17 @@ import { ButtonLink } from "@/components/button-link";
 import { Faq } from "@/components/site/faq";
 import { HeroChat } from "@/components/site/hero-chat";
 import { ArrowRight, Chat, Check, Code, Document, Globe, Shield } from "@/components/site/icons";
-import { Logo } from "@/components/site/logo";
+import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
-import { HOME_DESCRIPTION, HOME_TITLE } from "@/lib/site";
+import { buildJsonLd, jsonLdString } from "@/lib/seo";
+import { HOME_DESCRIPTION, HOME_TITLE, siteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: { absolute: HOME_TITLE },
   description: HOME_DESCRIPTION,
   alternates: { canonical: "/" },
+  openGraph: { type: "website", url: "/", title: HOME_TITLE, description: HOME_DESCRIPTION, siteName: APP_NAME },
+  twitter: { card: "summary_large_image", title: HOME_TITLE, description: HOME_DESCRIPTION },
 };
 
 const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? "https://askwell.novitasweb.works").replace(/\/$/, "");
@@ -105,6 +107,7 @@ export async function LandingWidget() {
 export default function Home() {
   return (
     <div className="theme-dark flex flex-1 flex-col bg-background text-foreground">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(buildJsonLd(siteUrl())) }} />
       <SiteHeader />
 
       <main className="flex-1">
@@ -245,19 +248,7 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="border-t border-border">
-        <div className="mx-auto flex w-full max-w-6xl flex-col items-start justify-between gap-6 px-4 py-10 md:flex-row md:items-center md:px-8">
-          <Logo />
-          <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted">
-            <Link href="/#how" className="hover:text-foreground">How it works</Link>
-            <Link href="/#pricing" className="hover:text-foreground">Pricing</Link>
-            <Link href="/#faq" className="hover:text-foreground">FAQ</Link>
-            <Link href="/sign-in" className="hover:text-foreground">Sign in</Link>
-            <Link href="/sign-up" className="hover:text-foreground">Sign up</Link>
-          </nav>
-          <p className="text-sm text-muted">© {APP_NAME}</p>
-        </div>
-      </footer>
+      <SiteFooter />
 
       <Suspense fallback={null}>
         <LandingWidget />
