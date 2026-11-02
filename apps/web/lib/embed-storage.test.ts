@@ -19,7 +19,7 @@ describe("saved chat", () => {
     const store = memory();
     const lines = [
       { role: "visitor" as const, body: "Hi" },
-      { role: "bot" as const, body: "Hello", sources: ["FAQ"], followUps: ["More?"] },
+      { role: "bot" as const, body: "Hello", sources: ["FAQ"], followUps: ["More?"], rateable: true, rating: -1 as const },
     ];
     saveChat(store, KEY, { conversationId: ID, lines }, 1000);
     expect(loadChat(store, KEY, 2000)).toEqual({ conversationId: ID, lines });
