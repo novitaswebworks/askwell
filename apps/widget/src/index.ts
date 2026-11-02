@@ -1,5 +1,36 @@
 import type { WidgetConfig } from "@askwell/shared";
-import { MESSAGE_SOURCE, anchorStyles, embedUrl, isValidKey, parseOffset, parsePanelMessage, readableTextColor } from "./lib";
+import {
+  MAX_QUEUED_OPS,
+  MESSAGE_SOURCE,
+  anchorStyles,
+  embedUrl,
+  isValidKey,
+  parseFlag,
+  parseOffset,
+  parsePanelMessage,
+  pickLang,
+  readableTextColor,
+  type WidgetOp,
+} from "./lib";
+
+// window.Askwell, for a site's own buttons: Askwell.open(), .close(), .toggle().
+// Calls made before the widget has loaded are kept and run once it is ready.
+interface AskwellApi {
+  open(): void;
+  close(): void;
+  toggle(): void;
+}
+declare global {
+  interface Window {
+    Askwell?: AskwellApi;
+  }
+}
+let applyOp: ((op: WidgetOp) => void) | null = null;
+const pendingOps: WidgetOp[] = [];
+function runOp(op: WidgetOp) {
+  if (applyOp) applyOp(op);
+  else if (pendingOps.length < MAX_QUEUED_OPS) pendingOps.push(op);
+}
 
 // Runs on the customer's site. Reads data-key, fetches the config, draws a button
 // inside a shadow root, and opens the chat panel in an iframe. Bad key: nothing renders.
@@ -8,6 +39,7 @@ const key = script?.dataset.key;
 const ROOT_ID = "askwell-widget";
 
 if (script?.src && isValidKey(key) && !document.getElementById(ROOT_ID)) {
+  window.Askwell = { open: () => runOp("open"), close: () => runOp("close"), toggle: () => runOp("toggle") };
   void start(script.src, key);
 }
 
@@ -94,7 +126,10 @@ async function start(scriptSrc: string, key: string) {
   function setOpen(next: boolean) {
     open = next;
     // The panel loads on first open, so pages that never open the chat pay nothing.
-    if (open && !frame.src) frame.src = embedUrl(appOrigin, key, location.origin);
+    if (open && !frame.src) {
+      const lang = pickLang(script?.dataset.lang, document.documentElement.lang, navigator.language);
+      frame.src = embedUrl(appOrigin, key, location.origin, lang);
+    }
     panel.classList.toggle("open", open);
     button.setAttribute("aria-expanded", String(open));
     if (open) dot.classList.remove("on");
@@ -118,4 +153,12 @@ async function start(scriptSrc: string, key: string) {
 
   shadow.append(style, panel, button);
   document.body.append(host);
+
+  applyOp = (op) => {
+    const next = op === "toggle" ? !open : op === "open";
+    if (next !== open) setOpen(next);
+  };
+  const queued = pendingOps.splice(0);
+  for (const op of queued) applyOp(op);
+  if (queued.length === 0 && parseFlag(script?.dataset.openOnLoad)) setOpen(true);
 }

@@ -1,9 +1,11 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 import { APP_NAME, MAX_MESSAGE_LENGTH, chatResponseSchema, type WidgetConfig } from "@askwell/shared";
 import { MESSAGE_SOURCE, getVisitorId, parseParentOrigin, type PanelMessage } from "@/lib/embed";
+import { getStrings, localizeConfigText, resolveLang } from "@/lib/embed-i18n";
+import { clearChat, loadChat, saveChat } from "@/lib/embed-storage";
 
 type Line = {
   id: number;
@@ -12,12 +14,22 @@ type Line = {
   sources?: string[];
   followUps?: string[];
 };
+const noopSubscribe = () => () => {};
 type Load = { state: "loading" } | { state: "error" } | { state: "ready"; config: WidgetConfig };
 
 export function EmbedPanel() {
   const params = useSearchParams();
   const key = params.get("key");
   const parentOrigin = parseParentOrigin(params.get("origin"));
+
+  // The loader passes the page's language; without it, follow the browser (after mount, so
+  // the server render and the first client render agree).
+  const browserLang = useSyncExternalStore(
+    noopSubscribe,
+    () => navigator.language,
+    () => null,
+  );
+  const t = getStrings(resolveLang(params.get("lang") ?? browserLang));
 
   const [fetched, setLoad] = useState<Load>({ state: "loading" });
   const load: Load = key ? fetched : { state: "error" };
@@ -35,6 +47,7 @@ export function EmbedPanel() {
   const conversationId = useRef<string | null>(null);
   const nextId = useRef(1);
   const visitorId = useRef<string | null>(null);
+  const storageRef = useRef<Storage | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -54,15 +67,26 @@ export function EmbedPanel() {
     } catch {
       storage = null;
     }
+    storageRef.current = storage;
     visitorId.current = getVisitorId(storage);
 
     if (!key) return;
+
     const controller = new AbortController();
     fetch(`/api/widget/config?key=${encodeURIComponent(key)}${parentOrigin ? `&origin=${encodeURIComponent(parentOrigin)}` : ""}`, {
       signal: controller.signal,
     })
       .then((res) => (res.ok ? (res.json() as Promise<WidgetConfig>) : Promise.reject(new Error("config"))))
-      .then((config) => setLoad({ state: "ready", config }))
+      .then((config) => {
+        // Pick up where this visitor left off on this site.
+        const saved = loadChat(storage, key, Date.now());
+        if (saved) {
+          conversationId.current = saved.conversationId;
+          nextId.current = saved.lines.length + 1;
+          setLines(saved.lines.map((line, i) => ({ id: i + 1, ...line })));
+        }
+        setLoad({ state: "ready", config });
+      })
       .catch((err) => {
         if (err?.name !== "AbortError") setLoad({ state: "error" });
       });
@@ -97,6 +121,17 @@ export function EmbedPanel() {
     endRef.current?.scrollIntoView({ block: "end" });
   }, [lines, typing]);
 
+  // Remember the conversation so a page change or reload does not lose it.
+  useEffect(() => {
+    if (!key || !conversationId.current || lines.length === 0) return;
+    saveChat(
+      storageRef.current,
+      key,
+      { conversationId: conversationId.current, lines: lines.map(({ role, body, sources, followUps }) => ({ role, body, sources, followUps })) },
+      Date.now(),
+    );
+  }, [lines, key]);
+
   const addBotLine = useCallback(
     (body: string, sources?: string[], followUps?: string[]) => {
       setLines((prev) => [...prev, { id: nextId.current++, role: "bot", body, sources, followUps }]);
@@ -116,16 +151,24 @@ export function EmbedPanel() {
       setLines((prev) => [...prev, { id: nextId.current++, role: "visitor", body }]);
       setTyping(true);
       try {
-        const res = await fetch("/api/widget/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            key,
-            visitorId: visitorId.current,
-            conversationId: conversationId.current ?? undefined,
-            message: body,
-          }),
-        });
+        const post = (conversation: string | null) =>
+          fetch("/api/widget/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              key,
+              visitorId: visitorId.current,
+              conversationId: conversation ?? undefined,
+              message: body,
+            }),
+          });
+        let res = await post(conversationId.current);
+        // A remembered conversation the server no longer knows: start a new one, keep the message.
+        if (res.status === 404 && conversationId.current) {
+          conversationId.current = null;
+          clearChat(storageRef.current, key);
+          res = await post(null);
+        }
         const data: unknown = await res.json().catch(() => null);
         const parsed = chatResponseSchema.safeParse(data);
         if (res.ok && parsed.success) {
@@ -139,19 +182,19 @@ export function EmbedPanel() {
           }
         } else {
           const message = (data as { error?: { message?: unknown } } | null)?.error?.message;
-          const fallback = typeof message === "string" ? message : "Something went wrong. Please try again.";
+          const fallback = typeof message === "string" ? message : t.errorGeneric;
           addBotLine(fallback);
           if (fallback.includes("leave your email") || fallback.includes("temporarily unavailable")) {
             setShowLeadForm({ open: true, type: "inquiry" });
           }
         }
       } catch {
-        addBotLine("Could not reach the server. Check your connection and try again.");
+        addBotLine(t.errorNetwork);
       } finally {
         setTyping(false);
       }
     },
-    [addBotLine, key, typing],
+    [addBotLine, key, t, typing],
   );
 
   async function submitLead(event: FormEvent) {
@@ -177,13 +220,13 @@ export function EmbedPanel() {
         setLeadEmail("");
         setLeadName("");
         setLeadPhone("");
-        addBotLine("Thank you! We've received your contact info and our team will follow up soon.");
+        addBotLine(t.thanks);
       } else {
         const body = (await res.json().catch(() => null)) as { error?: { message?: string } } | null;
-        setLeadError(body?.error?.message ?? "Could not save your contact info. Please try again.");
+        setLeadError(body?.error?.message ?? t.errorLeadSave);
       }
     } catch {
-      setLeadError("Network error. Please try again.");
+      setLeadError(t.errorLeadNetwork);
     } finally {
       setLeadBusy(false);
     }
@@ -196,24 +239,25 @@ export function EmbedPanel() {
 
   const startNewChat = useCallback(() => {
     conversationId.current = null;
+    if (key) clearChat(storageRef.current, key);
     setLines([]);
     setShowLeadForm(null);
     setDraft("");
-  }, []);
+  }, [key]);
 
   if (load.state === "loading") {
-    return <div className="h-full animate-pulse bg-glass" aria-busy="true" aria-label="Loading chat" />;
+    return <div className="h-full animate-pulse bg-glass" aria-busy="true" aria-label={t.loading} />;
   }
   if (load.state === "error") {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
-        <p className="font-medium">Chat is unavailable</p>
-        <p className="text-sm text-muted">Please try again later.</p>
+        <p className="font-medium">{t.unavailable}</p>
+        <p className="text-sm text-muted">{t.tryLater}</p>
       </div>
     );
   }
 
-  const { config } = load;
+  const config = { ...load.config, ...localizeConfigText(load.config, t) };
   return (
     <div className="flex h-full flex-col bg-background">
       <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
@@ -223,8 +267,8 @@ export function EmbedPanel() {
             <button
               type="button"
               onClick={startNewChat}
-              aria-label="Start new chat"
-              title="Start new chat"
+              aria-label={t.newChat}
+              title={t.newChat}
               className="flex h-8 items-center gap-1.5 rounded-full px-2.5 text-xs text-muted hover:bg-glass-strong hover:text-foreground transition"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -233,13 +277,13 @@ export function EmbedPanel() {
                 <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
                 <path d="M3 21v-5h5" />
               </svg>
-              <span>New chat</span>
+              <span>{t.newChat}</span>
             </button>
           )}
           <button
             type="button"
             onClick={() => tell({ source: MESSAGE_SOURCE, type: "close" })}
-            aria-label="Close chat"
+            aria-label={t.close}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full hover:bg-glass-strong focus-visible:outline-2 focus-visible:outline-accent"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -249,7 +293,7 @@ export function EmbedPanel() {
         </div>
       </header>
 
-      <div role="log" aria-live="polite" aria-label="Conversation" className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+      <div role="log" aria-live="polite" aria-label={t.conversation} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
         {lines.length === 0 && (
           <div className="space-y-3">
             <p className="text-sm text-muted">{config.welcomeMessage}</p>
@@ -303,7 +347,7 @@ export function EmbedPanel() {
                   disabled={typing}
                   className="rounded-full border border-border bg-glass px-3 py-1 text-xs text-foreground/85 transition hover:bg-glass-strong hover:text-foreground text-left disabled:opacity-50"
                 >
-                  Talk to a person
+                  {t.talkToPerson}
                 </button>
               </div>
             )}
@@ -313,27 +357,25 @@ export function EmbedPanel() {
           <div className="glass rounded-2xl border border-border p-3.5 space-y-2.5 max-w-[90%]">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold text-foreground">
-                {showLeadForm.type === "handoff" ? "Talk to a person" : "Leave your email"}
+                {showLeadForm.type === "handoff" ? t.talkToPerson : t.leaveEmail}
               </p>
               <button
                 type="button"
                 onClick={() => setShowLeadForm(null)}
                 className="text-xs text-muted hover:text-foreground px-1"
-                aria-label="Dismiss contact form"
+                aria-label={t.dismissForm}
               >
                 ✕
               </button>
             </div>
             <p className="text-[11px] text-muted leading-relaxed">
-              {showLeadForm.type === "handoff"
-                ? "Leave your details and we'll send your question and transcript to the site owner."
-                : "Leave your email and someone from the team will follow up directly."}
+              {showLeadForm.type === "handoff" ? t.handoffHint : t.leaveEmailHint}
             </p>
             <form onSubmit={submitLead} className="space-y-2 pt-1">
               <input
                 type="email"
                 required
-                placeholder="your@email.com (required)"
+                placeholder={t.emailPlaceholder}
                 value={leadEmail}
                 onChange={(e) => setLeadEmail(e.target.value)}
                 disabled={leadBusy}
@@ -342,7 +384,7 @@ export function EmbedPanel() {
               <div className="flex gap-1.5">
                 <input
                   type="text"
-                  placeholder="Name (optional)"
+                  placeholder={t.namePlaceholder}
                   value={leadName}
                   onChange={(e) => setLeadName(e.target.value)}
                   disabled={leadBusy}
@@ -351,7 +393,7 @@ export function EmbedPanel() {
                 />
                 <input
                   type="tel"
-                  placeholder="Phone (optional)"
+                  placeholder={t.phonePlaceholder}
                   value={leadPhone}
                   onChange={(e) => setLeadPhone(e.target.value)}
                   disabled={leadBusy}
@@ -365,13 +407,13 @@ export function EmbedPanel() {
                 disabled={leadBusy || !leadEmail.trim()}
                 className="h-8 w-full rounded-xl bg-accent px-3 text-xs font-medium text-accent-foreground transition hover:opacity-90 disabled:opacity-50"
               >
-                {leadBusy ? "Sending..." : "Submit details"}
+                {leadBusy ? t.sending : t.submitDetails}
               </button>
             </form>
           </div>
         )}
         {typing && (
-          <div className="flex justify-start" aria-label="Typing" role="status">
+          <div className="flex justify-start" aria-label={t.typing} role="status">
             <span className="glass flex gap-1 rounded-2xl px-4 py-3">
               {[0, 1, 2].map((i) => (
                 <span
@@ -388,7 +430,7 @@ export function EmbedPanel() {
 
       <form onSubmit={send} className="flex gap-2 border-t border-border p-3">
         <label htmlFor="message" className="sr-only">
-          Your message
+          {t.yourMessage}
         </label>
         <input
           ref={inputRef}
@@ -396,7 +438,7 @@ export function EmbedPanel() {
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           maxLength={MAX_MESSAGE_LENGTH}
-          placeholder="Type your message"
+          placeholder={t.placeholder}
           autoComplete="off"
           className="h-11 min-w-0 flex-1 rounded-full border border-border bg-glass-strong px-4 text-base outline-none focus-visible:ring-2 focus-visible:ring-accent"
         />
@@ -405,24 +447,24 @@ export function EmbedPanel() {
           disabled={typing || draft.trim() === ""}
           className="h-11 rounded-full bg-accent px-5 text-sm font-medium text-accent-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
         >
-          Send
+          {t.send}
         </button>
       </form>
 
       <div className="flex flex-col items-center gap-1 pb-2.5 px-3 text-center text-xs text-muted">
         <p>
-          Chats are stored by the site owner.{" "}
+          {t.storedBy}{" "}
           <a
             href="/privacy"
             target="_blank"
             rel="noopener noreferrer"
             className="underline hover:text-foreground"
           >
-            Privacy
+            {t.privacy}
           </a>
         </p>
         {config.showBadge && (
-          <p className="text-[11px] opacity-80">Powered by {APP_NAME}</p>
+          <p className="text-[11px] opacity-80">{t.poweredBy} {APP_NAME}</p>
         )}
       </div>
     </div>
