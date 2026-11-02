@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { EmptyState } from "@/components/empty-state";
+import { AllowedDomainsForm } from "@/components/allowed-domains-form";
 import { CopyBlock } from "@/components/copy-block";
 import { InstallStatus } from "@/components/install-status";
 import { PlatformSteps } from "@/components/platform-steps";
@@ -101,6 +102,13 @@ async function InstallContent({ searchParams }: { searchParams: Promise<{ projec
             </p>
             <CopyBlock text={snippet} kind="snippet" label="Copy code" />
           </section>
+
+          <AllowedDomainsForm
+            key={project.id}
+            projectId={project.id}
+            domains={project.allowedDomains}
+            seenHost={seen?.data?.last_seen_host ?? null}
+          />
 
           <section className="glass flex flex-col gap-3 p-4">
             <h2 className="text-lg font-semibold">2. Paste it into your website</h2>

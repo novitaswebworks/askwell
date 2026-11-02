@@ -17,13 +17,14 @@ export async function PATCH(req: Request, { params }: Context) {
   if (!isUuid(id)) return apiError("not_found", "Project not found.");
   const parsed = updateProjectSchema.safeParse(await readJson(req));
   if (!parsed.success) {
-    return apiError("invalid_input", "Enter a project name (1 to 100 characters) or a description (up to 600).");
+    return apiError("invalid_input", "Enter a project name (1 to 100 characters), a description (up to 600), or up to 10 website addresses like example.com.");
   }
 
-  // Only the columns the owner may change (name, about); RLS limits the row.
-  const changes: { name?: string; about?: string } = {};
+  // Only the columns the owner may change (name, about, allowed domains); RLS limits the row.
+  const changes: { name?: string; about?: string; allowed_domains?: string[] } = {};
   if (parsed.data.name !== undefined) changes.name = parsed.data.name;
   if (parsed.data.about !== undefined) changes.about = parsed.data.about;
+  if (parsed.data.allowedDomains !== undefined) changes.allowed_domains = parsed.data.allowedDomains;
 
   const { data, error } = await createOwnerClient()
     .from("projects")

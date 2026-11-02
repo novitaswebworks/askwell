@@ -224,6 +224,7 @@ export type Database = {
       projects: {
         Row: {
           about: string
+          allowed_domains: string[]
           created_at: string
           id: string
           messages_used: number
@@ -234,6 +235,7 @@ export type Database = {
         }
         Insert: {
           about?: string
+          allowed_domains?: string[]
           created_at?: string
           id?: string
           messages_used?: number
@@ -244,6 +246,7 @@ export type Database = {
         }
         Update: {
           about?: string
+          allowed_domains?: string[]
           created_at?: string
           id?: string
           messages_used?: number
@@ -330,6 +333,7 @@ export type Database = {
         }
         Returns: {
           about: string
+          allowed_domains: string[]
           created_at: string
           id: string
           messages_used: number

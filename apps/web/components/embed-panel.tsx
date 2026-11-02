@@ -58,14 +58,16 @@ export function EmbedPanel() {
 
     if (!key) return;
     const controller = new AbortController();
-    fetch(`/api/widget/config?key=${encodeURIComponent(key)}`, { signal: controller.signal })
+    fetch(`/api/widget/config?key=${encodeURIComponent(key)}${parentOrigin ? `&origin=${encodeURIComponent(parentOrigin)}` : ""}`, {
+      signal: controller.signal,
+    })
       .then((res) => (res.ok ? (res.json() as Promise<WidgetConfig>) : Promise.reject(new Error("config"))))
       .then((config) => setLoad({ state: "ready", config }))
       .catch((err) => {
         if (err?.name !== "AbortError") setLoad({ state: "error" });
       });
     return () => controller.abort();
-  }, [key]);
+  }, [key, parentOrigin]);
 
   // Messages from the loader: visibility only, and only from our parent window.
   useEffect(() => {
