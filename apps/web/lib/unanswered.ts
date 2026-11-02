@@ -1,5 +1,5 @@
 import "server-only";
-import { NO_ANSWER } from "@/lib/chat";
+import { NO_ANSWER_VARIANTS } from "@/lib/chat";
 import { normalizeQuestion } from "@/lib/answers";
 import { createOwnerClient } from "@/lib/supabase/owner";
 
@@ -49,7 +49,7 @@ export async function loadUnanswered(projectId: string, answered: string[]): Pro
     .from("messages")
     .select("conversation_id, created_at, conversations!inner(project_id)")
     .eq("role", "bot")
-    .eq("body", NO_ANSWER)
+    .in("body", NO_ANSWER_VARIANTS)
     .eq("conversations.project_id", projectId)
     .order("created_at", { ascending: false })
     .limit(MAX_BOT_ROWS);

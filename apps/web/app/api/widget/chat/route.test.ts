@@ -167,14 +167,12 @@ describe("POST /api/widget/chat", () => {
     expect(data.followUps).toEqual(["How do I initiate a return?", "Who pays shipping?"]);
   });
 
-  it("provides graceful contact follow-up suggestions when answer is unknown", async () => {
+  it("provides graceful NO_ANSWER when nothing is relevant", async () => {
     rpcs({ match_chunks_hybrid: { data: [], error: null } });
     const res = await call(body);
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.reply).toBe(NO_ANSWER);
-    expect(data.followUps).toBeDefined();
-    expect(data.followUps?.length).toBeGreaterThan(0);
   });
 });
 

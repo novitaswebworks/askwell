@@ -102,7 +102,7 @@ export function EmbedPanel() {
 
   const sendMessage = useCallback(
     async (rawText: string) => {
-      const body = rawText.trim();
+      const body = rawText.trim().slice(0, MAX_MESSAGE_LENGTH);
       if (!body || typing || !key) return;
       setDraft("");
       setLines((prev) => [...prev, { id: nextId.current++, role: "visitor", body }]);

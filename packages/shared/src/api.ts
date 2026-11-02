@@ -39,7 +39,7 @@ export const widgetConfigSchema = z.object({
   animation: animationSchema,
   headerText: z.string().min(1).max(60),
   showBadge: z.boolean(),
-  welcomeMessage: z.string().min(1).max(200),
+  welcomeMessage: z.string().trim().min(1).max(200),
   starterQuestions: z.array(z.string().trim().min(1).max(100)).max(4),
 });
 export type WidgetConfig = z.infer<typeof widgetConfigSchema>;

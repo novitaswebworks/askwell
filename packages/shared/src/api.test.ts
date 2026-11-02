@@ -61,6 +61,8 @@ describe("updateConfigSchema", () => {
     expect(updateConfigSchema.safeParse({ buttonColor: "#ff0000" }).success).toBe(true);
     expect(updateConfigSchema.safeParse({}).success).toBe(false);
     expect(updateConfigSchema.safeParse({ buttonColor: "red" }).success).toBe(false);
+    expect(updateConfigSchema.safeParse({ welcomeMessage: "   " }).success).toBe(false);
+    expect(updateConfigSchema.safeParse({ welcomeMessage: "Welcome!" }).success).toBe(true);
   });
 });
 

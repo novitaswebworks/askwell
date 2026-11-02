@@ -283,7 +283,7 @@ export function CustomizeManager({
                   className="h-10 flex-1 rounded-xl border border-border bg-glass-strong px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50"
                   placeholder={`Question ${idx + 1}`}
                 />
-                {canCustomize && (config.starterQuestions ?? []).length > 1 && (
+                {canCustomize && (
                   <button
                     type="button"
                     onClick={() => {

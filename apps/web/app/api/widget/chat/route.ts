@@ -10,7 +10,6 @@ import { apiError, isUuid, readJson } from "@/lib/api";
 import {
   buildPrompt,
   buildSystemPrompt,
-  DEFAULT_FOLLOW_UPS,
   HUMAN_QUERY,
   MATCH_COUNT,
   NO_ANSWER,
@@ -120,10 +119,8 @@ export async function POST(req: Request) {
 
     if (understanding.type === "smalltalk") {
       reply = SMALLTALK_REPLIES[understanding.smalltalk];
-      followUps = DEFAULT_FOLLOW_UPS;
     } else if (understanding.type === "off_topic") {
       reply = OFF_TOPIC_REPLY;
-      followUps = DEFAULT_FOLLOW_UPS.slice(0, 2);
     } else {
       // Retrieve (this project's ready sources only) and answer.
       const query = understanding.type === "human" ? HUMAN_QUERY : understanding.standalone;
@@ -141,7 +138,6 @@ export async function POST(req: Request) {
       const chunks = relevantChunks((matches ?? []) as MatchedChunk[]);
       if (chunks.length === 0) {
         reply = NO_ANSWER;
-        followUps = ["How can I contact support?", "What are your business hours?"];
       } else {
         const sourceIds = [...new Set(chunks.map((c) => c.source_id))];
         const { data: sourcesData } = await service
@@ -157,14 +153,12 @@ export async function POST(req: Request) {
         if (!raw) {
           reply = NO_ANSWER;
           sources = undefined;
-          followUps = ["How can I contact support?", "What are your business hours?"];
         } else {
           const parsed = parseAnswerAndFollowUps(raw);
           reply = parsed.reply || NO_ANSWER;
           if (reply.includes(NO_ANSWER)) {
             reply = NO_ANSWER;
             sources = undefined;
-            followUps = ["How can I contact support?", "What are your business hours?"];
           } else {
             followUps = parsed.followUps.length > 0 ? parsed.followUps : undefined;
           }

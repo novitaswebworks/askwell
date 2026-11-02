@@ -1,9 +1,13 @@
 // Pure helpers for the chat route.
 
+import { MAX_MESSAGE_LENGTH } from "@askwell/shared";
 import type { SmalltalkKind } from "./understand";
 
 export const NO_ANSWER =
   "I don't have that information right now. Please leave your email or reach out to us directly, and our team will be glad to help you.";
+export const LEGACY_NO_ANSWER =
+  "I don't have that information. Please contact the business directly and they'll be glad to help.";
+export const NO_ANSWER_VARIANTS = [NO_ANSWER, LEGACY_NO_ANSWER];
 export const OFF_TOPIC_REPLY =
   "I can only help with questions about this business and its services. Is there something about our offerings I can help you with?";
 export const SMALLTALK_REPLIES: Record<SmalltalkKind, string> = {
@@ -57,7 +61,7 @@ export function parseAnswerAndFollowUps(raw: string): { reply: string; followUps
     const trimmed = line.trim();
     const match = trimmed.match(/^Follow[- ]up:\s*(.+)$/i);
     if (match && match[1]) {
-      const q = match[1].trim().replace(/^["']|["']$/g, "");
+      const q = match[1].trim().replace(/^["']|["']$/g, "").slice(0, MAX_MESSAGE_LENGTH);
       if (q && followUps.length < 3) {
         followUps.push(q);
       }
