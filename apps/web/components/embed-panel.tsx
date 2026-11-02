@@ -4,6 +4,8 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 import { APP_NAME, MAX_MESSAGE_LENGTH, chatResponseSchema, type WidgetConfig } from "@askwell/shared";
 import { MESSAGE_SOURCE, getVisitorId, parseParentOrigin, type PanelMessage } from "@/lib/embed";
+import { LeadForm } from "@/components/embed-lead-form";
+import { RatingButtons } from "@/components/embed-rating";
 import { getStrings, localizeConfigText, resolveLang } from "@/lib/embed-i18n";
 import { clearChat, loadChat, saveChat } from "@/lib/embed-storage";
 
@@ -13,6 +15,8 @@ type Line = {
   body: string;
   sources?: string[];
   followUps?: string[];
+  rateable?: boolean; // a real answer from the server, so it can be rated
+  rating?: 1 | -1 | null;
 };
 const noopSubscribe = () => () => {};
 type Load = { state: "loading" } | { state: "error" } | { state: "ready"; config: WidgetConfig };
@@ -127,14 +131,14 @@ export function EmbedPanel() {
     saveChat(
       storageRef.current,
       key,
-      { conversationId: conversationId.current, lines: lines.map(({ role, body, sources, followUps }) => ({ role, body, sources, followUps })) },
+      { conversationId: conversationId.current, lines: lines.map(({ role, body, sources, followUps, rateable, rating }) => ({ role, body, sources, followUps, rateable, rating })) },
       Date.now(),
     );
   }, [lines, key]);
 
   const addBotLine = useCallback(
-    (body: string, sources?: string[], followUps?: string[]) => {
-      setLines((prev) => [...prev, { id: nextId.current++, role: "bot", body, sources, followUps }]);
+    (body: string, sources?: string[], followUps?: string[], rateable = false) => {
+      setLines((prev) => [...prev, { id: nextId.current++, role: "bot", body, sources, followUps, rateable }]);
       if (!open.current) {
         unread.current += 1;
         tell({ source: MESSAGE_SOURCE, type: "unread", count: unread.current });
@@ -173,7 +177,7 @@ export function EmbedPanel() {
         const parsed = chatResponseSchema.safeParse(data);
         if (res.ok && parsed.success) {
           conversationId.current = parsed.data.conversationId;
-          addBotLine(parsed.data.reply, parsed.data.sources, parsed.data.followUps);
+          addBotLine(parsed.data.reply, parsed.data.sources, parsed.data.followUps, true);
           if (
             parsed.data.reply.includes("leave your email") ||
             parsed.data.reply.includes("temporarily unavailable")
@@ -195,6 +199,27 @@ export function EmbedPanel() {
       }
     },
     [addBotLine, key, t, typing],
+  );
+
+  // Thumbs on the latest answer. Shown at once; put back if the server says no.
+  const rate = useCallback(
+    async (lineId: number, next: 1 | -1 | null, previous: 1 | -1 | null) => {
+      if (!key || !conversationId.current) return;
+      const set = (rating: 1 | -1 | null) =>
+        setLines((prev) => prev.map((l) => (l.id === lineId ? { ...l, rating } : l)));
+      set(next);
+      try {
+        const res = await fetch("/api/widget/rate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ key, conversationId: conversationId.current, rating: next ?? 0 }),
+        });
+        if (!res.ok) set(previous);
+      } catch {
+        set(previous);
+      }
+    },
+    [key],
   );
 
   async function submitLead(event: FormEvent) {
@@ -349,68 +374,33 @@ export function EmbedPanel() {
                 >
                   {t.talkToPerson}
                 </button>
+                {line.rateable && (
+                  <RatingButtons
+                    rating={line.rating ?? null}
+                    onRate={(next) => void rate(line.id, next, line.rating ?? null)}
+                    helpfulLabel={t.helpful}
+                    notHelpfulLabel={t.notHelpful}
+                  />
+                )}
               </div>
             )}
           </div>
         ))}
         {showLeadForm && (
-          <div className="glass rounded-2xl border border-border p-3.5 space-y-2.5 max-w-[90%]">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold text-foreground">
-                {showLeadForm.type === "handoff" ? t.talkToPerson : t.leaveEmail}
-              </p>
-              <button
-                type="button"
-                onClick={() => setShowLeadForm(null)}
-                className="text-xs text-muted hover:text-foreground px-1"
-                aria-label={t.dismissForm}
-              >
-                ✕
-              </button>
-            </div>
-            <p className="text-[11px] text-muted leading-relaxed">
-              {showLeadForm.type === "handoff" ? t.handoffHint : t.leaveEmailHint}
-            </p>
-            <form onSubmit={submitLead} className="space-y-2 pt-1">
-              <input
-                type="email"
-                required
-                placeholder={t.emailPlaceholder}
-                value={leadEmail}
-                onChange={(e) => setLeadEmail(e.target.value)}
-                disabled={leadBusy}
-                className="h-8 w-full rounded-xl border border-border bg-glass-strong px-3 text-xs outline-none focus-visible:ring-1 focus-visible:ring-accent"
-              />
-              <div className="flex gap-1.5">
-                <input
-                  type="text"
-                  placeholder={t.namePlaceholder}
-                  value={leadName}
-                  onChange={(e) => setLeadName(e.target.value)}
-                  disabled={leadBusy}
-                  maxLength={100}
-                  className="h-8 flex-1 min-w-0 rounded-xl border border-border bg-glass-strong px-3 text-xs outline-none focus-visible:ring-1 focus-visible:ring-accent"
-                />
-                <input
-                  type="tel"
-                  placeholder={t.phonePlaceholder}
-                  value={leadPhone}
-                  onChange={(e) => setLeadPhone(e.target.value)}
-                  disabled={leadBusy}
-                  maxLength={30}
-                  className="h-8 flex-1 min-w-0 rounded-xl border border-border bg-glass-strong px-3 text-xs outline-none focus-visible:ring-1 focus-visible:ring-accent"
-                />
-              </div>
-              {leadError && <p className="text-[11px] text-red-500">{leadError}</p>}
-              <button
-                type="submit"
-                disabled={leadBusy || !leadEmail.trim()}
-                className="h-8 w-full rounded-xl bg-accent px-3 text-xs font-medium text-accent-foreground transition hover:opacity-90 disabled:opacity-50"
-              >
-                {leadBusy ? t.sending : t.submitDetails}
-              </button>
-            </form>
-          </div>
+          <LeadForm
+            type={showLeadForm.type}
+            t={t}
+            email={leadEmail}
+            name={leadName}
+            phone={leadPhone}
+            busy={leadBusy}
+            error={leadError}
+            onEmail={setLeadEmail}
+            onName={setLeadName}
+            onPhone={setLeadPhone}
+            onSubmit={submitLead}
+            onDismiss={() => setShowLeadForm(null)}
+          />
         )}
         {typing && (
           <div className="flex justify-start" aria-label={t.typing} role="status">

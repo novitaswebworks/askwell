@@ -15,6 +15,8 @@ export interface Strings {
   newChat: string;
   close: string;
   talkToPerson: string;
+  helpful: string;
+  notHelpful: string;
   leaveEmail: string;
   handoffHint: string;
   leaveEmailHint: string;
@@ -49,6 +51,8 @@ const en: Strings = {
   newChat: "New chat",
   close: "Close chat",
   talkToPerson: "Talk to a person",
+  helpful: "This answer helped",
+  notHelpful: "This answer did not help",
   leaveEmail: "Leave your email",
   handoffHint: "Leave your details and we'll send your question and transcript to the site owner.",
   leaveEmailHint: "Leave your email and someone from the team will follow up directly.",
@@ -83,6 +87,8 @@ const es: Strings = {
   newChat: "Nuevo chat",
   close: "Cerrar el chat",
   talkToPerson: "Hablar con una persona",
+  helpful: "Esta respuesta me ayudó",
+  notHelpful: "Esta respuesta no me ayudó",
   leaveEmail: "Deja tu correo",
   handoffHint: "Deja tus datos y enviaremos tu pregunta y la conversación al propietario del sitio.",
   leaveEmailHint: "Deja tu correo y alguien del equipo te responderá directamente.",
@@ -117,6 +123,8 @@ const fr: Strings = {
   newChat: "Nouveau chat",
   close: "Fermer le chat",
   talkToPerson: "Parler à une personne",
+  helpful: "Cette réponse m'a aidé",
+  notHelpful: "Cette réponse ne m'a pas aidé",
   leaveEmail: "Laissez votre e-mail",
   handoffHint: "Laissez vos coordonnées et nous enverrons votre question et la conversation au propriétaire du site.",
   leaveEmailHint: "Laissez votre e-mail et quelqu'un de l'équipe vous répondra directement.",
@@ -151,6 +159,8 @@ const de: Strings = {
   newChat: "Neuer Chat",
   close: "Chat schließen",
   talkToPerson: "Mit einer Person sprechen",
+  helpful: "Diese Antwort hat geholfen",
+  notHelpful: "Diese Antwort hat nicht geholfen",
   leaveEmail: "E-Mail hinterlassen",
   handoffHint: "Hinterlassen Sie Ihre Daten, dann senden wir Ihre Frage und den Chatverlauf an den Betreiber der Website.",
   leaveEmailHint: "Hinterlassen Sie Ihre E-Mail-Adresse, dann meldet sich jemand aus dem Team direkt bei Ihnen.",
@@ -185,6 +195,8 @@ const hi: Strings = {
   newChat: "नई चैट",
   close: "चैट बंद करें",
   talkToPerson: "किसी व्यक्ति से बात करें",
+  helpful: "इस जवाब से मदद मिली",
+  notHelpful: "इस जवाब से मदद नहीं मिली",
   leaveEmail: "अपना ईमेल दें",
   handoffHint: "अपनी जानकारी दें, हम आपका सवाल और बातचीत साइट के मालिक को भेज देंगे।",
   leaveEmailHint: "अपना ईमेल दें, टीम का कोई सदस्य सीधे आपसे संपर्क करेगा।",

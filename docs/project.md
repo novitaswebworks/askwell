@@ -158,6 +158,7 @@ Two parts: a small loader script + an iframe.
 | JS API    | `window.Askwell.open()`, `.close()`, `.toggle()` for the site's own buttons. Calls made before the widget has loaded run once it is ready |
 | Languages | The panel's own labels come in English, Spanish, French, German and Hindi. The owner's words (header, welcome, starters, button label) are never translated; untouched defaults are |
 | Memory    | The panel keeps the current conversation (last 40 lines, 24 hours) in its own localStorage per project, so a page change or reload continues it. "New chat" clears it |
+| Ratings   | Thumbs up/down under the latest answer; pressing the same one again takes it back. Sent to `POST /api/widget/rate`; owners see them in Conversations |
 | Isolation | Button in a shadow root. No global CSS. Nothing else touches the host page.                  |
 | Errors    | Bad key → nothing renders                                                                    |
 

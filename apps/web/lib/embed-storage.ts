@@ -10,6 +10,8 @@ export interface SavedLine {
   body: string;
   sources?: string[];
   followUps?: string[];
+  rateable?: boolean;
+  rating?: 1 | -1 | null;
 }
 export interface SavedChat {
   conversationId: string;
@@ -32,6 +34,8 @@ function cleanLine(raw: unknown): SavedLine | null {
     body: l.body.slice(0, 5000),
     ...(strings(l.sources) ? { sources: l.sources.slice(0, 10) } : {}),
     ...(strings(l.followUps) ? { followUps: l.followUps.slice(0, 4) } : {}),
+    ...(l.rateable === true ? { rateable: true } : {}),
+    ...(l.rating === 1 || l.rating === -1 ? { rating: l.rating } : {}),
   };
 }
 
