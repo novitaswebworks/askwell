@@ -115,6 +115,7 @@ async function KnowledgeContent({ searchParams }: { searchParams: Promise<{ proj
           <AnswerBuilder key={`answers-${project.id}`} projectId={project.id} saved={saved} unanswered={unanswered} />
 
           <KnowledgeManager
+            key={`sources-${project.id}`}
             projectId={project.id}
             sources={sources}
             maxSources={getPlanLimits(plan).maxKnowledgeSources}
@@ -130,6 +131,7 @@ async function KnowledgeContent({ searchParams }: { searchParams: Promise<{ proj
               Paste that document into &ldquo;Paste text&rdquo; above.
             </p>
             <CopyBlock
+              key={`interview-${project.id}`}
               text={buildInterviewPrompt()}
               kind="interview_prompt"
               label="Copy the interview message"
