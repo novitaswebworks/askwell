@@ -43,7 +43,9 @@ export function pairUnanswered(bots: BotRow[], visitors: VisitorRow[], answered:
 }
 
 // Owner client: RLS limits both reads to the signed-in owner's own conversations.
-export async function loadUnanswered(projectId: string, answered: string[]): Promise<Unanswered[]> {
+// `answered` may still be loading: the reads below start straight away and only wait for
+// it at the end, so the page does not have to fetch the owner's answers first.
+export async function loadUnanswered(projectId: string, answered: string[] | Promise<string[]>): Promise<Unanswered[]> {
   const owner = createOwnerClient();
   const { data: bots, error } = await owner
     .from("messages")
@@ -54,7 +56,10 @@ export async function loadUnanswered(projectId: string, answered: string[]): Pro
     .order("created_at", { ascending: false })
     .limit(MAX_BOT_ROWS);
   if (error) throw new Error(`Could not load unanswered questions: ${error.message}`);
-  if (!bots || bots.length === 0) return [];
+  if (!bots || bots.length === 0) {
+    await answered; // settle it, so a failed answers read is never left unhandled
+    return [];
+  }
 
   const ids = [...new Set(bots.map((b) => b.conversation_id))];
   const { data: visitors, error: visitorError } = await owner
@@ -67,6 +72,6 @@ export async function loadUnanswered(projectId: string, answered: string[]): Pro
   return pairUnanswered(
     bots.map((b) => ({ conversation_id: b.conversation_id, created_at: b.created_at })),
     visitors ?? [],
-    answered,
+    await answered,
   );
 }

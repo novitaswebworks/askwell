@@ -25,11 +25,10 @@ const stored = {
   last_seen_host: null,
 };
 
-function mockTables(plan: string, project: unknown = { id: "p1", owner_id: "user_1" }) {
-  from.mockImplementation((table: string) =>
-    queryResult({
-      data: table === "projects" ? project : table === "widget_configs" ? stored : { plan },
-    }),
+function mockTables(plan: string, project: Record<string, unknown> | null = { id: "p1", owner_id: "user_1" }) {
+  // The route reads the project, its widget config and its owner's plan in one query.
+  from.mockImplementation(() =>
+    queryResult({ data: project === null ? null : { ...project, widget_configs: stored, accounts: { plan } } }),
   );
 }
 
@@ -54,6 +53,12 @@ describe("GET /api/widget/config", () => {
     mockTables("pro");
     const body = await (await get("pk_abcdefgh12345678")).json();
     expect(body).toMatchObject({ buttonColor: "#ff0000", position: "top-left", showBadge: false });
+  });
+  it("reads everything in one database query and lets caches keep it a while", async () => {
+    mockTables("free");
+    const res = await get("pk_abcdefgh12345678");
+    expect(from).toHaveBeenCalledTimes(1);
+    expect(res.headers.get("cache-control")).toBe("public, max-age=60, stale-while-revalidate=300");
   });
   it("allows any origin", async () => {
     mockTables("free");

@@ -61,24 +61,22 @@ async function KnowledgeContent({ searchParams }: { searchParams: Promise<{ proj
   let saved: ReturnType<typeof parseSavedAnswers> = null;
   let unanswered: Awaited<ReturnType<typeof loadUnanswered>> = [];
   if (project) {
-    const { data: rows, error: sourcesError } = await owner
-      .from("knowledge_sources")
-      .select(SOURCE_COLUMNS)
-      .eq("project_id", project.id)
-      .order("created_at", { ascending: false });
+    // Three independent reads at once instead of one after another. Each is a trip to the
+    // database, and the page cannot show anything until the slowest one is back.
+    const answersRead = Promise.resolve(
+      owner.from("knowledge_sources").select("answers").eq("project_id", project.id).not("answers", "is", null).limit(1).maybeSingle(),
+    );
+    const answeredQuestions = answersRead.then(({ data: row }) => parseSavedAnswers(row?.answers)?.items.map((i) => i.question) ?? []);
+    const [{ data: rows, error: sourcesError }, { data: answersRow, error: answersError }, unansweredList] = await Promise.all([
+      owner.from("knowledge_sources").select(SOURCE_COLUMNS).eq("project_id", project.id).order("created_at", { ascending: false }),
+      answersRead,
+      loadUnanswered(project.id, answeredQuestions),
+    ]);
     if (sourcesError) throw new Error(`Could not load knowledge: ${sourcesError.message}`);
-    sources = (rows as SourceRow[]).map(toSource);
-
-    const { data: answersRow, error: answersError } = await owner
-      .from("knowledge_sources")
-      .select("answers")
-      .eq("project_id", project.id)
-      .not("answers", "is", null)
-      .limit(1)
-      .maybeSingle();
     if (answersError) throw new Error(`Could not load answers: ${answersError.message}`);
+    sources = (rows as SourceRow[]).map(toSource);
     saved = parseSavedAnswers(answersRow?.answers);
-    unanswered = await loadUnanswered(project.id, saved?.items.map((i) => i.question) ?? []);
+    unanswered = unansweredList;
   }
 
   return (
