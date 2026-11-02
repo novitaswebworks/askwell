@@ -16,8 +16,27 @@ export const DEFAULT_CHAT_MODEL = "openai/gpt-oss-20b";
 export const DEFAULT_FALLBACK_MODELS = ["qwen/qwen3.8-27b", "openai/gpt-oss-120b"];
 const CHAT_TIMEOUT_MS = 30_000;
 const MIN_ATTEMPT_MS = 3_000;
+// With a backup endpoint set, Groq gets this share of the time and the rest is kept for the backup.
+const GROQ_SHARE_WITH_BACKUP = 0.5;
 
 type Env = Record<string, string | undefined>;
+
+export interface BackupProvider {
+  baseURL: string;
+  apiKey: string;
+  model: string;
+}
+
+// An optional OpenAI-compatible endpoint (for example a self-hosted gateway) tried
+// only after every Groq model has failed. Off unless all three variables are set.
+export function backupProvider(env: Env = process.env): BackupProvider | null {
+  const baseURL = env.BACKUP_LLM_BASE_URL?.trim().replace(/\/$/, "");
+  const apiKey = env.BACKUP_LLM_API_KEY?.trim();
+  const model = env.BACKUP_LLM_MODEL?.trim();
+  if (!baseURL || !apiKey || !model) return null;
+  if (!/^https:\/\//.test(baseURL)) return null;
+  return { baseURL, apiKey, model };
+}
 
 export function chatModelName(env: Env = process.env): string {
   return env.GROQ_CHAT_MODEL?.trim() || DEFAULT_CHAT_MODEL;
@@ -40,6 +59,9 @@ export async function generateAnswer(
   options: { maxOutputTokens?: number; timeoutMs?: number; onGeneration?: (g: Generation) => void } = {},
 ): Promise<string> {
   let lastError: unknown;
+  const backup = backupProvider();
+  const startedAll = Date.now();
+  const totalMs = options.timeoutMs ?? CHAT_TIMEOUT_MS;
   try {
     const groq = createOpenAICompatible({
       name: "groq",
@@ -47,7 +69,7 @@ export async function generateAnswer(
       apiKey: requireEnv("GROQ_API_KEY", process.env.GROQ_API_KEY),
     });
     const models = chatModelNames();
-    const deadline = Date.now() + (options.timeoutMs ?? CHAT_TIMEOUT_MS);
+    const deadline = startedAll + (backup ? totalMs * GROQ_SHARE_WITH_BACKUP : totalMs);
 
     for (const [index, name] of models.entries()) {
       const remaining = deadline - Date.now();
@@ -82,6 +104,35 @@ export async function generateAnswer(
     }
   } catch (error) {
     lastError = error;
+  }
+
+  if (backup) {
+    const remaining = Math.floor(startedAll + totalMs - Date.now());
+    if (remaining >= 500) {
+      const startedAt = Date.now();
+      try {
+        const provider = createOpenAICompatible({ name: "backup", baseURL: backup.baseURL, apiKey: backup.apiKey });
+        const { text, usage } = await generateText({
+          model: provider.chatModel(backup.model),
+          system,
+          prompt,
+          temperature: 0.2,
+          maxOutputTokens: options.maxOutputTokens ?? 800,
+          abortSignal: AbortSignal.timeout(remaining),
+          maxRetries: 0,
+        });
+        options.onGeneration?.({
+          model: `backup:${backup.model}`,
+          inputTokens: usage?.inputTokens,
+          outputTokens: usage?.outputTokens,
+          latencyMs: Date.now() - startedAt,
+        });
+        return text.trim();
+      } catch (error) {
+        lastError = error;
+        console.error(`[backup] ${backup.model} failed:`, error instanceof Error ? error.message : error);
+      }
+    }
   }
   throw new AiUnavailableError(lastError ?? new Error("no time left"));
 }
