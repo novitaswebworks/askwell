@@ -343,6 +343,7 @@ export type Database = {
           p_type: string
         }
         Returns: {
+          answers: Json | null
           created_at: string
           id: string
           project_id: string
