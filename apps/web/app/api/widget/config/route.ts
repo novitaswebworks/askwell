@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { planSchema, widgetConfigQuerySchema, type WidgetConfig } from "@askwell/shared";
 import { apiError } from "@/lib/api";
 import { createServiceClient } from "@/lib/supabase/service";
+import { hostFromHeaders, recordSeen, shouldRecordSeen } from "@/lib/seen";
 import { applyPlanToConfig } from "@/lib/widget-config";
 
 // Public route, called from any website. The key only identifies a project.
@@ -32,7 +33,7 @@ export async function GET(req: Request) {
 
   const { data: stored, error: configError } = await service
     .from("widget_configs")
-    .select("button_color, position, label, animation, header_text, show_badge")
+    .select("button_color, position, label, animation, header_text, show_badge, last_seen_at, last_seen_host")
     .eq("project_id", project.id)
     .single();
   if (configError) return apiError("internal", "Could not load the config.", { headers: CORS });
@@ -43,6 +44,12 @@ export async function GET(req: Request) {
     .eq("clerk_user_id", project.owner_id)
     .single();
   if (accountError) return apiError("internal", "Could not load the config.", { headers: CORS });
+
+  // Note which site is showing the widget, so the Install page can say "Connected".
+  const host = hostFromHeaders(req.headers);
+  if (host && shouldRecordSeen({ at: stored.last_seen_at, host: stored.last_seen_host }, host, Date.now())) {
+    recordSeen(service, project.id, host);
+  }
 
   const config: WidgetConfig = applyPlanToConfig(
     {

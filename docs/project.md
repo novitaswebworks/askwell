@@ -197,10 +197,12 @@ Two parts: a small loader script + an iframe.
 
 ### 6.9 Install
 
-| Item      | Detail                                                               |
-| --------- | -------------------------------------------------------------------- |
-| Content   | Script tag with the project's public key, a copy button, short steps |
-| Done when | Copied snippet works on a plain HTML page                            |
+| Item      | Detail                                                                                                                                                                                                                                  |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Content   | Connection status; the script tag with a copy button; per-platform steps (WordPress, Shopify, Wix, Squarespace, Webflow, plain HTML, other); a copyable AI-helper message; a copyable message (and mailto link) to send to a developer |
+| Status    | "Connected to <site>" once the widget has loaded on a website, else "Waiting". Waiting re-checks every 8 s for 3 min. Not seen for 7 days shows "Seen before, but not lately"                                                           |
+| Detection | `GET /api/widget/config` records the host (from `Origin`, else `Referer`) and time in `widget_configs.last_seen_*`, at most once per 10 min per host. Written by the service client only                                                |
+| Done when | A copied snippet works on a plain HTML page, and the page shows Connected after that page loads                                                                                                                                        |
 
 ### 6.10 Billing
 
@@ -240,7 +242,7 @@ Two parts: a small loader script + an iframe.
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------- |
 | `accounts`          | `clerk_user_id` (PK), `plan` (`free`/`pro`), `cashfree_subscription_id` (nullable), `created_at`                                      | One per Clerk user. Plan lives here, kept in sync by the Cashfree webhook. `cashfree_subscription_id` is our own ID for the owner's subscription (added with the billing migration); it lets the webhook find the owner and lets the owner cancel. |
 | `projects`          | `id`, `owner_id` → accounts, `name`, `about`, `public_key`, `messages_used`, `period_start`, `created_at`                            | `public_key` unique. `about`: the owner's description of the business (up to 600 characters), used by the chat to tell on-topic questions from off-topic ones. |
-| `widget_configs`    | `project_id` (PK), `button_color`, `position`, `label`, `animation`, `header_text`, `show_badge`                                     | One per project                                     |
+| `widget_configs`    | `project_id` (PK), `button_color`, `position`, `label`, `animation`, `header_text`, `show_badge`, `last_seen_at`, `last_seen_host`        | One per project                                     |
 | `knowledge_sources` | `id`, `project_id`, `title`, `type` (`text`/`pdf`/`md`/`txt`), `storage_key`, `status` (`uploading`/`processing`/`ready`/`failed`), `created_at` | `storage_key` null for pasted text                  |
 | `knowledge_chunks`  | `id`, `project_id`, `source_id`, `content`, `embedding vector(1536)`                                                                 | Deleted with the source. HNSW index on `embedding`. |
 | `conversations`     | `id`, `project_id`, `visitor_id`, `created_at`                                                                                       |                                                     |
