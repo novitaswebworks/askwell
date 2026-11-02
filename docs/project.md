@@ -249,7 +249,7 @@ Two parts: a small loader script + an iframe.
 | Table               | Columns                                                                                                                              | Notes                                               |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------- |
 | `accounts`          | `clerk_user_id` (PK), `plan` (`free`/`pro`), `cashfree_subscription_id` (nullable), `created_at`                                      | One per Clerk user. Plan lives here, kept in sync by the Cashfree webhook. `cashfree_subscription_id` is our own ID for the owner's subscription (added with the billing migration); it lets the webhook find the owner and lets the owner cancel. |
-| `projects`          | `id`, `owner_id` → accounts, `name`, `about`, `public_key`, `messages_used`, `period_start`, `created_at`                            | `public_key` unique. `about`: the owner's description of the business (up to 600 characters), used by the chat to tell on-topic questions from off-topic ones. |
+| `projects`          | `id`, `owner_id` → accounts, `name`, `about`, `allowed_domains`, `public_key`, `messages_used`, `period_start`, `created_at`                            | `public_key` unique. `about`: the owner's description of the business (up to 600 characters), used by the chat to tell on-topic questions from off-topic ones. `allowed_domains`: up to 10 domains that may show the widget; empty means any site; subdomains and localhost always match. Enforced in `GET /api/widget/config` (403 for other sites), using the browser's `Origin`, or the `?origin=` the `/embed` panel passes along. It stops a key being pasted onto the wrong site; it is not a defence against someone calling the chat API directly. |
 | `widget_configs`    | `project_id` (PK), `button_color`, `position`, `label`, `animation`, `header_text`, `show_badge`, `last_seen_at`, `last_seen_host`        | One per project                                     |
 | `knowledge_sources` | `id`, `project_id`, `title`, `type` (`text`/`pdf`/`md`/`txt`), `storage_key`, `status` (`uploading`/`processing`/`ready`/`failed`), `answers` (jsonb, null except the builder's source), `created_at` | `storage_key` null for pasted text |
 | `knowledge_chunks`  | `id`, `project_id`, `source_id`, `content`, `embedding vector(1536)`                                                                 | Deleted with the source. HNSW index on `embedding`. |
@@ -283,7 +283,7 @@ Limits run inside Postgres functions only `service_role` may execute: `create_pr
 
 | Route                                                               | Purpose                             |
 | ------------------------------------------------------------------- | ----------------------------------- |
-| `GET/POST /api/projects`, `PATCH/DELETE /api/projects/:id`          | Projects CRUD + limit check. PATCH changes `name` and/or `about`. |
+| `GET/POST /api/projects`, `PATCH/DELETE /api/projects/:id`          | Projects CRUD + limit check. PATCH changes `name`, `about` and/or `allowedDomains`. |
 | `POST /api/projects/:id/knowledge`                                  | Paste text → process                |
 | `POST /api/projects/:id/knowledge/upload-url`                       | Reserve a file source → signed upload URL |
 | `POST /api/projects/:id/knowledge/finalize`                         | Check the uploaded file → process   |

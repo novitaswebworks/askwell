@@ -143,3 +143,13 @@ describe("captureLeadRequestSchema", () => {
     expect(invalid.success).toBe(false);
   });
 });
+
+describe("updateProjectSchema allowed domains", () => {
+  it("accepts and normalizes a domain list on its own", () => {
+    expect(updateProjectSchema.parse({ allowedDomains: ["https://www.Site.com/"] })).toEqual({ allowedDomains: ["site.com"] });
+    expect(updateProjectSchema.parse({ allowedDomains: [] })).toEqual({ allowedDomains: [] });
+  });
+  it("rejects a bad entry", () => {
+    expect(updateProjectSchema.safeParse({ allowedDomains: ["not a domain"] }).success).toBe(false);
+  });
+});

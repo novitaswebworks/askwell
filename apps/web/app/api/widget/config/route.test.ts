@@ -97,4 +97,44 @@ describe("GET /api/widget/config: last seen", () => {
       "welcomeMessage",
     ]);
   });
+
+  describe("allowed domains", () => {
+    const withList = (list: string[]) => mockTables("free", { id: "p1", owner_id: "user_1", allowed_domains: list });
+    const KEY = "pk_abcdefgh12345678";
+    it("allows any site when the list is empty", async () => {
+      withList([]);
+      expect((await get(KEY, { origin: "https://anything.example" })).status).toBe(200);
+    });
+    it("refuses a site that is not listed", async () => {
+      withList(["suitedreams.com"]);
+      const res = await get(KEY, { origin: "https://askwell.example" });
+      expect(res.status).toBe(403);
+      expect(res.headers.get("vary")).toBe("Origin");
+    });
+    it("refuses a request that names no site", async () => {
+      withList(["suitedreams.com"]);
+      expect((await get(KEY)).status).toBe(403);
+    });
+    it("allows the listed site, its subdomains and local testing", async () => {
+      withList(["suitedreams.com"]);
+      for (const origin of ["https://suitedreams.com", "https://www.suitedreams.com", "http://localhost:3000"]) {
+        expect((await get(KEY, { origin })).status).toBe(200);
+      }
+    });
+    it("does not match look-alike hosts", async () => {
+      withList(["suitedreams.com"]);
+      expect((await get(KEY, { origin: "https://notsuitedreams.com" })).status).toBe(403);
+    });
+    it("checks the host page's origin when the embed panel asks from our own address", async () => {
+      withList(["suitedreams.com"]);
+      const embed = (origin: string) =>
+        GET(new Request(`http://x/api/widget/config?key=${KEY}&origin=${encodeURIComponent(origin)}`, { headers: { referer: "http://x/embed" } }));
+      expect((await embed("https://suitedreams.com")).status).toBe(200);
+      expect((await embed("https://other.example")).status).toBe(403);
+    });
+    it("lets the dashboard preview (our own address, no origin) through", async () => {
+      withList(["suitedreams.com"]);
+      expect((await get(KEY, { origin: "http://x" })).status).toBe(200);
+    });
+  });
 });

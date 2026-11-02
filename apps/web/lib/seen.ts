@@ -28,6 +28,12 @@ export function hostFromHeaders(headers: Pick<Headers, "get">): string | null {
   return null;
 }
 
+// The host from the ?origin= value the /embed panel passes along (http or https only).
+export function hostFromOriginParam(value: string | null): string | null {
+  if (!value) return null;
+  return hostFromHeaders({ get: (name) => (name === "origin" ? value : null) });
+}
+
 export function shouldRecordSeen(
   last: { at: string | null; host: string | null },
   host: string | null,
