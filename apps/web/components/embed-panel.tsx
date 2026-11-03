@@ -52,6 +52,8 @@ export function EmbedPanel() {
   const nextId = useRef(1);
   const visitorId = useRef<string | null>(null);
   const storageRef = useRef<Storage | null>(null);
+  // Bumped by "New chat": an answer that arrives for an earlier chat is dropped, not saved again.
+  const generation = useRef(0);
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -152,7 +154,9 @@ export function EmbedPanel() {
       const body = rawText.trim().slice(0, MAX_MESSAGE_LENGTH);
       if (!body || typing || !key) return;
       setDraft("");
-      setLines((prev) => [...prev, { id: nextId.current++, role: "visitor", body }]);
+      const turn = generation.current;
+      const visitorLineId = nextId.current++;
+      setLines((prev) => [...prev, { id: visitorLineId, role: "visitor", body }]);
       setTyping(true);
       try {
         const post = (conversation: string | null) =>
@@ -171,9 +175,12 @@ export function EmbedPanel() {
         if (res.status === 404 && conversationId.current) {
           conversationId.current = null;
           clearChat(storageRef.current, key);
+          // The old transcript belongs to a conversation the server no longer has: show only this message.
+          setLines((prev) => prev.filter((l) => l.id === visitorLineId));
           res = await post(null);
         }
         const data: unknown = await res.json().catch(() => null);
+        if (turn !== generation.current) return; // "New chat" was pressed while this was on its way
         const parsed = chatResponseSchema.safeParse(data);
         if (res.ok && parsed.success) {
           conversationId.current = parsed.data.conversationId;
@@ -193,9 +200,9 @@ export function EmbedPanel() {
           }
         }
       } catch {
-        addBotLine(t.errorNetwork);
+        if (turn === generation.current) addBotLine(t.errorNetwork);
       } finally {
-        setTyping(false);
+        if (turn === generation.current) setTyping(false);
       }
     },
     [addBotLine, key, t, typing],
@@ -224,7 +231,7 @@ export function EmbedPanel() {
 
   async function submitLead(event: FormEvent) {
     event.preventDefault();
-    if (!leadEmail.trim() || leadBusy || !key || !conversationId.current) return;
+    if (!leadEmail.trim() || leadBusy || !key) return;
     setLeadBusy(true);
     setLeadError(null);
     try {
@@ -233,7 +240,7 @@ export function EmbedPanel() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           key,
-          conversationId: conversationId.current,
+          conversationId: conversationId.current ?? undefined,
           email: leadEmail.trim(),
           name: leadName.trim() || undefined,
           phone: leadPhone.trim() || undefined,
@@ -263,7 +270,9 @@ export function EmbedPanel() {
   }
 
   const startNewChat = useCallback(() => {
+    generation.current += 1;
     conversationId.current = null;
+    setTyping(false);
     if (key) clearChat(storageRef.current, key);
     setLines([]);
     setShowLeadForm(null);

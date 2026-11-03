@@ -59,7 +59,7 @@ export function KnowledgePreviewDialog({
       }}
       className="m-auto w-[min(52rem,calc(100vw-2rem))] max-w-none rounded-2xl border border-border bg-background p-0 text-foreground shadow-2xl backdrop:bg-black/40"
     >
-      <div className="flex max-h-[calc(100dvh-2rem)] flex-col gap-4 overflow-hidden p-5 sm:p-6">
+      <div className="flex max-h-[calc(100dvh-2rem)] flex-col gap-4 overflow-y-auto p-5 sm:p-6">
         <div className="flex flex-col gap-1">
           <h2 id={headingId} className="text-lg font-semibold tracking-tight">
             Review before adding

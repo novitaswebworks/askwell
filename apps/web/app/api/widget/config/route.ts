@@ -15,11 +15,43 @@ import { applyPlanToConfig } from "@/lib/widget-config";
 const CORS = { "Access-Control-Allow-Origin": "*" };
 // The answer depends on which site asks, so shared caches must keep them apart.
 const CORS_VARY = { ...CORS, Vary: "Origin" };
-// Browsers keep it for a minute. Vercel's edge keeps it for ten and, after that, serves the old copy
-// instantly while it fetches a fresh one in the background, so a visitor almost never waits for the
-// database. (Vercel only does this for s-maxage, not for max-age.) A changed colour or text can take
-// up to about ten minutes to reach every customer's site.
-const CONFIG_CACHE_CONTROL = "public, max-age=60, s-maxage=600, stale-while-revalidate=86400";
+// Browsers keep it for a minute. Vercel's edge keeps it for five and, for ten more minutes after that,
+// serves the old copy instantly while it fetches a fresh one in the background, so a visitor rarely waits
+// for the database. (Vercel only does this for s-maxage, not for max-age.) The window is kept short on
+// purpose: a changed colour or text, and a domain removed from the allowed list, reach every customer's
+// site within about fifteen minutes at most.
+const CONFIG_CACHE_CONTROL = "public, max-age=60, s-maxage=300, stale-while-revalidate=600";
+
+const CONFIG_COLUMNS =
+  "button_color, position, label, animation, header_text, show_badge, welcome_message, starter_questions, last_seen_at, last_seen_host";
+const GREETING_COLUMNS = "greeting_enabled, greeting_text";
+
+interface StoredConfig {
+  button_color: string;
+  position: string;
+  label: string;
+  animation: string;
+  header_text: string;
+  show_badge: boolean;
+  welcome_message: string | null;
+  starter_questions: unknown;
+  last_seen_at: string | null;
+  last_seen_host: string | null;
+  greeting_enabled?: boolean | null;
+  greeting_text?: string | null;
+}
+interface ProjectRead {
+  id: string;
+  owner_id: string;
+  allowed_domains: string[] | null;
+  accounts: { plan: string } | { plan: string }[] | null;
+  widget_configs: StoredConfig | StoredConfig[] | null;
+}
+
+// Postgres "undefined column" (42703), however PostgREST words it.
+function isMissingColumn(error: { code?: string; message?: string }): boolean {
+  return error.code === "42703" || /column .* does not exist/i.test(error.message ?? "");
+}
 
 export function OPTIONS() {
   return new NextResponse(null, {
@@ -38,13 +70,17 @@ export async function GET(req: Request) {
   // One round trip: the project with its widget config and its owner's plan. Each extra
   // query is a trip to the database, which is what the visitor waits for.
   const service = createServiceClient();
-  const { data: project, error } = await service
-    .from("projects")
-    .select(
-      "id, owner_id, allowed_domains, accounts(plan), widget_configs(button_color, position, label, animation, header_text, show_badge, welcome_message, starter_questions, greeting_enabled, greeting_text, last_seen_at, last_seen_host)",
-    )
-    .eq("public_key", query.data.key)
-    .maybeSingle();
+  // The column list is built at run time, which the typed client cannot follow, so the result is typed here.
+  const read = (columns: string) =>
+    service
+      .from("projects")
+      .select(`id, owner_id, allowed_domains, accounts(plan), widget_configs(${columns})`)
+      .eq("public_key", query.data.key)
+      .maybeSingle() as unknown as Promise<{ data: ProjectRead | null; error: { code?: string; message?: string } | null }>;
+  let { data: project, error } = await read(`${CONFIG_COLUMNS}, ${GREETING_COLUMNS}`);
+  // If the code goes live before the greeting migration has run, those columns do not exist yet and
+  // every widget on every site would stop loading. Read without them (greeting off) until it has.
+  if (error && isMissingColumn(error)) ({ data: project, error } = await read(CONFIG_COLUMNS));
   if (error) return apiError("internal", "Could not load the config.", { headers: CORS });
   if (!project) return apiError("not_found", "Unknown key.", { headers: CORS });
 

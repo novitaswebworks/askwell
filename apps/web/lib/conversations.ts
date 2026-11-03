@@ -67,27 +67,51 @@ export interface ConversationFilter {
 
 export const MAX_SEARCH_TERM = 100;
 const MAX_MATCHED_CONVERSATIONS = 200;
+export const MAX_EXPORT_CONVERSATIONS = 500;
 
 // ilike treats % and _ as wildcards; a search for "50%" should find "50%".
 export function likePattern(term: string): string {
   return `%${term.trim().slice(0, MAX_SEARCH_TERM).replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
 }
 
-// Which conversations in the project match the filter, or null when there is no filter.
-async function matchingConversationIds(client: Reader, projectId: string, filter: ConversationFilter): Promise<string[] | null> {
-  const term = filter.q?.trim();
-  if (!term && !filter.unhelpful) return null;
-  let query = client
-    .from("messages")
-    .select("conversation_id, conversations!inner(project_id)")
-    .eq("conversations.project_id", projectId)
-    .order("created_at", { ascending: false })
-    .limit(MAX_MATCHED_CONVERSATIONS * 5);
-  if (term) query = query.ilike("body", likePattern(term));
-  if (filter.unhelpful) query = query.eq("rating", -1);
+// Ids of conversations in the project that have a message matching `where`, newest first.
+async function conversationIdsWhere(
+  client: Reader,
+  projectId: string,
+  max: number,
+  where: (query: any) => any, // eslint-disable-line @typescript-eslint/no-explicit-any
+): Promise<string[]> {
+  const query = where(
+    client
+      .from("messages")
+      .select("conversation_id, conversations!inner(project_id)")
+      .eq("conversations.project_id", projectId)
+      .order("created_at", { ascending: false })
+      .limit(max * 5),
+  );
   const { data, error } = await query;
   if (error) throw new Error(`Could not search conversations: ${error.message}`);
-  return [...new Set(((data ?? []) as { conversation_id: string }[]).map((m) => m.conversation_id))].slice(0, MAX_MATCHED_CONVERSATIONS);
+  return [...new Set(((data ?? []) as { conversation_id: string }[]).map((m) => m.conversation_id))].slice(0, max);
+}
+
+// Which conversations in the project match the filter, or null when there is no filter. A chat
+// matches when SOME message has the words and SOME message was rated thumbs-down (not necessarily
+// the same one), so the two conditions are looked up separately and then combined.
+async function matchingConversationIds(
+  client: Reader,
+  projectId: string,
+  filter: ConversationFilter,
+  max: number,
+): Promise<string[] | null> {
+  const term = filter.q?.trim();
+  if (!term && !filter.unhelpful) return null;
+  const byText = term ? await conversationIdsWhere(client, projectId, max, (q) => q.ilike("body", likePattern(term))) : null;
+  const byRating = filter.unhelpful ? await conversationIdsWhere(client, projectId, max, (q) => q.eq("rating", -1)) : null;
+  if (byText && byRating) {
+    const rated = new Set(byRating);
+    return byText.filter((id) => rated.has(id));
+  }
+  return (byText ?? byRating) as string[];
 }
 
 // The project's newest conversations, newest first, optionally only those matching a search.
@@ -97,7 +121,7 @@ export async function listConversations(
   limit = CONVERSATION_PAGE_SIZE,
   filter: ConversationFilter = {},
 ): Promise<ConversationSummary[]> {
-  const ids = await matchingConversationIds(client, projectId, filter);
+  const ids = await matchingConversationIds(client, projectId, filter, MAX_MATCHED_CONVERSATIONS);
   if (ids && ids.length === 0) return [];
   let query = client
     .from("conversations")
@@ -120,8 +144,6 @@ export async function listConversations(
   return summarize(rows, (messages ?? []) as MessageRow[]);
 }
 
-export const MAX_EXPORT_CONVERSATIONS = 500;
-
 export interface ExportRow {
   conversationId: string;
   startedAt: string;
@@ -133,7 +155,7 @@ export interface ExportRow {
 
 // Every message of the matching conversations (newest conversations first, up to a cap), one row each.
 export async function exportRows(client: Reader, projectId: string, filter: ConversationFilter = {}): Promise<ExportRow[]> {
-  const ids = await matchingConversationIds(client, projectId, filter);
+  const ids = await matchingConversationIds(client, projectId, filter, MAX_EXPORT_CONVERSATIONS);
   if (ids && ids.length === 0) return [];
   let query = client
     .from("conversations")

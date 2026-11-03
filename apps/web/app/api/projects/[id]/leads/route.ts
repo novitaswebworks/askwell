@@ -6,6 +6,8 @@ import { apiError, isUuid } from "@/lib/api";
 import { leadsToCsv } from "@/lib/leads";
 import { createOwnerClient } from "@/lib/supabase/owner";
 
+const MAX_EXPORT_LEADS = 10_000;
+
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { userId } = await auth();
   if (!userId) return apiError("unauthorized", "Sign in to continue.");
@@ -30,14 +32,16 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   if (!project) return apiError("not_found", "Project not found.");
 
   const { searchParams } = new URL(req.url);
-  const q = searchParams.get("q")?.trim();
+  // The search term goes into a PostgREST filter, where , ( ) and * mean something: drop them.
+  const q = searchParams.get("q")?.replace(/[,()*\\]/g, " ").trim().slice(0, 100);
   const format = searchParams.get("format");
 
   let query = owner
     .from("leads")
     .select("id, project_id, conversation_id, email, name, phone, created_at")
     .eq("project_id", project.id)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(MAX_EXPORT_LEADS);
 
   if (q) {
     query = query.or(`email.ilike.%${q}%,name.ilike.%${q}%,phone.ilike.%${q}%`);

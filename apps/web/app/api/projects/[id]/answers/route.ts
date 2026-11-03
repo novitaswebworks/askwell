@@ -23,7 +23,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   if (!isUuid(id)) return apiError("not_found", "Project not found.");
 
   const parsed = saveAnswersSchema.safeParse(await readJson(req));
-  if (!parsed.success) return apiError("invalid_input", "Answer at least one question (answers up to 2,000 characters).");
+  if (!parsed.success) return apiError("invalid_input", "Answer at least one question (each answer up to 2,000 characters, about 90,000 in total).");
 
   const project = await getOwnedProject(id);
   if (!project) return apiError("not_found", "Project not found.");

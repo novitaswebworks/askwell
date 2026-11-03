@@ -49,9 +49,9 @@ const MIN_PAGE_CHARS = 80;
 const MIN_TAIL_CHARS = 500;
 
 // One key per page: no fragment, no query (they only create near-duplicates), no trailing slash.
-function pageKey(url: URL, keepQuery: boolean): string {
+function pageKey(url: URL): string {
   const path = url.pathname.replace(/\/+$/, "") || "/";
-  return `${siteKey(url.hostname)}${path}${keepQuery ? url.search : ""}`;
+  return `${siteKey(url.hostname)}${path}`;
 }
 
 export async function crawlSite(
@@ -73,6 +73,9 @@ export async function crawlSite(
 
   const queue: URL[] = [start];
   const seen = new Set<string>();
+  // Every page already waiting in the queue, so a link repeated on many pages is queued once and
+  // cannot use up the queue's room (and push later, different pages out of the crawl).
+  const queued = new Set<string>([pageKey(start)]);
   const enqueue = (candidate: string, base: URL) => {
     if (queue.length >= MAX_QUEUE) return;
     let url: URL | null;
@@ -83,6 +86,9 @@ export async function crawlSite(
     }
     if (!url || siteKey(url.hostname) !== site || SKIP_EXTENSIONS.test(url.pathname) || url.pathname.length > 200) return;
     url.search = "";
+    const key = pageKey(url);
+    if (queued.has(key)) return;
+    queued.add(key);
     queue.push(url);
   };
 
@@ -99,7 +105,7 @@ export async function crawlSite(
 
   while (queue.length > 0 && pages < options.maxPages && chars < options.maxChars && now() < options.deadlineAt) {
     const url = queue.shift() as URL;
-    const key = pageKey(url, url.toString() === start.toString());
+    const key = pageKey(url);
     if (seen.has(key)) continue;
     seen.add(key);
     if (!isAllowedByRobots(rules, url.pathname + url.search)) {
@@ -111,6 +117,11 @@ export async function crawlSite(
 
     const result = await fetcher(url, "page");
     if (!result || result.status !== 200 || result.wrongType) {
+      skipped++;
+      continue;
+    }
+    // A page may have redirected somewhere robots.txt forbids: the rules apply to where we ended up too.
+    if (!isAllowedByRobots(rules, result.url.pathname + result.url.search)) {
       skipped++;
       continue;
     }

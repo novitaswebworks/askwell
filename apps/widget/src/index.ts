@@ -42,7 +42,8 @@ const script = document.currentScript as HTMLScriptElement | null;
 const key = script?.dataset.key;
 const ROOT_ID = "askwell-widget";
 
-if (script?.src && isValidKey(key) && !document.getElementById(ROOT_ID)) {
+// Only the first loader tag on a page starts: a second one must not replace the working window.Askwell.
+if (script?.src && isValidKey(key) && !document.getElementById(ROOT_ID) && !window.Askwell) {
   window.Askwell = { open: () => runOp("open"), close: () => runOp("close"), toggle: () => runOp("toggle") };
   void start(script.src, key);
 }

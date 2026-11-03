@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { queryResult } from "@/lib/test-utils";
 
 vi.mock("server-only", () => ({}));
+const protectRate = vi.fn();
+vi.mock("@/lib/protect", () => ({ protectRate: (...a: unknown[]) => protectRate(...a) }));
 const track = vi.fn();
 vi.mock("@/lib/analytics", () => ({ track: (...a: unknown[]) => track(...a) }));
 const from = vi.fn();
@@ -23,6 +25,7 @@ const post = (body: unknown) =>
 
 beforeEach(() => {
   vi.clearAllMocks();
+  protectRate.mockResolvedValue(true);
   from.mockImplementation(() => queryResult({ data: { id: "p1" } }));
   rpc.mockResolvedValue({ data: true, error: null });
 });
@@ -39,6 +42,13 @@ describe("POST /api/widget/rate", () => {
     expect(await res.json()).toEqual({ rating: -1 });
     expect(rpc).toHaveBeenCalledWith("rate_last_reply", { p_project_id: "p1", p_conversation_id: CONVO, p_rating: -1 });
     expect(track).toHaveBeenCalledWith(expect.objectContaining({ event: "answer_rated" }));
+  });
+  it("refuses with 429, before any database work, when the rate limit is hit", async () => {
+    protectRate.mockResolvedValue(false);
+    const res = await post({ key: KEY, conversationId: CONVO, rating: 1 });
+    expect(res.status).toBe(429);
+    expect(from).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
   });
   it("lets a visitor take a rating back", async () => {
     const res = await post({ key: KEY, conversationId: CONVO, rating: 0 });

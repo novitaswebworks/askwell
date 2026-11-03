@@ -19,7 +19,10 @@ function Skeleton() {
 }
 
 // The heading is the instant shell; the data streams in behind the skeleton.
-type Search = { project?: string; q?: string; filter?: string };
+// A repeated key (?q=a&q=b) arrives as an array; use the first value.
+type Param = string | string[] | undefined;
+type Search = { project?: Param; q?: Param; filter?: Param };
+const first = (value: Param): string | undefined => (Array.isArray(value) ? value[0] : value);
 
 export default function ConversationsPage({ searchParams }: { searchParams: Promise<Search> }) {
   return (
@@ -35,9 +38,10 @@ export default function ConversationsPage({ searchParams }: { searchParams: Prom
 async function ConversationsContent({ searchParams }: { searchParams: Promise<Search> }) {
   const { userId } = await auth();
   if (!userId) return null; // the proxy already sends signed-out visitors to sign-in
-  const { project: selectedId, q: rawQ, filter } = await searchParams;
-  const q = (rawQ ?? "").trim().slice(0, MAX_SEARCH_TERM);
-  const unhelpful = filter === "unhelpful";
+  const params = await searchParams;
+  const selectedId = first(params.project);
+  const q = (first(params.q) ?? "").trim().slice(0, MAX_SEARCH_TERM);
+  const unhelpful = first(params.filter) === "unhelpful";
 
   const owner = createOwnerClient();
   const [plan, { data, error }] = await Promise.all([

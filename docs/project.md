@@ -159,7 +159,7 @@ Two parts: a small loader script + an iframe.
 | Languages | The panel's own labels come in English, Spanish, French, German and Hindi. The owner's words (header, welcome, starters, button label) are never translated; untouched defaults are |
 | Memory    | The panel keeps the current conversation (last 40 lines, 24 hours) in its own localStorage per project, so a page change or reload continues it. "New chat" clears it |
 | Greeting  | Optional bubble beside the button (Pro; off by default; text up to 120 characters), shown 4 s after load for 14 s, once per visitor (one small flag, `askwell_greeted_<key>`, in the site's localStorage), never while the chat is open. `data-no-greeting` on the script tag turns it off for a page |
-| Ratings   | Thumbs up/down under the latest answer; pressing the same one again takes it back. Sent to `POST /api/widget/rate`; owners see them in Conversations |
+| Ratings   | Thumbs up/down under the latest answer; pressing the same one again takes it back. Sent to `POST /api/widget/rate` (30 per minute per key and IP); owners see them in Conversations |
 | Isolation | Button in a shadow root. No global CSS. Nothing else touches the host page.                  |
 | Errors    | Bad key → nothing renders                                                                    |
 
@@ -218,7 +218,7 @@ Two parts: a small loader script + an iframe.
 | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Content   | Connection status; the script tag with a copy button; per-platform steps (WordPress, Shopify, Wix, Squarespace, Webflow, plain HTML, other); a copyable AI-helper message; a copyable message (and mailto link) to send to a developer |
 | Status    | "Connected to <site>" once the widget has loaded on a website, else "Waiting". Waiting re-checks every 8 s for 3 min. Not seen for 7 days shows "Seen before, but not lately"                                                           |
-| Detection | `GET /api/widget/config` records the host (from `Origin`, else `Referer`) and time in `widget_configs.last_seen_*`, at most once per 10 min per host. Written by the service client only                                                |
+| Detection | `GET /api/widget/config` records the host (from `Origin`, else `Referer`) and time in `widget_configs.last_seen_*`, at most once per 10 min per host. Written by the service client only. Cached at the edge: fresh for 5 minutes, then served stale for up to 10 more while it refreshes, so changes (and a domain removed from the allowed list) reach sites within about 15 minutes. If the greeting columns do not exist yet (code live before its migration) it reads without them (greeting off) |
 | Done when | A copied snippet works on a plain HTML page, and the page shows Connected after that page loads                                                                                                                                        |
 
 ### 6.10 Billing
@@ -289,6 +289,7 @@ Limits run inside Postgres functions only `service_role` may execute: `create_pr
 | `GET /api/widget/config` | `key`                                            | Config, plan-applied (Free gets defaults + badge) |
 | `POST /api/widget/chat`  | `key`, `visitorId`, `conversationId?`, `message` | `conversationId`, `reply`                         |
 | `POST /api/widget/rate`  | `key`, `conversationId`, `rating` (1, -1, 0 clears) | `rating`. Rates the latest answer of that conversation |
+| `POST /api/widget/lead`  | `key`, `email`, `name?`, `phone?`, `type`, `conversationId?` (missing when the first message was refused) | `leadId`. Rate limited (5 per minute per key and IP); the same details sent again within 10 minutes are not a new lead |
 
 ### Owner (Clerk session required)
 

@@ -435,6 +435,10 @@ export type Database = {
         Args: { p_level: number; p_project_id: string }
         Returns: boolean
       }
+      owner_is_pro: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       rate_last_reply: {
         Args: { p_conversation_id: string; p_project_id: string; p_rating: number }
         Returns: boolean
