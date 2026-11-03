@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { crawlLimitsFor, crawlSite, NoReadablePagesError, RobotsBlockedError, type PageFetcher } from "./crawl";
+import { crawlLimitsFor, crawlSite, SPARSE_TEXT_CHARS, NoReadablePagesError, RobotsBlockedError, type PageFetcher } from "./crawl";
 
 const long = (s: string) => `${s} `.repeat(30);
 const html = (title: string, body: string, links: string[] = []) =>
@@ -97,6 +97,17 @@ describe("crawlSite", () => {
     });
     await crawlSite(start, fetcher, opts);
     expect(asked.filter((p) => p !== "/" && p !== "/robots.txt" && p !== "/sitemap.xml")).toEqual([]);
+  });
+});
+
+describe("sparse results", () => {
+  it("flags a site that gave very little text, but not a normal one", async () => {
+    const thin = site({ "/": { body: html("Home", `${"short page text here ".repeat(6)}`) } });
+    expect((await crawlSite(start, thin.fetcher, opts)).sparse).toBe(true);
+    const rich = site({ "/": { body: html("Home", "plenty of real content here. ".repeat(80)) } });
+    const out = await crawlSite(start, rich.fetcher, opts);
+    expect(out.text.length).toBeGreaterThanOrEqual(SPARSE_TEXT_CHARS);
+    expect(out.sparse).toBe(false);
   });
 });
 

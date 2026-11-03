@@ -71,6 +71,14 @@ export function KnowledgePreviewDialog({
           </p>
         </div>
 
+        {draft.sparse && (
+          <p role="note" className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-sm leading-relaxed">
+            <strong className="font-semibold">We found very little text.</strong> If this website shows more in your
+            browser, it probably draws that content with JavaScript, which we can&apos;t read. Add the missing text below,
+            or close this window and use &ldquo;Paste text&rdquo; for the rest.
+          </p>
+        )}
+
         <div className="flex flex-col gap-1.5">
           <label htmlFor={`${headingId}-title`} className="text-xs font-medium text-muted">
             Title

@@ -35,6 +35,10 @@ export class NoReadablePagesError extends Error {
   }
 }
 
+// Below this much text, the site probably draws most of its content with JavaScript (which we
+// cannot run) or is genuinely tiny. Either way the owner should look before relying on it.
+export const SPARSE_TEXT_CHARS = 1500;
+
 export function crawlLimitsFor(plan: "free" | "pro") {
   return plan === "pro" ? { maxPages: 40, maxChars: 200_000 } : { maxPages: 10, maxChars: 60_000 };
 }
@@ -54,7 +58,7 @@ export async function crawlSite(
   start: URL,
   fetcher: PageFetcher,
   options: CrawlOptions,
-): Promise<{ text: string; pages: number; skipped: number }> {
+): Promise<{ text: string; pages: number; skipped: number; sparse: boolean }> {
   const now = options.now ?? Date.now;
   const sleep = options.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const delay = options.delayMs ?? 250;
@@ -130,5 +134,6 @@ export async function crawlSite(
   }
 
   if (pages === 0) throw new NoReadablePagesError();
-  return { text: parts.join("\n\n---\n\n"), pages, skipped };
+  const text = parts.join("\n\n---\n\n");
+  return { text, pages, skipped, sparse: text.length < SPARSE_TEXT_CHARS };
 }
