@@ -1,6 +1,6 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Newsreader } from "next/font/google";
 import { APP_NAME } from "@askwell/shared";
 import { siteUrl } from "@/lib/site";
 import "../globals.css";
@@ -15,6 +15,11 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const serif = Newsreader({
+  variable: "--font-serif",
+  subsets: ["latin"],
+});
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
   title: { default: APP_NAME, template: `%s | ${APP_NAME}` },
@@ -25,7 +30,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${serif.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <ClerkProvider signInUrl="/sign-in" signUpUrl="/sign-up">

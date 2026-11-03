@@ -9,16 +9,16 @@ export const contentType = "image/png";
 export default function OpengraphImage() {
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", background: "#f5f5f4", padding: 80 }}>
+      <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", background: "#faf9f5", padding: 80 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
           <BrandMark size={88} />
-          <div style={{ fontSize: 56, fontWeight: 700, color: "#0a0a0a" }}>{APP_NAME}</div>
+          <div style={{ fontSize: 56, fontWeight: 700, color: "#141413" }}>{APP_NAME}</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-          <div style={{ fontSize: 80, fontWeight: 700, lineHeight: 1.05, color: "#0a0a0a" }}>
+          <div style={{ fontSize: 80, fontWeight: 700, lineHeight: 1.05, color: "#141413" }}>
             Your content, answering your customers.
           </div>
-          <div style={{ fontSize: 34, color: "#57534e" }}>
+          <div style={{ fontSize: 34, color: "#6e6d66" }}>
             An AI chat assistant for any website. Free to start.
           </div>
         </div>

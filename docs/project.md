@@ -403,9 +403,9 @@ Every screen follows this. Agents don't pick their own style.
 
 | Area | Look |
 |---|---|
-| Overall | Black and white, with glass effects (blurred, translucent panels) |
+| Overall | Claude look: warm cream and charcoal, terracotta accent (`--brand`), serif headings (Newsreader), glass panels |
 | Landing page | Dark, with simple motion: subtle entrance and scroll animations |
-| Dashboard | Light, monochrome, glass panels |
+| Dashboard | Light cream, warm neutrals, glass panels |
 | Sign-in / sign-up | Clerk's default look |
 | Tokens | One set of design tokens (colors, radius, shadows, blur) shared by every page |
 | States | Empty, loading and error states on every screen |

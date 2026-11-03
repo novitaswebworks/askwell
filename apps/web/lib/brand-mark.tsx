@@ -1,6 +1,6 @@
 // The logo mark as plain SVG with fixed colours, for generated images (favicon, share
 // image), which cannot read the page's CSS variables. Same drawing as components/site/logo.tsx.
-export const BRAND_COLOR = "#e8590c";
+export const BRAND_COLOR = "#c15f3c";
 
 export function BrandMark({ size }: { size: number }) {
   return (

@@ -6,11 +6,11 @@ import { Check } from "./icons";
 export function HeroChat() {
   return (
     <div
-      className="relative mx-auto w-full max-w-md rounded-[28px] border border-border bg-[#0d0d0d] p-2 shadow-[0_40px_80px_-20px_rgb(0_0_0/0.8),0_0_0_1px_rgb(255_255_255/0.04)]"
+      className="relative mx-auto w-full max-w-md rounded-[28px] border border-border bg-[#1f1e1d] p-2 shadow-[0_40px_80px_-20px_rgb(0_0_0/0.8),0_0_0_1px_rgb(255_255_255/0.04)]"
       role="img"
       aria-label="Example chat: a visitor asks about airport transfers and gets an answer from the business's own information, then asks an unrelated question and is politely redirected."
     >
-      <div className="overflow-hidden rounded-[22px] bg-[#111]">
+      <div className="overflow-hidden rounded-[22px] bg-[#262624]">
         <div className="flex items-center gap-3 border-b border-border px-5 py-4">
           <span className="grid size-9 place-items-center rounded-full bg-brand text-brand-foreground">
             <Check className="size-5" />
