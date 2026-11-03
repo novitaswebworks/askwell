@@ -100,6 +100,40 @@ describe("crawlSite", () => {
   });
 });
 
+describe("crawl hygiene", () => {
+  it("queues a link repeated on every page once, so it cannot crowd out later pages", async () => {
+    // 600 links to /same, then one real, different page.
+    const links = [...Array.from({ length: 600 }, () => "/same"), "/real"];
+    const { fetcher, asked } = site({
+      "/": { body: html("Home", long("hello"), links) },
+      "/same": { body: html("Same", long("same page")) },
+      "/real": { body: html("Real", long("a different page")) },
+    });
+    const out = await crawlSite(start, fetcher, opts);
+    expect(out.text).toContain("# Real");
+    expect(asked.filter((p) => p === "/same")).toHaveLength(1);
+  });
+  it("does not read the start page twice when it has a query and pages link back without one", async () => {
+    const { fetcher, asked } = site({ "/shop": { body: html("Shop", long("shop"), ["/shop", "/shop?page=1"]) } });
+    await crawlSite(new URL("https://acme.com/shop?ref=ad"), fetcher, opts);
+    expect(asked.filter((p) => p === "/shop")).toHaveLength(1);
+  });
+  it("applies robots.txt to the page a request ended up on after a redirect", async () => {
+    const asked: string[] = [];
+    const fetcher: PageFetcher = async (url, kind) => {
+      asked.push(url.pathname);
+      if (kind === "robots") return { url, status: 200, wrongType: false, body: "User-agent: *\nDisallow: /private" };
+      if (kind === "sitemap") return null;
+      if (url.pathname === "/") return { url, status: 200, wrongType: false, body: html("Home", long("hello"), ["/moved"]) };
+      // /moved redirects to a path robots.txt forbids
+      return { url: new URL("https://acme.com/private/secret"), status: 200, wrongType: false, body: html("Secret", long("not for crawlers")) };
+    };
+    const out = await crawlSite(start, fetcher, opts);
+    expect(out.text).not.toContain("not for crawlers");
+    expect(out.pages).toBe(1);
+  });
+});
+
 describe("sparse results", () => {
   it("flags a site that gave very little text, but not a normal one", async () => {
     const thin = site({ "/": { body: html("Home", `${"short page text here ".repeat(6)}`) } });

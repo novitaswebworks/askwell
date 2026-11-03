@@ -169,6 +169,56 @@ describe("search and filter", () => {
   });
 });
 
+describe("search combined with the thumbs-down filter", () => {
+  // Answers each query on `messages` from a list, in the order they are asked.
+  function sequenced(messageAnswers: unknown[][], conversations: unknown[]) {
+    const calls: { table: string; ops: [string, ...unknown[]][] }[] = [];
+    let message = 0;
+    const client = {
+      from(table: string) {
+        const call = { table, ops: [] as [string, ...unknown[]][] };
+        calls.push(call);
+        const data = table === "messages" ? (messageAnswers[message++] ?? []) : conversations;
+        const builder: unknown = new Proxy(
+          {},
+          {
+            get: (_t, prop: string) =>
+              prop === "then"
+                ? (resolve: (v: unknown) => unknown) => resolve({ data, error: null })
+                : (...args: unknown[]) => {
+                    call.ops.push([prop, ...args]);
+                    return builder;
+                  },
+          },
+        );
+        return builder;
+      },
+    };
+    return { client, calls };
+  }
+
+  it("keeps a chat when the words and the thumbs-down are on different messages, and drops one that only has one of them", async () => {
+    const { client, calls } = sequenced(
+      [[{ conversation_id: "a" }, { conversation_id: "b" }], [{ conversation_id: "b" }, { conversation_id: "c" }]],
+      [],
+    );
+    await listConversations(client, "p1", 50, { q: "refund", unhelpful: true });
+    expect(calls[0].ops).toContainEqual(["ilike", "body", "%refund%"]);
+    expect(calls[1].ops).toContainEqual(["eq", "rating", -1]);
+    // Only "b" has both. The text search and the rating are separate queries, so they need not be the same message.
+    expect(calls[2].ops).toContainEqual(["in", "id", ["b"]]);
+  });
+  it("lets an export match up to its own cap, not the smaller list cap", async () => {
+    const { exportRows, MAX_EXPORT_CONVERSATIONS } = await import("./conversations");
+    const { client, calls } = sequenced([[{ conversation_id: "a" }]], []);
+    await exportRows(client, "p1", { q: "refund" });
+    expect(calls[0].ops).toContainEqual(["limit", MAX_EXPORT_CONVERSATIONS * 5]);
+    const list = sequenced([[{ conversation_id: "a" }]], []);
+    await listConversations(list.client, "p1", 50, { q: "refund" });
+    expect(list.calls[0].ops).toContainEqual(["limit", 200 * 5]);
+  });
+});
+
 describe("exportRows", () => {
   it("lists every message with its conversation, who wrote it and the rating", async () => {
     const { exportRows } = await import("./conversations");

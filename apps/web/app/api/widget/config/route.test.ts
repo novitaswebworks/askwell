@@ -51,6 +51,30 @@ describe("GET /api/widget/config", () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual(DEFAULT_WIDGET_CONFIG);
   });
+  describe("before the greeting migration has run", () => {
+    const { greeting_enabled: _a, greeting_text: _b, ...withoutGreeting } = stored;
+    void _a;
+    void _b;
+    it("still serves the widget, with the greeting off, when the new columns do not exist yet", async () => {
+      let calls = 0;
+      from.mockImplementation(() => {
+        calls += 1;
+        return calls === 1
+          ? queryResult({ data: null, error: { code: "42703", message: "column widget_configs_1.greeting_enabled does not exist" } })
+          : queryResult({ data: { id: "p1", owner_id: "user_1", widget_configs: withoutGreeting, accounts: { plan: "pro" } } });
+      });
+      const res = await get("pk_abcdefgh12345678");
+      expect(res.status).toBe(200);
+      expect(calls).toBe(2);
+      expect(await res.json()).toMatchObject({ buttonColor: "#ff0000", greetingEnabled: false });
+    });
+    it("does not hide other database errors", async () => {
+      from.mockImplementation(() => queryResult({ data: null, error: { code: "XX000", message: "boom" } }));
+      expect((await get("pk_abcdefgh12345678")).status).toBe(500);
+      expect(from).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it("keeps the greeting bubble off for a Free project", async () => {
     mockTables("free");
     const body = await (await get("pk_abcdefgh12345678")).json();
@@ -70,7 +94,7 @@ describe("GET /api/widget/config", () => {
     mockTables("free");
     const res = await get("pk_abcdefgh12345678");
     expect(from).toHaveBeenCalledTimes(1);
-    expect(res.headers.get("cache-control")).toBe("public, max-age=60, s-maxage=600, stale-while-revalidate=86400");
+    expect(res.headers.get("cache-control")).toBe("public, max-age=60, s-maxage=300, stale-while-revalidate=600");
   });
   it("allows any origin", async () => {
     mockTables("free");

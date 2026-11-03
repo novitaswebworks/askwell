@@ -18,6 +18,39 @@ function build(key: string) {
   });
 }
 
+// Public routes other than chat (leads, ratings) have no message to check for injection, but they write
+// to the database with the service role, so they get a rate limit of their own per route + key + IP.
+const rateClients = new Map<number, ReturnType<typeof buildRate>>();
+
+function buildRate(key: string, max: number) {
+  return arcjet({ key, characteristics: ["publicKey", "ip.src"], rules: [fixedWindow({ mode: "LIVE", window: "1m", max })] });
+}
+
+// Fails open like chat does. `route` keeps each route's counter separate from the others'.
+export async function protectRate(req: Request, publicKey: string, route: string, max: number): Promise<boolean> {
+  const arcjetKey = process.env.ARCJET_KEY;
+  if (!arcjetKey) return true;
+  try {
+    let client = rateClients.get(max);
+    if (!client) {
+      client = buildRate(arcjetKey, max);
+      rateClients.set(max, client);
+    }
+    const decision = await Promise.race([
+      client.protect(req, { publicKey: `${route}:${publicKey}` }),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 3000)),
+    ]);
+    if (decision.isErrored()) {
+      console.error("[arcjet] error decision", decision.reason);
+      return true;
+    }
+    return !decision.isDenied();
+  } catch (error) {
+    console.error("[arcjet] failed open", error);
+    return true;
+  }
+}
+
 // Fails open (project.md section 3): a missing key, an Arcjet error or a timeout
 // lets the request through and is logged. The monthly quota stays in Postgres.
 export async function protectChat(req: Request, publicKey: string, message: string): Promise<Protection> {

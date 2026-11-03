@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   chatRequestSchema,
+  saveAnswersSchema,
   chatResponseSchema,
   knowledgeUploadUrlRequestSchema,
   updateConfigSchema,
@@ -157,5 +158,21 @@ describe("updateProjectSchema allowed domains", () => {
   });
   it("rejects a bad entry", () => {
     expect(updateProjectSchema.safeParse({ allowedDomains: ["not a domain"] }).success).toBe(false);
+  });
+});
+
+describe("saveAnswersSchema size", () => {
+  const item = (n: number) => ({ question: `Question ${n}?`, answer: "a".repeat(2000) });
+  it("accepts a normal set of answers", () => {
+    expect(saveAnswersSchema.safeParse({ template: "business", items: Array.from({ length: 10 }, (_, i) => item(i)) }).success).toBe(true);
+  });
+  it("refuses a set the database would reject (over about 95,000 bytes in total)", () => {
+    const tooBig = { template: "business", items: Array.from({ length: 80 }, (_, i) => item(i)) }; // about 164,000 bytes
+    expect(saveAnswersSchema.safeParse(tooBig).success).toBe(false);
+  });
+  it("counts bytes, not characters, so non-Latin text cannot slip past", () => {
+    const wide = { template: "business", items: Array.from({ length: 40 }, (_, i) => ({ question: `Q${i}?`, answer: "é".repeat(1500) })) }; // 2 bytes each
+    expect(new TextEncoder().encode(JSON.stringify(wide)).length).toBeGreaterThan(95_000);
+    expect(saveAnswersSchema.safeParse(wide).success).toBe(false);
   });
 });

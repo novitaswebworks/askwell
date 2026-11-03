@@ -73,7 +73,8 @@ export function CustomizeManager({
       const res = await fetch(`/api/projects/${projectId}/config`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(config),
+        // An emptied greeting box (with the greeting off) falls back to the default text instead of failing the save.
+        body: JSON.stringify({ ...config, greetingText: config.greetingText.trim() || DEFAULT_WIDGET_CONFIG.greetingText }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => null);
@@ -87,7 +88,7 @@ export function CustomizeManager({
       setConfig(updated);
       setMessage({
         kind: "ok",
-        text: "Saved. Changes can take up to about ten minutes to reach your website.",
+        text: "Saved. Changes can take up to about fifteen minutes to reach your website.",
       });
     } catch {
       setMessage({ kind: "error", text: "Network error. Check your connection and try again." });

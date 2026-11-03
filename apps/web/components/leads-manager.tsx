@@ -9,10 +9,14 @@ export function LeadsManager({
   projects,
   selectedProjectId,
   initialLeads,
+  truncated = false,
+  pageSize = 200,
 }: {
   projects: Project[];
   selectedProjectId: string;
   initialLeads: Lead[];
+  truncated?: boolean;
+  pageSize?: number;
 }) {
   const [search, setSearch] = useState("");
 
@@ -77,6 +81,12 @@ export function LeadsManager({
           </a>
         )}
       </div>
+
+      {truncated && (
+        <p className="text-xs text-muted">
+          Showing your latest {pageSize} leads. Search covers these; &ldquo;Export CSV&rdquo; has all of them.
+        </p>
+      )}
 
       {/* Table / Empty State */}
       {filtered.length === 0 ? (

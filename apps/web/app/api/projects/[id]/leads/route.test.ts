@@ -101,6 +101,6 @@ describe("GET /api/projects/:id/leads", () => {
     expect(res.headers.get("Content-Disposition")).toContain('filename="leads-acme_corp.csv"');
     const text = await res.text();
     expect(text).toContain("ID,Created At,Email,Name,Phone,Conversation ID");
-    expect(text).toContain('"lead@example.com"');
+    expect(text).toContain('lead@example.com');
   });
 });

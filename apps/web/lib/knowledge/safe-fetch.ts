@@ -15,6 +15,9 @@ import { CRAWLER_NAME } from "./robots";
 
 export const USER_AGENT = `${CRAWLER_NAME}/1.0`;
 const MAX_REDIRECTS = 3;
+// `timeout` below is only an idle timeout (a server that trickles bytes can keep a socket open forever),
+// so every request also gets a hard limit on its total time.
+const TOTAL_TIMEOUT_MS = 20_000;
 
 export class FetchFailedError extends Error {
   constructor(message = "The page could not be fetched.") {
@@ -72,6 +75,7 @@ function request(url: URL, options: FetchOptions): Promise<RawResponse> {
       {
         method: "GET",
         timeout: options.timeoutMs,
+        signal: AbortSignal.timeout(TOTAL_TIMEOUT_MS),
         lookup: guardedLookup as never,
         headers: {
           "User-Agent": USER_AGENT,
@@ -81,13 +85,15 @@ function request(url: URL, options: FetchOptions): Promise<RawResponse> {
       },
       (res) => {
         const status = res.statusCode ?? 0;
+        // We never need the body of a redirect or of a page we will not read: close the connection
+        // instead of draining it, so a site cannot stream us bytes the size cap would not see.
         if (status >= 300 && status < 400) {
-          res.resume();
+          res.destroy();
           return finish(() => resolve({ status, location: String(res.headers.location ?? "") || null, wrongType: false, body: "" }));
         }
         const type = String(res.headers["content-type"] ?? "").toLowerCase();
         if (!options.accept.some((a) => type.includes(a))) {
-          res.resume();
+          res.destroy();
           return finish(() => resolve({ status, location: null, wrongType: true, body: "" }));
         }
         const encoding = String(res.headers["content-encoding"] ?? "").toLowerCase();
@@ -96,7 +102,7 @@ function request(url: URL, options: FetchOptions): Promise<RawResponse> {
         else if (encoding === "br") stream = res.pipe(zlib.createBrotliDecompress());
         else if (encoding === "deflate") stream = res.pipe(zlib.createInflate());
         else if (encoding && encoding !== "identity") {
-          res.resume();
+          res.destroy();
           return finish(() => reject(new FetchFailedError()));
         }
         const chunks: Buffer[] = [];

@@ -141,18 +141,25 @@ export const addTextKnowledgeSchema = z.object({
 export type AddTextKnowledgeInput = z.infer<typeof addTextKnowledgeSchema>;
 
 export const MAX_ANSWER_ITEMS = 80;
-export const saveAnswersSchema = z.object({
-  template: z.string().trim().min(1).max(40),
-  items: z
-    .array(
-      z.object({
-        question: z.string().trim().min(1).max(300),
-        answer: z.string().trim().min(1).max(2000),
-      }),
-    )
-    .min(1)
-    .max(MAX_ANSWER_ITEMS),
-});
+// The database refuses an `answers` value over 100,000 bytes, and 80 items of the maximum length would be
+// about 184,000. Stop it here, with a clear message, instead of failing at the database.
+export const MAX_ANSWERS_BYTES = 95_000;
+export const saveAnswersSchema = z
+  .object({
+    template: z.string().trim().min(1).max(40),
+    items: z
+      .array(
+        z.object({
+          question: z.string().trim().min(1).max(300),
+          answer: z.string().trim().min(1).max(2000),
+        }),
+      )
+      .min(1)
+      .max(MAX_ANSWER_ITEMS),
+  })
+  .refine((v) => new TextEncoder().encode(JSON.stringify(v)).length <= MAX_ANSWERS_BYTES, {
+    message: "The answers are too long in total.",
+  });
 export type SaveAnswersInput = z.infer<typeof saveAnswersSchema>;
 
 export const knowledgeUploadUrlRequestSchema = z.object({
@@ -257,7 +264,8 @@ export type Lead = z.infer<typeof leadSchema>;
 
 export const captureLeadRequestSchema = z.object({
   key: publicKeySchema,
-  conversationId: z.uuid(),
+  // Missing when the very first message was refused (quota, outage): the visitor can still leave an email.
+  conversationId: z.uuid().optional(),
   email: z.string().trim().email("Enter a valid email address.").max(255),
   name: z.string().trim().max(100).optional(),
   phone: z.string().trim().max(30).optional(),

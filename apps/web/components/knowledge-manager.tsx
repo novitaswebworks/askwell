@@ -133,7 +133,11 @@ export function KnowledgeManager({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, text: body }),
       });
-      if (!res.ok) return await errorMessage(res);
+      if (!res.ok) {
+        // Indexing can fail after the source row exists (marked failed, and counted against the limit): show it so it can be deleted.
+        router.refresh();
+        return await errorMessage(res);
+      }
     } catch {
       return "Network error. Check your connection and try again.";
     }

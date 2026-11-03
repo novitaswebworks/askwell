@@ -2,11 +2,14 @@ import { NextResponse } from "next/server";
 import { rateReplyRequestSchema, type RateReplyResponse } from "@askwell/shared";
 import { track } from "@/lib/analytics";
 import { apiError, readJson } from "@/lib/api";
+import { protectRate } from "@/lib/protect";
 import { createServiceClient } from "@/lib/supabase/service";
 
 // Public route, called from the chat panel. The key only identifies a project; the
 // conversation ID (a random UUID only that visitor's browser holds) picks the chat.
 const CORS = { "Access-Control-Allow-Origin": "*" };
+
+const RATINGS_PER_MINUTE = 30; // per public key + IP
 
 export function OPTIONS() {
   return new NextResponse(null, {
@@ -26,6 +29,10 @@ export async function POST(req: Request) {
   const parsed = rateReplyRequestSchema.safeParse(await readJson(req));
   if (!parsed.success) return fail("invalid_input", "Choose thumbs up or down for an answer.");
   const { key, conversationId, rating } = parsed.data;
+
+  if (!(await protectRate(req, key, "rate", RATINGS_PER_MINUTE))) {
+    return fail("rate_limited", "Too many requests. Please wait a minute and try again.");
+  }
 
   const service = createServiceClient();
   const { data: project, error: projectError } = await service

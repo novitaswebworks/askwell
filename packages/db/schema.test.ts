@@ -716,6 +716,13 @@ describe("knowledge answers", () => {
         ]);
       });
 
+      // Lead capture is a Pro feature: on Free the owner cannot read their leads, even directly.
+      const freeRead = await asRole(db, "authenticated", "user_leads_alice", () =>
+        db.query("select email from public.leads where project_id = $1", [aliceProj]),
+      );
+      expect(freeRead.rows).toEqual([]);
+      await svc(() => db.exec("update public.accounts set plan = 'pro' where clerk_user_id = 'user_leads_alice'"));
+
       // Alice can read her own lead
       const aliceLeads = await asRole(db, "authenticated", "user_leads_alice", () =>
         db.query<{ email: string }>("select email from public.leads where project_id = $1", [aliceProj]),
@@ -732,6 +739,16 @@ describe("knowledge answers", () => {
       await expect(
         asRole(db, "anon", null, () => db.query("select * from public.leads")),
       ).rejects.toThrow(/permission denied/);
+
+      // Back on Free, the leads are hidden again; they are kept, not deleted.
+      await svc(() => db.exec("update public.accounts set plan = 'free' where clerk_user_id = 'user_leads_alice'"));
+      const downgraded = await asRole(db, "authenticated", "user_leads_alice", () =>
+        db.query("select email from public.leads where project_id = $1", [aliceProj]),
+      );
+      expect(downgraded.rows).toEqual([]);
+      const kept = await svc(() => db.query("select count(*)::int as n from public.leads where project_id = $1", [aliceProj]));
+      expect(kept.rows[0]).toEqual({ n: 1 });
+      await svc(() => db.exec("update public.accounts set plan = 'pro' where clerk_user_id = 'user_leads_alice'"));
 
       // Authenticated cannot insert directly (service_role only)
       await expect(

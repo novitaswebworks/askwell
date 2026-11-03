@@ -1,21 +1,10 @@
 import type { Lead } from "@askwell/shared";
+import { toCsv } from "./csv";
 
-function escapeCsvCell(val: string | null | undefined): string {
-  if (val === null || val === undefined) return '""';
-  const str = String(val).replace(/"/g, '""');
-  return `"${str}"`;
-}
-
+// Visitors write these fields, so the shared CSV writer also defuses spreadsheet formulas.
 export function leadsToCsv(leads: Lead[]): string {
-  const headers = ["ID", "Created At", "Email", "Name", "Phone", "Conversation ID"];
-  const rows = leads.map((lead) => [
-    escapeCsvCell(lead.id),
-    escapeCsvCell(lead.createdAt),
-    escapeCsvCell(lead.email),
-    escapeCsvCell(lead.name),
-    escapeCsvCell(lead.phone),
-    escapeCsvCell(lead.conversationId),
-  ]);
-
-  return [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+  return toCsv(
+    ["ID", "Created At", "Email", "Name", "Phone", "Conversation ID"],
+    leads.map((l) => [l.id, l.createdAt, l.email, l.name ?? "", l.phone ?? "", l.conversationId ?? ""]),
+  );
 }

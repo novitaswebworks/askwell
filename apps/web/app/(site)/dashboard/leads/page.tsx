@@ -8,6 +8,9 @@ import { getAccountPlan } from "@/lib/accounts";
 import { PROJECT_COLUMNS, toProject, type ProjectRow } from "@/lib/projects";
 import { createOwnerClient } from "@/lib/supabase/owner";
 
+// Newest first; the list is filtered in the browser, so only this many are sent. "Export CSV" has the rest.
+const LEADS_PAGE_SIZE = 200;
+
 function Skeleton() {
   return <div className="glass h-96 animate-pulse rounded-2xl" aria-busy="true" aria-label="Loading leads" />;
 }
@@ -81,7 +84,8 @@ async function LeadsContent({ searchParams }: { searchParams: Promise<{ project?
     .from("leads")
     .select("id, project_id, conversation_id, email, name, phone, created_at")
     .eq("project_id", project.id)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(LEADS_PAGE_SIZE);
 
   if (leadsError) throw new Error(`Could not load leads: ${leadsError.message}`);
 
@@ -100,6 +104,8 @@ async function LeadsContent({ searchParams }: { searchParams: Promise<{ project?
       projects={projects}
       selectedProjectId={project.id}
       initialLeads={initialLeads}
+      truncated={initialLeads.length === LEADS_PAGE_SIZE}
+      pageSize={LEADS_PAGE_SIZE}
     />
   );
 }
