@@ -3,5 +3,8 @@ import { PUBLIC_PATHS, siteUrl } from "@/lib/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = siteUrl();
-  return PUBLIC_PATHS.map((path) => ({ url: path === "/" ? `${base}/` : `${base}${path}`, changeFrequency: "monthly" as const }));
+  return PUBLIC_PATHS.map((path) => ({
+    url: path === "/" ? base : `${base}${path}`,
+    changeFrequency: "monthly" as const,
+  }));
 }
