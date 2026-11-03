@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { DeleteConversationButton } from "@/components/delete-conversation-button";
 import { LocalTime } from "@/components/local-time";
 import { RefreshButton } from "@/components/refresh-button";
 import { getThread } from "@/lib/conversations";
@@ -48,7 +49,10 @@ async function Thread({ params, searchParams }: Props) {
             {thread.messages.length === 1 ? "message" : "messages"}
           </p>
         </div>
-        <RefreshButton />
+        <div className="flex flex-wrap items-start gap-2">
+          <RefreshButton />
+          <DeleteConversationButton conversationId={thread.id} projectId={thread.projectId} />
+        </div>
       </div>
 
       <ol className="glass flex flex-col gap-3 p-4 md:p-6" aria-label="Messages">

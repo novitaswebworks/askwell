@@ -3,12 +3,13 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { getPlanLimits } from "@askwell/shared";
 import { ButtonLink } from "@/components/button-link";
+import { ConversationSearch } from "@/components/conversation-search";
 import { EmptyState } from "@/components/empty-state";
 import { LocalTime } from "@/components/local-time";
 import { RefreshButton } from "@/components/refresh-button";
 import { UsageMeter } from "@/components/usage-meter";
 import { getAccountPlan } from "@/lib/accounts";
-import { CONVERSATION_PAGE_SIZE, listConversations } from "@/lib/conversations";
+import { CONVERSATION_PAGE_SIZE, MAX_SEARCH_TERM, listConversations } from "@/lib/conversations";
 import { PROJECT_COLUMNS, toProject, type ProjectRow } from "@/lib/projects";
 import { createOwnerClient } from "@/lib/supabase/owner";
 import { usageThisMonth } from "@/lib/usage";
@@ -18,7 +19,9 @@ function Skeleton() {
 }
 
 // The heading is the instant shell; the data streams in behind the skeleton.
-export default function ConversationsPage({ searchParams }: { searchParams: Promise<{ project?: string }> }) {
+type Search = { project?: string; q?: string; filter?: string };
+
+export default function ConversationsPage({ searchParams }: { searchParams: Promise<Search> }) {
   return (
     <>
       <h1 className="mb-4 text-2xl font-semibold tracking-tight">Conversations</h1>
@@ -29,10 +32,12 @@ export default function ConversationsPage({ searchParams }: { searchParams: Prom
   );
 }
 
-async function ConversationsContent({ searchParams }: { searchParams: Promise<{ project?: string }> }) {
+async function ConversationsContent({ searchParams }: { searchParams: Promise<Search> }) {
   const { userId } = await auth();
   if (!userId) return null; // the proxy already sends signed-out visitors to sign-in
-  const { project: selectedId } = await searchParams;
+  const { project: selectedId, q: rawQ, filter } = await searchParams;
+  const q = (rawQ ?? "").trim().slice(0, MAX_SEARCH_TERM);
+  const unhelpful = filter === "unhelpful";
 
   const owner = createOwnerClient();
   const [plan, { data, error }] = await Promise.all([
@@ -53,7 +58,8 @@ async function ConversationsContent({ searchParams }: { searchParams: Promise<{ 
     );
   }
 
-  const conversations = await listConversations(owner, project.id);
+  const conversations = await listConversations(owner, project.id, CONVERSATION_PAGE_SIZE, { q, unhelpful });
+  const filtered = q !== "" || unhelpful;
   const usage = usageThisMonth(project, getPlanLimits(plan).messagesPerMonth, new Date());
 
   return (
@@ -80,7 +86,15 @@ async function ConversationsContent({ searchParams }: { searchParams: Promise<{ 
         <RefreshButton />
       </div>
 
-      {conversations.length === 0 ? (
+      <ConversationSearch projectId={project.id} q={q} unhelpful={unhelpful} />
+
+      {conversations.length === 0 && filtered ? (
+        <EmptyState
+          title="No conversations match"
+          description="Try different words, or clear the search to see everything."
+          action={<ButtonLink href={`/dashboard/conversations?project=${project.id}`}>Clear search</ButtonLink>}
+        />
+      ) : conversations.length === 0 ? (
         <EmptyState
           title="No conversations yet"
           description="Chats from your widget will show up here. Send a test message on a page with the widget, then refresh."
