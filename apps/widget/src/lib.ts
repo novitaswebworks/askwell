@@ -86,5 +86,29 @@ export function pickLang(...candidates: Array<string | null | undefined>): strin
   return undefined;
 }
 
+export const GREETING_DELAY_MS = 4000;
+export const GREETING_VISIBLE_MS = 14000;
+
+type FlagStore = Pick<Storage, "getItem" | "setItem">;
+const greetedKey = (key: string) => `askwell_greeted_${key}`;
+
+// The greeting is offered once per visitor. That needs one small flag in their browser; if
+// storage is blocked the greeting simply shows once per page load instead.
+export function hasBeenGreeted(storage: FlagStore | null, key: string): boolean {
+  try {
+    return storage?.getItem(greetedKey(key)) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function markGreeted(storage: FlagStore | null, key: string): void {
+  try {
+    storage?.setItem(greetedKey(key), "1");
+  } catch {
+    // blocked or full: nothing to remember
+  }
+}
+
 export type WidgetOp = "open" | "close" | "toggle";
 export const MAX_QUEUED_OPS = 10;

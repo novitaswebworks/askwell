@@ -41,7 +41,7 @@ export async function GET(req: Request) {
   const { data: project, error } = await service
     .from("projects")
     .select(
-      "id, owner_id, allowed_domains, accounts(plan), widget_configs(button_color, position, label, animation, header_text, show_badge, welcome_message, starter_questions, last_seen_at, last_seen_host)",
+      "id, owner_id, allowed_domains, accounts(plan), widget_configs(button_color, position, label, animation, header_text, show_badge, welcome_message, starter_questions, greeting_enabled, greeting_text, last_seen_at, last_seen_host)",
     )
     .eq("public_key", query.data.key)
     .maybeSingle();
@@ -84,6 +84,8 @@ export async function GET(req: Request) {
       showBadge: stored.show_badge,
       welcomeMessage: stored.welcome_message ?? DEFAULT_WIDGET_CONFIG.welcomeMessage,
       starterQuestions: rawStarters,
+      greetingEnabled: stored.greeting_enabled ?? DEFAULT_WIDGET_CONFIG.greetingEnabled,
+      greetingText: stored.greeting_text ?? DEFAULT_WIDGET_CONFIG.greetingText,
     },
     planSchema.parse(account.plan),
   );

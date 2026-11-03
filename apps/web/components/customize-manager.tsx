@@ -60,7 +60,9 @@ export function CustomizeManager({
     config.headerText !== initialConfig.headerText ||
     config.showBadge !== initialConfig.showBadge ||
     config.welcomeMessage !== initialConfig.welcomeMessage ||
-    JSON.stringify(config.starterQuestions) !== JSON.stringify(initialConfig.starterQuestions);
+    JSON.stringify(config.starterQuestions) !== JSON.stringify(initialConfig.starterQuestions) ||
+    config.greetingEnabled !== initialConfig.greetingEnabled ||
+    config.greetingText !== initialConfig.greetingText;
 
   async function save(e: FormEvent) {
     e.preventDefault();
@@ -85,7 +87,7 @@ export function CustomizeManager({
       setConfig(updated);
       setMessage({
         kind: "ok",
-        text: "Saved. Changes appear on your site within a minute (cached for 30s).",
+        text: "Saved. Changes can take up to about ten minutes to reach your website.",
       });
     } catch {
       setMessage({ kind: "error", text: "Network error. Check your connection and try again." });
@@ -261,6 +263,45 @@ export function CustomizeManager({
           />
         </div>
 
+        {/* Greeting bubble */}
+        <div className="space-y-2">
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              checked={config.greetingEnabled}
+              onChange={(e) => setConfig({ ...config, greetingEnabled: e.target.checked })}
+              disabled={!canCustomize || busy}
+              className="mt-1 h-4 w-4 accent-foreground"
+            />
+            <span className="flex flex-col">
+              <span className="text-sm font-medium">Greeting bubble</span>
+              <span className="text-xs text-muted">
+                A short line pops up beside the chat button a few seconds after a new visitor arrives, once per visitor.
+                It remembers that with one small flag in their browser (no personal data).
+              </span>
+            </span>
+          </label>
+          {config.greetingEnabled && (
+            <div className="space-y-1.5 pl-7">
+              <div className="flex items-center justify-between">
+                <label htmlFor="greeting-text" className="text-xs font-medium text-muted">
+                  Greeting text
+                </label>
+                <span className="text-xs text-muted">{config.greetingText.length} of 120</span>
+              </div>
+              <input
+                id="greeting-text"
+                type="text"
+                value={config.greetingText}
+                onChange={(e) => setConfig({ ...config, greetingText: e.target.value })}
+                maxLength={120}
+                disabled={!canCustomize || busy}
+                className="h-11 w-full rounded-2xl border border-border bg-glass-strong px-4 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50"
+              />
+            </div>
+          )}
+        </div>
+
         {/* Starter Questions */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -393,6 +434,17 @@ export function CustomizeManager({
               <div className="h-3 w-5/6 rounded bg-border" />
               <div className="h-3 w-2/3 rounded bg-border" />
             </div>
+
+            {/* Greeting bubble, as a visitor sees it beside the button */}
+            {config.greetingEnabled && !previewOpen && (
+              <div
+                className={`absolute max-w-[14rem] rounded-2xl border border-border bg-background px-3 py-2 text-xs shadow-lg ${
+                  config.position.startsWith("bottom") ? "bottom-16" : "top-16"
+                } ${config.position.endsWith("right") ? "right-4" : "left-4"}`}
+              >
+                {config.greetingText || DEFAULT_WIDGET_CONFIG.greetingText}
+              </div>
+            )}
 
             {/* Corner Button */}
             <div

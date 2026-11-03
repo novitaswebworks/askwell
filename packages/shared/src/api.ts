@@ -42,6 +42,8 @@ export const widgetConfigSchema = z.object({
   showBadge: z.boolean(),
   welcomeMessage: z.string().trim().min(1).max(200),
   starterQuestions: z.array(z.string().trim().min(1).max(100)).max(4),
+  greetingEnabled: z.boolean(),
+  greetingText: z.string().trim().min(1).max(120),
 });
 export type WidgetConfig = z.infer<typeof widgetConfigSchema>;
 
@@ -58,6 +60,8 @@ export const DEFAULT_WIDGET_CONFIG: WidgetConfig = {
     "How do I get started?",
     "How can I contact you?",
   ],
+  greetingEnabled: false,
+  greetingText: "Hi! Need a hand? Ask me anything.",
 };
 
 // ---------------------------------------------------------------- public routes

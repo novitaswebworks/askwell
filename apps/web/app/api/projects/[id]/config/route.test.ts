@@ -29,6 +29,8 @@ const proRow = {
   header_text: "Ask our team",
   show_badge: false,
   welcome_message: "Ask a question and we'll reply right here.",
+  greeting_enabled: false,
+  greeting_text: "Hi! Need a hand? Ask me anything.",
   starter_questions: [
     "What services do you offer?",
     "How do I get started?",
@@ -115,6 +117,8 @@ describe("PATCH /api/projects/:id/config", () => {
         "How do I get started?",
         "How can I contact you?",
       ],
+      greetingEnabled: false,
+      greetingText: "Hi! Need a hand? Ask me anything.",
     });
 
     expect(track).toHaveBeenCalledWith({
@@ -138,6 +142,15 @@ describe("PATCH /api/projects/:id/config", () => {
       welcome_message: "Hello, welcome to our store!",
       starter_questions: ["Where are you located?", "What are your hours?"],
     });
+  });
+
+  it("saves the greeting bubble settings on Pro", async () => {
+    const update = vi.fn().mockReturnValue(queryResult({ data: { ...proRow, greeting_enabled: true, greeting_text: "Planning a trip?" } }));
+    serviceFrom.mockReturnValue({ update });
+    const res = await patch({ greetingEnabled: true, greetingText: "Planning a trip?" });
+    expect(res.status).toBe(200);
+    expect(update).toHaveBeenCalledWith({ greeting_enabled: true, greeting_text: "Planning a trip?" });
+    expect(await res.json()).toMatchObject({ greetingEnabled: true, greetingText: "Planning a trip?" });
   });
 
   it("never touches unallowed columns even if passed in body", async () => {

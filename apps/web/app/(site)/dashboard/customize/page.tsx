@@ -44,7 +44,7 @@ async function CustomizeContent({ searchParams }: { searchParams: Promise<{ proj
   if (project) {
     const { data: row, error: configError } = await owner
       .from("widget_configs")
-      .select("button_color, position, label, animation, header_text, show_badge, welcome_message, starter_questions")
+      .select("button_color, position, label, animation, header_text, show_badge, welcome_message, starter_questions, greeting_enabled, greeting_text")
       .eq("project_id", project.id)
       .maybeSingle();
     if (configError) throw new Error(`Could not load widget config: ${configError.message}`);
@@ -61,6 +61,8 @@ async function CustomizeContent({ searchParams }: { searchParams: Promise<{ proj
         showBadge: row.show_badge,
         welcomeMessage: row.welcome_message ?? DEFAULT_WIDGET_CONFIG.welcomeMessage,
         starterQuestions: rawStarters,
+        greetingEnabled: row.greeting_enabled ?? DEFAULT_WIDGET_CONFIG.greetingEnabled,
+        greetingText: row.greeting_text ?? DEFAULT_WIDGET_CONFIG.greetingText,
       };
     }
   }

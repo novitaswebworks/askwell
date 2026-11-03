@@ -41,13 +41,15 @@ export async function PATCH(req: Request, { params }: Context) {
   if (parsed.data.showBadge !== undefined) updates.show_badge = parsed.data.showBadge;
   if (parsed.data.welcomeMessage !== undefined) updates.welcome_message = parsed.data.welcomeMessage;
   if (parsed.data.starterQuestions !== undefined) updates.starter_questions = parsed.data.starterQuestions;
+  if (parsed.data.greetingEnabled !== undefined) updates.greeting_enabled = parsed.data.greetingEnabled;
+  if (parsed.data.greetingText !== undefined) updates.greeting_text = parsed.data.greetingText;
 
   const service = createServiceClient();
   const { data, error } = await service
     .from("widget_configs")
     .update(updates)
     .eq("project_id", project.id)
-    .select("button_color, position, label, animation, header_text, show_badge, welcome_message, starter_questions")
+    .select("button_color, position, label, animation, header_text, show_badge, welcome_message, starter_questions, greeting_enabled, greeting_text")
     .single();
 
   if (error || !data) return apiError("internal", "Could not update the widget configuration.");
@@ -71,6 +73,8 @@ export async function PATCH(req: Request, { params }: Context) {
     showBadge: data.show_badge,
     welcomeMessage: data.welcome_message ?? DEFAULT_WIDGET_CONFIG.welcomeMessage,
     starterQuestions: rawStarters,
+    greetingEnabled: data.greeting_enabled ?? DEFAULT_WIDGET_CONFIG.greetingEnabled,
+    greetingText: data.greeting_text ?? DEFAULT_WIDGET_CONFIG.greetingText,
   };
 
   return NextResponse.json(config);

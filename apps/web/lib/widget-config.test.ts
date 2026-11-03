@@ -11,11 +11,16 @@ const custom: WidgetConfig = {
   showBadge: false,
   welcomeMessage: "Custom welcome",
   starterQuestions: ["Question A", "Question B"],
+  greetingEnabled: true,
+  greetingText: "Hello from the team",
 };
 
 describe("applyPlanToConfig", () => {
   it("gives Free the defaults and the badge, whatever is stored", () => {
     expect(applyPlanToConfig(custom, "free")).toEqual(DEFAULT_WIDGET_CONFIG);
+  });
+  it("keeps the greeting bubble off for Free, even if it was switched on while on Pro", () => {
+    expect(applyPlanToConfig(custom, "free").greetingEnabled).toBe(false);
   });
   it("gives Pro the stored config", () => {
     expect(applyPlanToConfig(custom, "pro")).toEqual(custom);
