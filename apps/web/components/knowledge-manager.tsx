@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type DragEvent, type FormEvent } from "react";
-import { MAX_KNOWLEDGE_FILE_BYTES, type KnowledgeSource, type Plan } from "@askwell/shared";
+import { MAX_KNOWLEDGE_FILE_BYTES, websitePreviewSchema, type KnowledgeSource, type Plan, type WebsitePreview } from "@askwell/shared";
 import { EmptyState } from "@/components/empty-state";
+import { KnowledgePreviewDialog } from "@/components/knowledge-preview-dialog";
 import { KnowledgeUrlForm } from "@/components/knowledge-url-form";
 import { Document, Plus, Trash, Upload } from "@/components/site/icons";
 
@@ -53,6 +54,7 @@ export function KnowledgeManager({
   const [textTitle, setTextTitle] = useState("");
   const [text, setText] = useState("");
   const [siteUrl, setSiteUrl] = useState("");
+  const [draft, setDraft] = useState<WebsitePreview | null>(null);
   const [fileTitle, setFileTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -99,10 +101,11 @@ export function KnowledgeManager({
     }
   }
 
-  async function addWebsite(e: FormEvent) {
+  // Step 1: read the site. Nothing is saved; the owner reviews and edits what we found first.
+  async function readWebsite(e: FormEvent) {
     e.preventDefault();
     if (!siteUrl.trim()) return;
-    const ok = await run("Reading the website. This can take a minute...", async () => {
+    await run("Reading the website. This can take a minute...", async () => {
       const res = await fetch(`${base}/url`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -112,9 +115,32 @@ export function KnowledgeManager({
         setError(await errorMessage(res));
         return false;
       }
+      const preview = websitePreviewSchema.safeParse(await res.json().catch(() => null));
+      if (!preview.success) {
+        setError("Something went wrong. Try again.");
+        return false;
+      }
+      setDraft(preview.data);
       return true;
     });
-    if (ok) setSiteUrl("");
+  }
+
+  // Step 2: the owner confirmed (and maybe edited) the text, so add it like pasted text.
+  async function confirmWebsite(title: string, body: string): Promise<string | null> {
+    try {
+      const res = await fetch(base, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, text: body }),
+      });
+      if (!res.ok) return await errorMessage(res);
+    } catch {
+      return "Network error. Check your connection and try again.";
+    }
+    setDraft(null);
+    setSiteUrl("");
+    router.refresh();
+    return null;
   }
 
   function handleFileSelect(selected: File | null) {
@@ -414,12 +440,14 @@ export function KnowledgeManager({
           <KnowledgeUrlForm
             url={siteUrl}
             onUrl={setSiteUrl}
-            onSubmit={addWebsite}
+            onSubmit={readWebsite}
             disabled={disabled}
             busy={busy}
             maxPages={isPro ? 40 : 10}
           />
         )}
+
+        {draft && <KnowledgePreviewDialog draft={draft} onCancel={() => setDraft(null)} onConfirm={confirmWebsite} />}
 
         {busy && (
           <p role="status" className="text-xs text-muted flex items-center gap-2">

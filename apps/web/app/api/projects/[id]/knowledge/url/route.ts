@@ -1,18 +1,17 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { addUrlKnowledgeSchema, getPlanLimits } from "@askwell/shared";
+import { addUrlKnowledgeSchema, getPlanLimits, type WebsitePreview } from "@askwell/shared";
 import { getAccountPlan } from "@/lib/accounts";
 import { track } from "@/lib/analytics";
 import { apiError, isUuid, readJson } from "@/lib/api";
 import { crawlLimitsFor, crawlSite, NoReadablePagesError, RobotsBlockedError, type PageFetcher } from "@/lib/knowledge/crawl";
 import { BlockedAddressError, parsePublicUrl } from "@/lib/knowledge/net-safety";
-import { processSource } from "@/lib/knowledge/process";
 import { fetchPublic } from "@/lib/knowledge/safe-fetch";
-import { limitMessage, processingMessage, toSource, type SourceRow } from "@/lib/knowledge/sources";
+import { limitMessage } from "@/lib/knowledge/sources";
 import { getOwnedProject } from "@/lib/owned-project";
 import { createServiceClient } from "@/lib/supabase/service";
 
-// Reading a site and embedding it can take a while.
+// Reading a site can take a while.
 export const maxDuration = 300;
 
 const CRAWL_BUDGET_MS = 90_000;
@@ -33,6 +32,9 @@ function makeFetcher(start: URL): PageFetcher {
   };
 }
 
+// Reads the site and returns what it found, for the owner to look over and edit. Nothing is
+// saved here: the reviewed text is added through the ordinary "paste text" route, which
+// checks the plan limit again and does the indexing.
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { userId } = await auth();
   if (!userId) return apiError("unauthorized", "Sign in to continue.");
@@ -47,31 +49,19 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const project = await getOwnedProject(id);
   if (!project) return apiError("not_found", "Project not found.");
 
+  // No point reading a whole site if the project has no room for another source.
   const plan = await getAccountPlan(userId);
-  const service = createServiceClient();
-  const host = start.hostname.replace(/^www\./, "");
-  const { data, error } = await service.rpc("reserve_knowledge_source", {
-    p_project_id: project.id,
-    p_title: `Website: ${host}`.slice(0, 200),
-    p_type: "text",
-    p_storage_key: null,
-    p_status: "processing",
-    p_max_sources: getPlanLimits(plan).maxKnowledgeSources,
-  });
-  if (error) {
-    if (error.code === "P0001") return apiError("limit_reached", limitMessage(plan));
-    return apiError("internal", "Could not add the website.");
-  }
-  const row = data as SourceRow & { project_id: string };
-
-  // Nothing worth keeping if the site could not be read: drop the placeholder row.
-  const discard = async () => void (await service.from("knowledge_sources").delete().eq("id", row.id));
+  const { count, error: countError } = await createServiceClient()
+    .from("knowledge_sources")
+    .select("id", { count: "exact", head: true })
+    .eq("project_id", project.id);
+  if (countError) return apiError("internal", "Could not read the website.");
+  if ((count ?? 0) >= getPlanLimits(plan).maxKnowledgeSources) return apiError("limit_reached", limitMessage(plan));
 
   let crawled: Awaited<ReturnType<typeof crawlSite>>;
   try {
     crawled = await crawlSite(start, makeFetcher(start), { ...crawlLimitsFor(plan), deadlineAt: Date.now() + CRAWL_BUDGET_MS });
   } catch (e) {
-    await discard();
     if (e instanceof RobotsBlockedError) {
       return apiError("invalid_input", "That website asks not to be read by crawlers (robots.txt). Paste its text instead.");
     }
@@ -82,17 +72,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return apiError("internal", "We couldn't reach that website. Check the address and try again.");
   }
 
-  try {
-    await processSource({ id: row.id, projectId: project.id }, crawled.text, service);
-  } catch (e) {
-    return apiError("internal", processingMessage(e));
-  }
+  const host = start.hostname.replace(/^www\./, "");
   const title = `Website: ${host} (${crawled.pages} ${crawled.pages === 1 ? "page" : "pages"})`.slice(0, 200);
-  await service.from("knowledge_sources").update({ title }).eq("id", row.id);
-  track({
-    distinctId: userId,
-    event: "knowledge_source_added",
-    properties: { source_type: "website", plan, pages: crawled.pages },
-  });
-  return NextResponse.json(toSource({ ...row, title, status: "ready" } satisfies SourceRow), { status: 201 });
+  track({ distinctId: userId, event: "website_previewed", properties: { plan, pages: crawled.pages } });
+  const preview: WebsitePreview = { title, text: crawled.text, pages: crawled.pages, skipped: crawled.skipped };
+  return NextResponse.json(preview);
 }
