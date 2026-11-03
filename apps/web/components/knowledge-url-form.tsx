@@ -38,9 +38,9 @@ export function KnowledgeUrlForm({
           className="h-11 min-w-0 w-full rounded-xl border border-border bg-glass-strong px-4 text-sm outline-none transition-all focus-visible:ring-2 focus-visible:ring-foreground placeholder:text-muted/60"
         />
         <p className="text-xs leading-relaxed text-muted">
-          We read up to {maxPages} pages of this website, following its own links. Pages that need a login are skipped,
-          and we respect the site&apos;s robots.txt. It counts as one source. To refresh it later, delete it and add it
-          again.
+          We read up to {maxPages} pages of this website, following its own links, then show you the text so you can
+          edit it before it is added. Pages that need a login are skipped, and we respect the site&apos;s robots.txt. It
+          counts as one source. To refresh it later, delete it and add it again.
         </p>
       </div>
       <button
@@ -49,7 +49,7 @@ export function KnowledgeUrlForm({
         className="inline-flex h-10 items-center justify-center gap-2 self-start rounded-full bg-foreground px-5 text-sm font-medium text-background transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <Plus className="h-4 w-4" />
-        <span>{busy ?? "Read this website"}</span>
+        <span>{busy ?? "Read website and review"}</span>
       </button>
     </form>
   );

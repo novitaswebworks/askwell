@@ -291,7 +291,7 @@ Limits run inside Postgres functions only `service_role` may execute: `create_pr
 | ------------------------------------------------------------------- | ----------------------------------- |
 | `GET/POST /api/projects`, `PATCH/DELETE /api/projects/:id`          | Projects CRUD + limit check. PATCH changes `name`, `about` and/or `allowedDomains`. |
 | `POST /api/projects/:id/knowledge`                                  | Paste text → process                |
-| `POST /api/projects/:id/knowledge/url`                              | Read a website (same site only, robots.txt respected, private addresses refused; Free 10 pages, Pro 40) into one `text` source titled "Website: host (n pages)" → process |
+| `POST /api/projects/:id/knowledge/url`                              | Read a website (same site only, robots.txt respected, private addresses refused; Free 10 pages, Pro 40) and **return the text for review**; saves nothing. The owner edits it in a dialog and confirms, which adds it through `POST /api/projects/:id/knowledge` as a `text` source (checks the limit and indexes) |
 | `POST /api/projects/:id/knowledge/upload-url`                       | Reserve a file source → signed upload URL |
 | `POST /api/projects/:id/knowledge/finalize`                         | Check the uploaded file → process   |
 | `DELETE /api/knowledge/:id`                                         | Delete source, file, chunks         |

@@ -115,9 +115,18 @@ export const updateProjectSchema = z
   );
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
 
-// POST /api/projects/:id/knowledge/url: read a website into one knowledge source.
+// POST /api/projects/:id/knowledge/url: read a website and return the text for the owner to
+// review. Nothing is saved; the reviewed text is added through POST /api/projects/:id/knowledge.
 export const addUrlKnowledgeSchema = z.object({ url: z.string().trim().min(1).max(2048) });
 export type AddUrlKnowledgeInput = z.infer<typeof addUrlKnowledgeSchema>;
+
+export const websitePreviewSchema = z.object({
+  title: z.string(),
+  text: z.string(),
+  pages: z.number().int().nonnegative(),
+  skipped: z.number().int().nonnegative(),
+});
+export type WebsitePreview = z.infer<typeof websitePreviewSchema>;
 
 export const addTextKnowledgeSchema = z.object({
   title: z.string().trim().min(1).max(200),
