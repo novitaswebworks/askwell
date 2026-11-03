@@ -15,6 +15,17 @@ export type NotifyOwnerParams = {
   isHandoff?: boolean;
 };
 
+async function ownerEmailOf(ownerId: string): Promise<string | undefined> {
+  try {
+    const client = await clerkClient();
+    const user = await client.users.getUser(ownerId);
+    return user.primaryEmailAddress?.emailAddress;
+  } catch (err) {
+    console.error("[email] could not load owner email:", err instanceof Error ? err.message : "unknown");
+    return undefined;
+  }
+}
+
 export async function notifyOwnerOfLead({
   ownerId,
   projectName,
@@ -22,15 +33,7 @@ export async function notifyOwnerOfLead({
   transcript = [],
   isHandoff = false,
 }: NotifyOwnerParams): Promise<boolean> {
-  let ownerEmail: string | undefined;
-
-  try {
-    const client = await clerkClient();
-    const user = await client.users.getUser(ownerId);
-    ownerEmail = user.primaryEmailAddress?.emailAddress;
-  } catch (err) {
-    console.error("[email] could not load owner email:", err instanceof Error ? err.message : "unknown");
-  }
+  const ownerEmail = await ownerEmailOf(ownerId);
 
   if (!ownerEmail) return false;
 
@@ -64,6 +67,48 @@ export async function notifyOwnerOfLead({
   return sendEmail({
     to: ownerEmail,
     subject,
+    text: lines.join("\n"),
+  });
+}
+
+export type QuotaNoticeParams = {
+  ownerId: string;
+  projectName: string;
+  level: 80 | 100;
+  used: number;
+  limit: number;
+  plan: "free" | "pro";
+};
+
+// "Your project is nearly out of messages" / "is out of messages", once each per month.
+export async function notifyOwnerOfQuota({ ownerId, projectName, level, used, limit, plan }: QuotaNoticeParams): Promise<boolean> {
+  const to = await ownerEmailOf(ownerId);
+  if (!to) return false;
+
+  const billing = `${(process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/$/, "")}/dashboard/billing`;
+  const lines =
+    level === 80
+      ? [
+          `${projectName} has used ${used.toLocaleString("en-US")} of its ${limit.toLocaleString("en-US")} messages this month (80%).`,
+          "",
+          "The count starts again on the 1st of each month (UTC). When it runs out, visitors are told the team is unavailable and can leave their email instead.",
+        ]
+      : [
+          `${projectName} has used all ${limit.toLocaleString("en-US")} of its messages this month.`,
+          "",
+          "Until the 1st of next month (UTC), visitors are told the team is unavailable and can leave their email instead.",
+        ];
+  if (plan === "free") {
+    lines.push("", `Upgrade to Pro for more messages: ${billing}`);
+  }
+  lines.push("", `You get this email once per month for each level (80% and 100%).`);
+
+  return sendEmail({
+    to,
+    subject:
+      level === 80
+        ? `[${APP_NAME}] ${projectName} has used 80% of its monthly messages`
+        : `[${APP_NAME}] ${projectName} is out of messages for this month`,
     text: lines.join("\n"),
   });
 }

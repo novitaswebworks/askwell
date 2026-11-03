@@ -19,6 +19,9 @@ const trackGeneration = vi.fn();
 vi.mock("@/lib/analytics", () => ({ track: (...a: unknown[]) => track(...a), trackGeneration: (...a: unknown[]) => trackGeneration(...a) }));
 const understandMessage = vi.fn();
 vi.mock("@/lib/ai/understand", () => ({ understandMessage: (...a: unknown[]) => understandMessage(...a) }));
+const notifyOwnerOfQuota = vi.fn();
+vi.mock("@/lib/email/notify", () => ({ notifyOwnerOfQuota: (...a: unknown[]) => notifyOwnerOfQuota(...a) }));
+vi.mock("@/lib/after", () => ({ runAfterResponse: (work: () => Promise<unknown>) => void work().catch(() => {}) }));
 const from = vi.fn();
 const rpc = vi.fn();
 vi.mock("@/lib/supabase/service", () => ({ createServiceClient: () => ({ from, rpc }) }));
@@ -35,7 +38,7 @@ const call = (b: unknown) => POST(new Request("http://x/api/widget/chat", { meth
 
 type Tables = Record<string, { data: unknown }>;
 function tables(t: Tables = {}) {
-  const defaults: Tables = { projects: { data: { id: PROJECT, owner_id: "user_1", about: "A travel advisor." } },
+  const defaults: Tables = { projects: { data: { id: PROJECT, name: "Shop", owner_id: "user_1", about: "A travel advisor.", messages_used: 3, period_start: new Date().toISOString().slice(0, 10) } },
     conversations: { data: { id: CONVO } },
     messages: { data: [{ role: "bot", body: "Hi" }, { role: "visitor", body: "Hello" }] },
   };
@@ -48,6 +51,7 @@ function rpcs(overrides: Record<string, unknown> = {}) {
     consume_message: { data: true, error: null },
     match_chunks_hybrid: { data: [{ id: "c", source_id: "s", content: "Refunds take 5 days.", similarity: 0.8 }], error: null },
     save_chat_turn: { data: CONVO, error: null },
+    claim_quota_warning: { data: true, error: null },
     ...overrides,
   };
   rpc.mockImplementation(async (name: string) => results[name]);
@@ -291,5 +295,41 @@ describe("OPTIONS /api/widget/chat", () => {
     const res = OPTIONS();
     expect(res.status).toBe(204);
     expect(res.headers.get("access-control-allow-origin")).toBe("*");
+  });
+
+  describe("quota warning emails", () => {
+    beforeEach(() => notifyOwnerOfQuota.mockReset());
+    const nearLimit = (used: number) => tables({ projects: { data: { id: PROJECT, name: "Shop", owner_id: "user_1", about: "x", messages_used: used, period_start: new Date().toISOString().slice(0, 10) } } });
+    it("sends nothing on an ordinary message and asks the database nothing extra", async () => {
+      await call(body);
+      expect(rpc).not.toHaveBeenCalledWith("claim_quota_warning", expect.anything());
+      expect(notifyOwnerOfQuota).not.toHaveBeenCalled();
+    });
+    it("emails the owner once when this message takes the project to 80% (Free: 100 messages)", async () => {
+      nearLimit(79);
+      await call(body);
+      await vi.waitFor(() => expect(notifyOwnerOfQuota).toHaveBeenCalledTimes(1));
+      expect(rpc).toHaveBeenCalledWith("claim_quota_warning", { p_project_id: PROJECT, p_level: 80 });
+      expect(notifyOwnerOfQuota).toHaveBeenCalledWith(expect.objectContaining({ ownerId: "user_1", projectName: "Shop", level: 80, limit: 100, plan: "free" }));
+    });
+    it("does not email when the warning was already claimed", async () => {
+      nearLimit(79);
+      rpcs({ claim_quota_warning: { data: false, error: null } });
+      await call(body);
+      await vi.waitFor(() => expect(rpc).toHaveBeenCalledWith("claim_quota_warning", expect.anything()));
+      expect(notifyOwnerOfQuota).not.toHaveBeenCalled();
+    });
+    it("sends the limit-reached email on the last message", async () => {
+      nearLimit(99);
+      await call(body);
+      await vi.waitFor(() => expect(notifyOwnerOfQuota).toHaveBeenCalledWith(expect.objectContaining({ level: 100 })));
+    });
+    it("still answers when the email cannot be sent", async () => {
+      nearLimit(79);
+      notifyOwnerOfQuota.mockResolvedValue(false); // what sendEmail returns when mail is down
+      const res = await call(body);
+      expect(res.status).toBe(200);
+      await vi.waitFor(() => expect(notifyOwnerOfQuota).toHaveBeenCalled());
+    });
   });
 });

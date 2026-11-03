@@ -5,6 +5,9 @@ import { generateAnswer } from "@/lib/ai/groq";
 import { embedTexts } from "@/lib/ai/ollama";
 import { understandMessage } from "@/lib/ai/understand";
 import { getAccountPlan } from "@/lib/accounts";
+import { runAfterResponse } from "@/lib/after";
+import { notifyOwnerOfQuota } from "@/lib/email/notify";
+import { quotaWarningLevel } from "@/lib/quota";
 import { track, trackGeneration, type Generation } from "@/lib/analytics";
 import { apiError, isUuid, readJson } from "@/lib/api";
 import {
@@ -71,7 +74,7 @@ export async function POST(req: Request) {
   const service = createServiceClient();
   const { data: project, error: projectError } = await service
     .from("projects")
-    .select("id, owner_id, about")
+    .select("id, name, owner_id, about, messages_used, period_start")
     .eq("public_key", key)
     .maybeSingle();
   if (projectError) return fail("internal", UNAVAILABLE_MESSAGE);
@@ -100,6 +103,30 @@ export async function POST(req: Request) {
   if (counted !== true) {
     track({ distinctId: visitorId, event: "quota_exceeded", anonymous: true, properties: { project_id: project.id } });
     return fail("quota_exceeded", QUOTA_MESSAGE);
+  }
+
+  // The message that takes a project to 80% or 100% of its month sends the owner a one-time email,
+  // after the reply has gone out (the claim in the database makes sure it is sent only once).
+  const limit = getPlanLimits(plan).messagesPerMonth;
+  const warning = quotaWarningLevel(
+    { messagesUsed: Number(project.messages_used) || 0, periodStart: String(project.period_start ?? "") },
+    limit,
+    new Date(),
+  );
+  if (warning) {
+    runAfterResponse(async () => {
+      const { data: claimed } = await service.rpc("claim_quota_warning", { p_project_id: project.id, p_level: warning });
+      if (claimed !== true) return;
+      const used = warning === 100 ? limit : Math.ceil(limit * 0.8);
+      await notifyOwnerOfQuota({
+        ownerId: project.owner_id,
+        projectName: String(project.name ?? "Your project"),
+        level: warning,
+        used,
+        limit,
+        plan,
+      });
+    });
   }
 
   // 5. Understand the message, then answer, decline or chat accordingly.

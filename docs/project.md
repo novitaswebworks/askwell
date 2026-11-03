@@ -197,6 +197,9 @@ Two parts: a small loader script + an iframe.
 | List      | Per project, newest first: first message preview, message count, time |
 | Thread    | Full message history, visitor vs bot                                  |
 | Refresh   | Manual refresh. No realtime.                                          |
+| Search    | Words visitors or the assistant wrote (`?q=`), and "Not helpful only" (`?filter=unhelpful`); both in the address bar |
+| Export    | "Download CSV": one row per message of the matching conversations (newest 500), spreadsheet formulas defused |
+| Delete    | Per conversation, after a confirm. Its messages go; leads captured in it stay |
 | Done when | A chat from the widget shows up after refresh                         |
 
 ### 6.8 Customize (Pro)
@@ -245,6 +248,7 @@ Two parts: a small loader script + an iframe.
 | --------- | ------------------------------------------------------------------------------------ |
 | Shown     | Messages used this month / limit, per project                                        |
 | Reset     | Monthly (`period_start`)                                                             |
+| Emails    | The owner gets one email when a project reaches 80% and one at 100% of its month (`claim_quota_warning`, `projects.quota_warned_*`, sent through Resend like lead emails; once per level per month) |
 | Done when | Count goes up for each accepted message; at the limit, the widget shows the quota message |
 
 ---
@@ -254,7 +258,7 @@ Two parts: a small loader script + an iframe.
 | Table               | Columns                                                                                                                              | Notes                                               |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------- |
 | `accounts`          | `clerk_user_id` (PK), `plan` (`free`/`pro`), `cashfree_subscription_id` (nullable), `created_at`                                      | One per Clerk user. Plan lives here, kept in sync by the Cashfree webhook. `cashfree_subscription_id` is our own ID for the owner's subscription (added with the billing migration); it lets the webhook find the owner and lets the owner cancel. |
-| `projects`          | `id`, `owner_id` → accounts, `name`, `about`, `allowed_domains`, `public_key`, `messages_used`, `period_start`, `created_at`                            | `public_key` unique. `about`: the owner's description of the business (up to 600 characters), used by the chat to tell on-topic questions from off-topic ones. `allowed_domains`: up to 10 domains that may show the widget; empty means any site; subdomains and localhost always match. Enforced in `GET /api/widget/config` (403 for other sites), using the browser's `Origin`, or the `?origin=` the `/embed` panel passes along. It stops a key being pasted onto the wrong site; it is not a defence against someone calling the chat API directly. |
+| `projects`          | `id`, `owner_id` → accounts, `name`, `about`, `allowed_domains`, `public_key`, `quota_warned_period`, `quota_warned_level`, `messages_used`, `period_start`, `created_at`                            | `public_key` unique. `about`: the owner's description of the business (up to 600 characters), used by the chat to tell on-topic questions from off-topic ones. `allowed_domains`: up to 10 domains that may show the widget; empty means any site; subdomains and localhost always match. Enforced in `GET /api/widget/config` (403 for other sites), using the browser's `Origin`, or the `?origin=` the `/embed` panel passes along. It stops a key being pasted onto the wrong site; it is not a defence against someone calling the chat API directly. |
 | `widget_configs`    | `project_id` (PK), `button_color`, `position`, `label`, `animation`, `header_text`, `show_badge`, `last_seen_at`, `last_seen_host`        | One per project                                     |
 | `knowledge_sources` | `id`, `project_id`, `title`, `type` (`text`/`pdf`/`md`/`txt`), `storage_key`, `status` (`uploading`/`processing`/`ready`/`failed`), `answers` (jsonb, null except the builder's source), `created_at` | `storage_key` null for pasted text |
 | `knowledge_chunks`  | `id`, `project_id`, `source_id`, `content`, `embedding vector(1536)`                                                                 | Deleted with the source. HNSW index on `embedding`. |
@@ -296,6 +300,8 @@ Limits run inside Postgres functions only `service_role` may execute: `create_pr
 | `POST /api/projects/:id/knowledge/finalize`                         | Check the uploaded file → process   |
 | `DELETE /api/knowledge/:id`                                         | Delete source, file, chunks         |
 | `GET /api/projects/:id/conversations`, `GET /api/conversations/:id` | Read conversations                  |
+| `GET /api/projects/:id/conversations/export` | CSV download (optional `q`, `filter=unhelpful`) |
+| `DELETE /api/conversations/:id`             | Delete a conversation and its messages |
 | `PATCH /api/projects/:id/config`                                    | Update config (402 if Free)         |
 | `POST /api/billing/subscribe`, `POST /api/billing/cancel`           | Start the Pro subscription (returns the Cashfree session ID) / cancel it |
 

@@ -106,3 +106,91 @@ describe("ratings", () => {
     expect(toMessage(msg("1", "a", "bot", "Hi")).rating).toBeNull();
   });
 });
+
+describe("search and filter", () => {
+  // A client that records what was asked of each table and answers from fixtures.
+  function fake(fixtures: Record<string, unknown[]>) {
+    const calls: { table: string; ops: [string, ...unknown[]][] }[] = [];
+    const client = {
+      from(table: string) {
+        const call = { table, ops: [] as [string, ...unknown[]][] };
+        calls.push(call);
+        const builder: unknown = new Proxy(
+          {},
+          {
+            get: (_t, prop: string) =>
+              prop === "then"
+                ? (resolve: (v: unknown) => unknown) => resolve({ data: fixtures[table] ?? [], error: null })
+                : (...args: unknown[]) => {
+                    call.ops.push([prop, ...args]);
+                    return builder;
+                  },
+          },
+        );
+        return builder;
+      },
+    };
+    return { client, calls };
+  }
+
+  it("escapes % and _ so they are searched literally", async () => {
+    const { likePattern } = await import("./conversations");
+    expect(likePattern("50% off_x")).toBe("%50\\% off\\_x%");
+    expect(likePattern("  a  ")).toBe("%a%");
+    expect(likePattern("x".repeat(500)).length).toBe(102);
+  });
+  it("searches message text inside the project, then loads only the matching conversations", async () => {
+    const { client, calls } = fake({
+      messages: [msg("1", "a", "visitor", "refund?"), msg("2", "a", "bot", "yes"), msg("3", "b", "visitor", "refund")],
+      conversations: [conv("a", "2026-11-01")],
+    });
+    await listConversations(client, "p1", 50, { q: "refund" });
+    const search = calls[0];
+    expect(search.table).toBe("messages");
+    expect(search.ops).toContainEqual(["ilike", "body", "%refund%"]);
+    expect(search.ops).toContainEqual(["eq", "conversations.project_id", "p1"]);
+    const list = calls[1];
+    expect(list.ops).toContainEqual(["in", "id", ["a", "b"]]);
+  });
+  it("filters to thumbs-down chats", async () => {
+    const { client, calls } = fake({ messages: [msg("1", "a", "bot", "no")], conversations: [conv("a", "2026-11-01")] });
+    await listConversations(client, "p1", 50, { unhelpful: true });
+    expect(calls[0].ops).toContainEqual(["eq", "rating", -1]);
+  });
+  it("returns nothing, without loading conversations, when nothing matches", async () => {
+    const { client, calls } = fake({ messages: [] });
+    expect(await listConversations(client, "p1", 50, { q: "zzz" })).toEqual([]);
+    expect(calls.map((c) => c.table)).toEqual(["messages"]);
+  });
+  it("does not search at all without a filter", async () => {
+    const { client, calls } = fake({ conversations: [] });
+    await listConversations(client, "p1");
+    expect(calls.map((c) => c.table)).toEqual(["conversations"]);
+  });
+});
+
+describe("exportRows", () => {
+  it("lists every message with its conversation, who wrote it and the rating", async () => {
+    const { exportRows } = await import("./conversations");
+    const client = {
+      from: (table: string) =>
+        queryResult(
+          table === "conversations"
+            ? { data: [conv("a", "2026-11-02"), conv("b", "2026-11-01")] }
+            : {
+                data: [
+                  { ...msg("1", "b", "visitor", "Old question", "2026-11-01T00:00:00Z"), rating: null },
+                  { ...msg("2", "a", "visitor", "Hi", "2026-11-02T00:00:00Z"), rating: null },
+                  { ...msg("3", "a", "bot", "Hello", "2026-11-02T00:00:01Z"), rating: -1 },
+                ],
+              },
+        ),
+    };
+    const rows = await exportRows(client, "p1");
+    expect(rows.map((r) => `${r.conversationId}:${r.role}:${r.message}:${r.rating}`)).toEqual([
+      "a:visitor:Hi:",
+      "a:assistant:Hello:not helpful",
+      "b:visitor:Old question:",
+    ]);
+  });
+});
