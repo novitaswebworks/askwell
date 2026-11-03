@@ -9,3 +9,4 @@ dist
 .DS_Store
 .claude-flow
 apps/web/public/widget.js
+.mcp.json
