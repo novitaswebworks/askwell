@@ -1,8 +1,12 @@
 import type { WidgetConfig } from "@askwell/shared";
 import {
+  GREETING_DELAY_MS,
+  GREETING_VISIBLE_MS,
   MAX_QUEUED_OPS,
   MESSAGE_SOURCE,
   anchorStyles,
+  hasBeenGreeted,
+  markGreeted,
   embedUrl,
   isValidKey,
   parseFlag,
@@ -91,13 +95,23 @@ async function start(scriptSrc: string, key: string) {
     .panel.open { visibility: visible; opacity: 1; pointer-events: auto; transform: none;
       transition: opacity .2s ease-out, transform .2s ease-out, visibility 0s; }
     iframe { width: 100%; height: 100%; border: 0; display: block; }
+    .bubble { position: fixed; ${panelAnchor} z-index: 2147483646; display: none; max-width: min(260px, calc(100vw - 2 * var(--ax) - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px)));
+      background: #fff; color: #111; border-radius: 16px; box-shadow: 0 8px 32px rgb(0 0 0 / 0.22); }
+    .bubble.on { display: block; animation: pop .25s ease-out; }
+    .bubble .msg { all: unset; display: block; box-sizing: border-box; cursor: pointer; padding: 11px 32px 11px 14px;
+      font: 400 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; overflow-wrap: anywhere; }
+    .bubble .msg:focus-visible, .bubble .x:focus-visible { outline: 2px solid ${config.buttonColor}; outline-offset: 2px; border-radius: 8px; }
+    .bubble .x { all: unset; position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; line-height: 22px; text-align: center;
+      border-radius: 50%; cursor: pointer; color: #555; font: 400 16px/22px system-ui, sans-serif; }
+    .bubble .x:hover { background: #eee; }
+    @keyframes pop { from { opacity: 0; transform: translateY(6px) scale(.97); } to { opacity: 1; transform: none; } }
     @media (max-width: 480px) {
       :host { --ay: ${mobileOffsetY}px; }
       button { height: 48px; padding: 0 18px; font-size: 14px; }
       .panel { left: calc(10px + env(safe-area-inset-left,0px)); right: calc(10px + env(safe-area-inset-right,0px));
         width: auto; max-width: none; }
     }
-    @media (prefers-reduced-motion: reduce) { .panel, button { transition: none; } }
+    @media (prefers-reduced-motion: reduce) { .panel, button { transition: none; } .bubble.on { animation: none; } }
   `;
 
   const button = document.createElement("button");
@@ -125,6 +139,7 @@ async function start(scriptSrc: string, key: string) {
   }
   function setOpen(next: boolean) {
     open = next;
+    if (open) hideGreeting();
     // The panel loads on first open, so pages that never open the chat pay nothing.
     if (open && !frame.src) {
       const lang = pickLang(script?.dataset.lang, document.documentElement.lang, navigator.language);
@@ -136,6 +151,28 @@ async function start(scriptSrc: string, key: string) {
     else button.focus();
     tellPanel();
   }
+
+  // Greeting bubble: off unless the owner turned it on, shown once per visitor, never while the
+  // chat is open, and a site can switch it off for a page with data-no-greeting.
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  const greetingButton = document.createElement("button");
+  greetingButton.type = "button";
+  greetingButton.className = "msg";
+  greetingButton.textContent = config.greetingText;
+  const greetingClose = document.createElement("button");
+  greetingClose.type = "button";
+  greetingClose.className = "x";
+  greetingClose.setAttribute("aria-label", "Close");
+  greetingClose.textContent = "\u00d7";
+  bubble.append(greetingButton, greetingClose);
+  let greetingTimer: number | undefined;
+  function hideGreeting() {
+    window.clearTimeout(greetingTimer);
+    bubble.classList.remove("on");
+  }
+  greetingButton.addEventListener("click", () => setOpen(true));
+  greetingClose.addEventListener("click", hideGreeting);
 
   button.addEventListener("click", () => setOpen(!open));
   frame.addEventListener("load", () => {
@@ -151,8 +188,25 @@ async function start(scriptSrc: string, key: string) {
     else if (!open && message.count > 0) dot.classList.add("on");
   });
 
-  shadow.append(style, panel, button);
+  shadow.append(style, panel, bubble, button);
   document.body.append(host);
+
+  if (config.greetingEnabled && config.greetingText && !parseFlag(script?.dataset.noGreeting)) {
+    let storage: Storage | null = null;
+    try {
+      storage = window.localStorage;
+    } catch {
+      storage = null;
+    }
+    if (!hasBeenGreeted(storage, key)) {
+      greetingTimer = window.setTimeout(() => {
+        if (open) return;
+        markGreeted(storage, key);
+        bubble.classList.add("on");
+        greetingTimer = window.setTimeout(hideGreeting, GREETING_VISIBLE_MS);
+      }, GREETING_DELAY_MS);
+    }
+  }
 
   applyOp = (op) => {
     const next = op === "toggle" ? !open : op === "open";

@@ -272,6 +272,8 @@ export type Database = {
         Row: {
           animation: string
           button_color: string
+          greeting_enabled: boolean
+          greeting_text: string
           header_text: string
           label: string
           last_seen_at: string | null
@@ -285,6 +287,8 @@ export type Database = {
         Insert: {
           animation?: string
           button_color?: string
+          greeting_enabled?: boolean
+          greeting_text?: string
           header_text?: string
           label?: string
           last_seen_at?: string | null
@@ -298,6 +302,8 @@ export type Database = {
         Update: {
           animation?: string
           button_color?: string
+          greeting_enabled?: boolean
+          greeting_text?: string
           header_text?: string
           label?: string
           last_seen_at?: string | null

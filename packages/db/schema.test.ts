@@ -44,6 +44,8 @@ describe("projects", () => {
       position: "bottom-right",
       show_badge: true,
       welcome_message: "Ask a question and we'll reply right here.",
+      greeting_enabled: false,
+      greeting_text: "Hi! Need a hand? Ask me anything.",
     });
     expect((cfg.rows[0] as { starter_questions: unknown }).starter_questions).toEqual([
       "What services do you offer?",

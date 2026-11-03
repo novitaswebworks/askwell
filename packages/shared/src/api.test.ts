@@ -65,6 +65,12 @@ describe("updateConfigSchema", () => {
     expect(updateConfigSchema.safeParse({ welcomeMessage: "   " }).success).toBe(false);
     expect(updateConfigSchema.safeParse({ welcomeMessage: "Welcome!" }).success).toBe(true);
   });
+  it("limits the greeting bubble text to 1 to 120 characters", () => {
+    expect(updateConfigSchema.safeParse({ greetingEnabled: true, greetingText: "Hi there" }).success).toBe(true);
+    expect(updateConfigSchema.safeParse({ greetingText: "   " }).success).toBe(false);
+    expect(updateConfigSchema.safeParse({ greetingText: "x".repeat(121) }).success).toBe(false);
+    expect(updateConfigSchema.safeParse({ greetingEnabled: "yes" }).success).toBe(false);
+  });
 });
 
 describe("updateProjectSchema", () => {

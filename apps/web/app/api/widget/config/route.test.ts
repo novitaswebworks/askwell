@@ -21,6 +21,8 @@ const stored = {
   show_badge: false,
   welcome_message: "Custom welcome",
   starter_questions: ["Q1", "Q2"],
+  greeting_enabled: true,
+  greeting_text: "Hello from us",
   last_seen_at: null,
   last_seen_host: null,
 };
@@ -48,6 +50,16 @@ describe("GET /api/widget/config", () => {
     const res = await get("pk_abcdefgh12345678");
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual(DEFAULT_WIDGET_CONFIG);
+  });
+  it("keeps the greeting bubble off for a Free project", async () => {
+    mockTables("free");
+    const body = await (await get("pk_abcdefgh12345678")).json();
+    expect(body).toMatchObject({ greetingEnabled: false, greetingText: DEFAULT_WIDGET_CONFIG.greetingText });
+  });
+  it("sends a Pro project's greeting settings", async () => {
+    mockTables("pro");
+    const body = await (await get("pk_abcdefgh12345678")).json();
+    expect(body).toMatchObject({ greetingEnabled: true, greetingText: "Hello from us" });
   });
   it("gives a Pro project its stored config", async () => {
     mockTables("pro");
@@ -94,6 +106,8 @@ describe("GET /api/widget/config: last seen", () => {
     expect(Object.keys(body).sort()).toEqual([
       "animation",
       "buttonColor",
+      "greetingEnabled",
+      "greetingText",
       "headerText",
       "label",
       "position",

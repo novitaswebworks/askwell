@@ -4,6 +4,8 @@ import {
   embedUrl,
   isValidKey,
   parseFlag,
+  hasBeenGreeted,
+  markGreeted,
   parseOffset,
   parsePanelMessage,
   pickLang,
@@ -123,5 +125,33 @@ describe("embedUrl", () => {
     expect(url.searchParams.get("origin")).toBe("https://site.example");
     expect(url.searchParams.get("lang")).toBe("de");
     expect(new URL(embedUrl(APP, "pk_abcdefgh12345678", "https://s.example")).searchParams.has("lang")).toBe(false);
+  });
+});
+
+describe("greeting memory", () => {
+  const store = () => {
+    const data = new Map<string, string>();
+    return { getItem: (k: string) => data.get(k) ?? null, setItem: (k: string, v: string) => void data.set(k, v) };
+  };
+  it("remembers a visitor was greeted, per project", () => {
+    const s = store();
+    expect(hasBeenGreeted(s, "pk_abcdefgh12345678")).toBe(false);
+    markGreeted(s, "pk_abcdefgh12345678");
+    expect(hasBeenGreeted(s, "pk_abcdefgh12345678")).toBe(true);
+    expect(hasBeenGreeted(s, "pk_otherotherother1")).toBe(false);
+  });
+  it("copes with blocked or missing storage", () => {
+    const broken = {
+      getItem: () => {
+        throw new Error("blocked");
+      },
+      setItem: () => {
+        throw new Error("blocked");
+      },
+    };
+    expect(hasBeenGreeted(broken, "pk_x")).toBe(false);
+    expect(() => markGreeted(broken, "pk_x")).not.toThrow();
+    expect(hasBeenGreeted(null, "pk_x")).toBe(false);
+    expect(() => markGreeted(null, "pk_x")).not.toThrow();
   });
 });
