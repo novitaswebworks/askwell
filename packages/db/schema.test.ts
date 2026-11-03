@@ -204,6 +204,27 @@ describe("row level security", () => {
     });
   });
 
+  it("lets exactly one caller claim each quota warning per month, service role only", async () => {
+    const alice = await svc(() => db.query<{ id: string }>("select id from public.projects where owner_id = $1 limit 1", [ALICE]));
+    const projectId = alice.rows[0]!.id;
+    const claim = (level: number) =>
+      svc(async () => (await db.query<{ ok: boolean }>("select public.claim_quota_warning($1, $2::smallint) as ok", [projectId, level])).rows[0]!.ok);
+    expect(await claim(80)).toBe(true);
+    expect(await claim(80)).toBe(false); // already sent this month
+    expect(await claim(100)).toBe(true); // a higher level is new
+    expect(await claim(100)).toBe(false);
+    expect(await claim(80)).toBe(false); // 80 does not come back after 100
+    // A new month starts again.
+    await svc(() => db.query("update public.projects set period_start = period_start + interval '1 month' where id = $1", [projectId]));
+    expect(await claim(80)).toBe(true);
+    await svc(async () => {
+      await expect(db.query("select public.claim_quota_warning($1, 50::smallint)", [projectId])).rejects.toThrow(/invalid_level/);
+    });
+    await asRole(db, "authenticated", ALICE, async () => {
+      await expect(db.query("select public.claim_quota_warning($1, 80::smallint)", [projectId])).rejects.toThrow(/permission denied/);
+    });
+  });
+
   it("does not let an owner change another owner's project", async () => {
     const res = await asRole(db, "authenticated", BOB, () =>
       db.query("update public.projects set name = 'hacked' where owner_id = $1 returning id", [ALICE]),

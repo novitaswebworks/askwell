@@ -235,6 +235,8 @@ export type Database = {
           owner_id: string
           period_start: string
           public_key: string
+          quota_warned_level: number
+          quota_warned_period: string | null
         }
         Insert: {
           about?: string
@@ -246,6 +248,8 @@ export type Database = {
           owner_id: string
           period_start?: string
           public_key: string
+          quota_warned_level?: number
+          quota_warned_period?: string | null
         }
         Update: {
           about?: string
@@ -257,6 +261,8 @@ export type Database = {
           owner_id?: string
           period_start?: string
           public_key?: string
+          quota_warned_level?: number
+          quota_warned_period?: string | null
         }
         Relationships: [
           {
@@ -350,6 +356,8 @@ export type Database = {
           owner_id: string
           period_start: string
           public_key: string
+          quota_warned_level: number
+          quota_warned_period: string | null
         }
         SetofOptions: {
           from: "*"
@@ -422,6 +430,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      claim_quota_warning: {
+        Args: { p_level: number; p_project_id: string }
+        Returns: boolean
       }
       rate_last_reply: {
         Args: { p_conversation_id: string; p_project_id: string; p_rating: number }
