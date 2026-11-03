@@ -12,14 +12,14 @@ import {
 import { readableTextColor } from "@/lib/widget-config";
 
 const COLOR_PRESETS = [
-  "#000000",
-  "#e8590c",
-  "#2563eb",
-  "#16a34a",
-  "#9333ea",
-  "#e11d48",
-  "#0f766e",
-  "#475569",
+  "#141413",
+  "#c15f3c",
+  "#d97757",
+  "#6a9bcc",
+  "#788c5d",
+  "#9a6fb0",
+  "#b0583c",
+  "#6e6d66",
 ];
 
 const POSITIONS: { value: WidgetPosition; label: string }[] = [
