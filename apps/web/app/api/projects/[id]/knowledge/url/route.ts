@@ -74,7 +74,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   const host = start.hostname.replace(/^www\./, "");
   const title = `Website: ${host} (${crawled.pages} ${crawled.pages === 1 ? "page" : "pages"})`.slice(0, 200);
-  track({ distinctId: userId, event: "website_previewed", properties: { plan, pages: crawled.pages } });
-  const preview: WebsitePreview = { title, text: crawled.text, pages: crawled.pages, skipped: crawled.skipped };
+  track({ distinctId: userId, event: "website_previewed", properties: { plan, pages: crawled.pages, sparse: crawled.sparse } });
+  const preview: WebsitePreview = { title, text: crawled.text, pages: crawled.pages, skipped: crawled.skipped, sparse: crawled.sparse };
   return NextResponse.json(preview);
 }

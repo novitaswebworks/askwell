@@ -125,6 +125,8 @@ export const websitePreviewSchema = z.object({
   text: z.string(),
   pages: z.number().int().nonnegative(),
   skipped: z.number().int().nonnegative(),
+  // Very little text was found: the site may draw its content with JavaScript, which we cannot read.
+  sparse: z.boolean(),
 });
 export type WebsitePreview = z.infer<typeof websitePreviewSchema>;
 

@@ -34,7 +34,7 @@ beforeEach(() => {
   getAccountPlan.mockResolvedValue("free");
   getOwnedProject.mockResolvedValue({ id: PROJECT });
   from.mockImplementation(() => queryResult({ data: null }));
-  crawlSite.mockResolvedValue({ text: "# Home\nhello", pages: 3, skipped: 1 });
+  crawlSite.mockResolvedValue({ text: "# Home\nhello", pages: 3, skipped: 1, sparse: false });
 });
 
 describe("POST /api/projects/:id/knowledge/url (preview)", () => {
@@ -63,12 +63,16 @@ describe("POST /api/projects/:id/knowledge/url (preview)", () => {
   it("returns the text for review and saves nothing", async () => {
     const res = await call({ url: "acme.com" });
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ title: "Website: acme.com (3 pages)", text: "# Home\nhello", pages: 3, skipped: 1 });
+    expect(await res.json()).toEqual({ title: "Website: acme.com (3 pages)", text: "# Home\nhello", pages: 3, skipped: 1, sparse: false });
     expect(crawlSite.mock.calls[0][0].toString()).toBe("https://acme.com/");
     expect(crawlSite.mock.calls[0][2]).toMatchObject({ maxPages: 10 });
     expect(rpc).not.toHaveBeenCalled(); // no source is reserved, nothing is indexed
     expect(from).toHaveBeenCalledTimes(1); // only the limit check reads the table
     expect(track).toHaveBeenCalledWith(expect.objectContaining({ event: "website_previewed" }));
+  });
+  it("passes on that very little text was found", async () => {
+    crawlSite.mockResolvedValue({ text: "# Home\nhi", pages: 1, skipped: 0, sparse: true });
+    expect((await (await call({ url: "acme.com" })).json()).sparse).toBe(true);
   });
   it("gives Pro a bigger crawl", async () => {
     getAccountPlan.mockResolvedValue("pro");
