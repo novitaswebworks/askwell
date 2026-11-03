@@ -28,6 +28,17 @@ export function SiteFooter() {
         </nav>
         <p className="text-sm text-muted">© {APP_NAME}</p>
       </div>
+      <p className="mx-auto w-full max-w-6xl px-4 pb-8 text-sm text-muted md:px-8">
+        Developed by{" "}
+        <a
+          href="https://novitasweb.works"
+          target="_blank"
+          rel="noopener"
+          className="font-medium text-foreground underline-offset-4 hover:underline"
+        >
+          Novitas WebWorks
+        </a>
+      </p>
     </footer>
   );
 }
