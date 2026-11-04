@@ -1,5 +1,4 @@
 import { auth } from "@clerk/nextjs/server";
-import Link from "next/link";
 import { Suspense } from "react";
 import { DEFAULT_WIDGET_CONFIG, getPlanLimits, type WidgetConfig } from "@askwell/shared";
 import { ButtonLink } from "@/components/button-link";
@@ -77,22 +76,6 @@ async function CustomizeContent({ searchParams }: { searchParams: Promise<{ proj
         />
       ) : (
         <div className="flex flex-col gap-4">
-          {projects.length > 1 && (
-            <nav aria-label="Project" className="flex flex-wrap gap-2">
-              {projects.map((p) => (
-                <Link
-                  key={p.id}
-                  href={`/dashboard/customize?project=${p.id}`}
-                  aria-current={p.id === project.id ? "page" : undefined}
-                  className={`rounded-full px-4 py-2 text-sm ${
-                    p.id === project.id ? "bg-accent text-accent-foreground" : "glass"
-                  }`}
-                >
-                  {p.name}
-                </Link>
-              ))}
-            </nav>
-          )}
           <CustomizeManager
             key={project.id}
             projectId={project.id}
