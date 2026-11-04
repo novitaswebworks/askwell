@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { Suspense } from "react";
 import { getPlanLimits } from "@askwell/shared";
+import { UnansweredCard, UnansweredSkeleton } from "@/components/unanswered-card";
 import { OverviewStats } from "@/components/overview-stats";
 import { OnboardingChecklist } from "@/components/onboarding-checklist";
 import { ProjectsManager } from "@/components/projects-manager";
@@ -93,6 +94,11 @@ async function ProjectsContent() {
   return (
     <div className="flex flex-col gap-6">
       {projects.length > 0 && <OverviewStats overview={overview} />}
+      {projects.length > 0 && (
+        <Suspense fallback={<UnansweredSkeleton />}>
+          <UnansweredCard projectId={projects[0].id} projectName={projects[0].name} />
+        </Suspense>
+      )}
       {projects.length > 0 && <OnboardingChecklist facts={facts} projectId={projects[0].id} />}
       <ProjectsManager
         projects={projects}
