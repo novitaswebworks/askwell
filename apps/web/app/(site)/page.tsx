@@ -9,6 +9,8 @@ import { HeroChat } from "@/components/site/hero-chat";
 import { ArrowRight, Chat, Check, Code, Document, Globe, Shield } from "@/components/site/icons";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
+import { UpcomingFeatures } from "@/components/upcoming-features";
+import { billingEnabled, planFeatures } from "@/lib/plan-features";
 import { buildJsonLd, jsonLdString } from "@/lib/seo";
 import { HOME_DESCRIPTION, HOME_TITLE, siteUrl } from "@/lib/site";
 
@@ -56,14 +58,7 @@ function PlanCard({
   cta: string;
   featured?: boolean;
 }) {
-  const l = PLAN_LIMITS[plan];
-  const rows = [
-    `${l.maxProjects} project${l.maxProjects > 1 ? "s" : ""}`,
-    `${l.messagesPerMonth.toLocaleString("en-US")} messages a month per project`,
-    `${l.maxKnowledgeSources} knowledge sources per project`,
-    l.canCustomize ? "Your colour, position, label and animation" : "Standard widget look",
-    l.canCustomize ? "No “Powered by” badge" : "“Powered by” badge shown",
-  ];
+  const rows = planFeatures(plan);
   return (
     <div
       className={`flex flex-col gap-6 rounded-3xl border p-8 ${
@@ -216,12 +211,13 @@ export default function Home() {
             <PlanCard
               name="Pro"
               price={`₹${PRO_PRICE_INR.toLocaleString("en-IN")}`}
-              note="per month · cancel anytime"
+              note={billingEnabled() ? "per month · cancel anytime" : "per month · opens soon"}
               plan="pro"
-              cta="Get started"
+              cta={billingEnabled() ? "Get started" : "Start free, upgrade soon"}
               featured
             />
           </div>
+          <UpcomingFeatures className="mt-12" />
         </section>
 
         <section id="faq" className="mx-auto w-full max-w-6xl px-4 py-12 md:px-8">

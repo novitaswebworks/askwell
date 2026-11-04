@@ -1,8 +1,10 @@
 import { auth } from "@clerk/nextjs/server";
 import { Suspense } from "react";
-import { PLAN_LIMITS } from "@askwell/shared";
+import { PLAN_LIMITS, PRO_PRICE_INR } from "@askwell/shared";
 import { BillingActions } from "@/components/billing-actions";
 import { getAccountPlan } from "@/lib/accounts";
+import { UpcomingFeatures } from "@/components/upcoming-features";
+import { billingEnabled, planFeatures } from "@/lib/plan-features";
 import { razorpayMode } from "@/lib/razorpay";
 
 function Skeleton() {
@@ -52,7 +54,29 @@ async function BillingContent({ searchParams }: Props) {
         </p>
       )}
 
-      <BillingActions plan={plan} mode={razorpayMode()} />
+      {plan === "free" && !billingEnabled() ? (
+        <div className="glass flex flex-col gap-3 p-5">
+          <div>
+            <h2 className="font-medium">Pro opens soon</h2>
+            <p className="mt-1 text-sm text-muted">
+              Paid plans are not open yet. Everything on Free keeps working. This is what Pro will include:
+            </p>
+          </div>
+          <ul className="flex flex-col gap-2 text-sm">
+            {planFeatures("pro").map((f) => (
+              <li key={f} className="flex items-start gap-2">
+                <span aria-hidden className="mt-1.5 size-1.5 shrink-0 rounded-full bg-brand" />
+                {f}
+              </li>
+            ))}
+          </ul>
+          <p className="text-sm text-muted">₹{PRO_PRICE_INR.toLocaleString("en-IN")} a month when it opens.</p>
+        </div>
+      ) : (
+        <BillingActions plan={plan} mode={razorpayMode()} />
+      )}
+
+      <UpcomingFeatures />
     </div>
   );
 }
