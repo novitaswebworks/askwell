@@ -4,6 +4,9 @@ import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Show, UserButton } from "@clerk/nextjs";
+import { CommandPalette } from "@/components/command-palette";
+import { ProjectSwitcher } from "@/components/project-switcher";
+import { createOwnerClient } from "@/lib/supabase/owner";
 import { DashboardNav } from "@/components/dashboard-nav";
 import { EnsureAccount } from "@/components/ensure-account";
 import { PostHogIdentify } from "@/components/posthog-identify";
@@ -32,6 +35,28 @@ async function SidebarPlanBadge() {
   );
 }
 
+// Project list for the switcher and the search. It streams in behind the sidebar, and the
+// sidebar still works without it if the read fails.
+async function SidebarTools() {
+  const { userId } = await auth();
+  if (!userId) return null;
+  const { data } = await createOwnerClient()
+    .from("projects")
+    .select("id, name, widget_configs(last_seen_host)")
+    .order("created_at", { ascending: true });
+  const rows = (data ?? []) as unknown as { id: string; name: string; widget_configs: { last_seen_host: string | null } | { last_seen_host: string | null }[] | null }[];
+  const projects = rows.map((r) => {
+    const config = Array.isArray(r.widget_configs) ? r.widget_configs[0] : r.widget_configs;
+    return { id: r.id, name: r.name, connected: Boolean(config?.last_seen_host) };
+  });
+  return (
+    <div className="flex flex-col gap-3">
+      <CommandPalette projects={projects} />
+      <ProjectSwitcher projects={projects} />
+    </div>
+  );
+}
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 p-4 md:flex-row md:p-8">
@@ -49,6 +74,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         <div className="h-px bg-border/60" />
+
+        <Suspense>
+          <SidebarTools />
+        </Suspense>
 
         <Suspense>
           <DashboardNav />

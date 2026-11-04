@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import { withProject } from "@/lib/dashboard-links";
 import {
   Chat,
   Code,
@@ -24,6 +25,7 @@ export const DASHBOARD_LINKS = [
 
 export function DashboardNav() {
   const pathname = usePathname();
+  const project = useSearchParams().get("project");
   return (
     <nav aria-label="Dashboard" className="flex gap-1.5 overflow-x-auto py-1 md:flex-col md:py-0">
       {DASHBOARD_LINKS.map(({ href, label, icon: Icon }) => {
@@ -31,7 +33,7 @@ export function DashboardNav() {
         return (
           <Link
             key={href}
-            href={href}
+            href={withProject(href, project)}
             aria-current={active ? "page" : undefined}
             className={`group flex items-center gap-2.5 whitespace-nowrap rounded-full px-3.5 py-2 text-sm font-medium transition-all md:rounded-xl md:px-3 md:py-2.5 ${
               active
