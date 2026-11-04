@@ -18,6 +18,7 @@ import { POST } from "./route";
 beforeEach(() => {
   vi.clearAllMocks();
   process.env.RAZORPAY_KEY_ID = "rzp_test_abc";
+  process.env.BILLING_ENABLED = "true";
   auth.mockResolvedValue({ userId: "user_1" });
   getAccountPlan.mockResolvedValue("free");
   currentUser.mockResolvedValue({ fullName: "Asha Rao", primaryEmailAddress: { emailAddress: "asha@example.com" } });
@@ -30,6 +31,13 @@ describe("POST /api/billing/subscribe", () => {
     auth.mockResolvedValue({ userId: null });
     expect((await POST()).status).toBe(401);
     expect(createProSubscription).not.toHaveBeenCalled();
+  });
+  it("refuses while billing is closed, without calling Razorpay", async () => {
+    process.env.BILLING_ENABLED = "false";
+    const res = await POST();
+    expect(res.status).toBe(403);
+    expect(createProSubscription).not.toHaveBeenCalled();
+    expect(update).not.toHaveBeenCalled();
   });
   it("refuses an owner who is already on Pro", async () => {
     getAccountPlan.mockResolvedValue("pro");
