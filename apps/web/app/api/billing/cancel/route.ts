@@ -2,10 +2,10 @@ import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { track } from "@/lib/analytics";
 import { apiError } from "@/lib/api";
-import { cancelSubscription } from "@/lib/cashfree";
+import { cancelSubscription } from "@/lib/razorpay";
 import { createServiceClient } from "@/lib/supabase/service";
 
-// Cancels the owner's own subscription. Pro ends now: Cashfree stops future
+// Cancels the owner's own subscription. Pro ends now: Razorpay stops future
 // charges, and the month already paid is not refunded.
 export async function POST() {
   const { userId } = await auth();
@@ -14,19 +14,19 @@ export async function POST() {
   const service = createServiceClient();
   const { data: account, error } = await service
     .from("accounts")
-    .select("plan, cashfree_subscription_id")
+    .select("plan, razorpay_subscription_id")
     .eq("clerk_user_id", userId)
     .maybeSingle();
   if (error) return apiError("internal", "Could not cancel the subscription.");
-  if (!account || account.plan !== "pro" || !account.cashfree_subscription_id) {
+  if (!account || account.plan !== "pro" || !account.razorpay_subscription_id) {
     return apiError("not_found", "You do not have an active subscription.");
   }
 
   try {
-    await cancelSubscription(account.cashfree_subscription_id as string);
+    await cancelSubscription(account.razorpay_subscription_id as string);
   } catch (e) {
     console.error("[billing] cancel failed:", e instanceof Error ? e.message : e);
-    return apiError("internal", "Could not cancel with Cashfree. Try again in a moment.");
+    return apiError("internal", "Could not cancel with Razorpay. Try again in a moment.");
   }
 
   // The webhook would also do this; doing it now means the page is right at once.

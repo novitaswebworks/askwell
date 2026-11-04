@@ -6,7 +6,7 @@ import {
   knowledgeUploadUrlRequestSchema,
   updateConfigSchema,
   conversationThreadSchema,
-  subscribeRequestSchema,
+  subscribeResponseSchema,
   updateProjectSchema,
   widgetConfigSchema,
   captureLeadRequestSchema,
@@ -117,15 +117,12 @@ describe("conversationThreadSchema", () => {
   });
 });
 
-describe("subscribeRequestSchema", () => {
-  it("keeps only the digits of a phone number", () => {
-    expect(subscribeRequestSchema.parse({ phone: " +91 98765-43210 " }).phone).toBe("919876543210");
-    expect(subscribeRequestSchema.parse({ phone: "9876543210" }).phone).toBe("9876543210");
-  });
-  it("rejects letters, too short and too long numbers", () => {
-    for (const phone of ["", "abc", "12345", "1".repeat(16), "98765 4321a"]) {
-      expect(subscribeRequestSchema.safeParse({ phone }).success).toBe(false);
-    }
+describe("subscribeResponseSchema", () => {
+  it("needs the subscription ID and the public key ID", () => {
+    const ok = { subscriptionId: "sub_1", keyId: "rzp_test_abc", name: "Asha", email: "a@example.com" };
+    expect(subscribeResponseSchema.safeParse(ok).success).toBe(true);
+    expect(subscribeResponseSchema.safeParse({ ...ok, subscriptionId: "" }).success).toBe(false);
+    expect(subscribeResponseSchema.safeParse({ ...ok, keyId: "" }).success).toBe(false);
   });
 });
 

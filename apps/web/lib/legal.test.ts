@@ -25,7 +25,7 @@ describe("legal documents", () => {
     expect(text(REFUNDS)).toMatch(/not refunded/);
   });
   it("name the providers that handle data, and say chat text is not sent to analytics", () => {
-    for (const name of ["Clerk", "Supabase", "Vercel", "Groq", "Cashfree", "Arcjet", "PostHog"]) expect(text(PRIVACY)).toContain(name);
+    for (const name of ["Clerk", "Supabase", "Vercel", "Groq", "Razorpay", "Arcjet", "PostHog"]) expect(text(PRIVACY)).toContain(name);
     expect(text(PRIVACY)).toMatch(/never include the text of chat messages/);
   });
 });

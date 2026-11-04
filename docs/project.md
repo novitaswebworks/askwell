@@ -27,7 +27,7 @@ The whole product in one flow. When this works end to end, the product is done.
 5. Ask a question on that page. The answer comes from the PDF.
 6. Open Conversations. The chat is there.
 7. Open Customize. Paywall.
-8. Upgrade to Pro with a Cashfree sandbox payment. Customize unlocks.
+8. Upgrade to Pro with a Razorpay test-mode payment. Customize unlocks.
 9. Change the button color. Reload the HTML page. The new color shows.
 
 ---
@@ -44,7 +44,7 @@ The whole product in one flow. When this works end to end, the product is done.
 | File storage     | Supabase Storage (`supabase-js`)             | Private `knowledge` bucket (10 MB, PDF/Markdown/TXT), created by a migration. The browser uploads straight to Storage with a one-time signed URL. |
 | Hosting          | Vercel                                       | Preview deployment per PR; production from `main`. Request bodies are capped at 4.5 MB, so files never pass through our routes. |
 | Auth             | Clerk                                        | Sign in / sign up UI, sessions, middleware. Supabase accepts Clerk session tokens (third-party auth), so RLS reads the user ID from `auth.jwt()->>'sub'`. |
-| Payments         | Cashfree Subscriptions (sandbox first)       | A monthly Pro subscription charged in INR, on Cashfree's hosted checkout: UPI Autopay, Indian cards, international Visa and Mastercard, eNACH. Cashfree webhook with signature check. No Stripe, no Clerk Billing. |
+| Payments         | Razorpay Subscriptions (test mode first)      | A monthly Pro subscription charged in INR, in Razorpay Checkout: UPI, Indian cards, eNACH, and international cards once Razorpay enables them on the account. Razorpay webhook with signature check. No Stripe, no Clerk Billing. |
 | AI               | Groq (chat) + Ollama on our own server (embeddings), through the Vercel AI SDK | Chat: Groq `openai/gpt-oss-20b`, falling back to other Groq models when one is throttled (set `GROQ_CHAT_MODEL` to change it), so a visitor waits seconds, not a minute. Embeddings: `nomic-embed-text` on our Ollama server (768 dims, zero-padded to the 1536-wide column; cosine results are unchanged), reached over HTTPS with a Bearer key. |
 | Security         | Arcjet                                       | On the public widget routes: a fixed-window rate limit per route + public key + IP, and prompt injection detection on chat messages before any AI call. Fails open: an Arcjet error or timeout lets the request through and is logged. The monthly message quota stays in Postgres. |
 | Analytics        | PostHog                                      | Product analytics, session replay, error tracking, AI tracing                           |
@@ -225,10 +225,10 @@ Two parts: a small loader script + an iframe.
 
 | Item      | Detail                                                                                                    |
 | --------- | --------------------------------------------------------------------------------------------------------- |
-| Upgrade   | "Upgrade to Pro" on the Billing page. The server creates a Cashfree subscription for the signed-in owner (their email and phone, the Pro plan, the price from one constant) and the browser opens Cashfree's hosted checkout with the returned session ID. We never see card or bank details. |
-| Webhook   | `POST /api/cashfree/webhook`, signature verified (HMAC SHA-256 over timestamp + raw body, 5 minute window). Authorisation succeeded or subscription `ACTIVE` → `accounts.plan = pro`. `CANCELLED`, `COMPLETED`, `EXPIRED`, `CARD_EXPIRED`, `CUSTOMER_CANCELLED`, `LINK_EXPIRED` → `free`. `ON_HOLD` (a failed charge) keeps Pro through Cashfree's retries. The owner is found from our own `subscription_id`; the plan is never taken from the browser. |
-| Manage    | "Cancel subscription" on the Billing page calls Cashfree's manage API (`CANCEL`). Cancelling ends Pro at once: future charges stop and the month already paid is not refunded. The owner can also cancel from their UPI app or bank, which ends Pro when Cashfree reports it. |
-| Currency  | INR. International cards are accepted and billed in rupees by the issuer's rate. Cashfree needs the customer's phone number, so the upgrade form asks for it. |
+| Upgrade   | "Upgrade to Pro" on the Billing page. The server creates a Razorpay subscription for the signed-in owner on the Pro plan (`RAZORPAY_PLAN_ID`) and returns its ID and the public key ID; the browser opens Razorpay Checkout with them. We never see card or bank details. |
+| Webhook   | `POST /api/razorpay/webhook`, signature verified (HMAC SHA-256 hex over the raw body with `RAZORPAY_WEBHOOK_SECRET`, header `x-razorpay-signature`). `subscription.activated` and `subscription.charged` → `accounts.plan = pro`. `subscription.cancelled`, `completed`, `expired` and `halted` → `free`. `subscription.pending` (a failed charge) keeps Pro through Razorpay's retries. The owner is found from the stored `razorpay_subscription_id`; the plan is never taken from the browser. |
+| Manage    | "Cancel subscription" on the Billing page calls Razorpay's cancel API (immediately). Cancelling ends Pro at once: future charges stop and the month already paid is not refunded. The owner can also cancel from their UPI app or bank, which ends Pro when Razorpay reports it. |
+| Currency  | INR. International cards work only after Razorpay enables them for the account; they are billed in rupees at the issuer's rate. Razorpay Checkout collects the phone number itself. |
 | Done when | Sandbox payment → Customize unlocks                                                                       |
 
 ### 6.11 Analytics
@@ -258,7 +258,7 @@ Two parts: a small loader script + an iframe.
 
 | Table               | Columns                                                                                                                              | Notes                                               |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------- |
-| `accounts`          | `clerk_user_id` (PK), `plan` (`free`/`pro`), `cashfree_subscription_id` (nullable), `created_at`                                      | One per Clerk user. Plan lives here, kept in sync by the Cashfree webhook. `cashfree_subscription_id` is our own ID for the owner's subscription (added with the billing migration); it lets the webhook find the owner and lets the owner cancel. |
+| `accounts`          | `clerk_user_id` (PK), `plan` (`free`/`pro`), `razorpay_subscription_id` (nullable), `cashfree_subscription_id` (legacy, nullable), `created_at`                                      | One per Clerk user. Plan lives here, kept in sync by the Razorpay webhook. `razorpay_subscription_id` is Razorpay's ID for the owner's subscription; it lets the webhook find the owner and lets the owner cancel. `cashfree_subscription_id` is unused and is dropped in a later migration. |
 | `projects`          | `id`, `owner_id` → accounts, `name`, `about`, `allowed_domains`, `public_key`, `quota_warned_period`, `quota_warned_level`, `messages_used`, `period_start`, `created_at`                            | `public_key` unique. `about`: the owner's description of the business (up to 600 characters), used by the chat to tell on-topic questions from off-topic ones. `allowed_domains`: up to 10 domains that may show the widget; empty means any site; subdomains and localhost always match. Enforced in `GET /api/widget/config` (403 for other sites), using the browser's `Origin`, or the `?origin=` the `/embed` panel passes along. It stops a key being pasted onto the wrong site; it is not a defence against someone calling the chat API directly. |
 | `widget_configs`    | `project_id` (PK), `button_color`, `position`, `label`, `animation`, `header_text`, `show_badge`, `welcome_message`, `starter_questions`, `greeting_enabled`, `greeting_text`, `last_seen_at`, `last_seen_host`        | One per project                                     |
 | `knowledge_sources` | `id`, `project_id`, `title`, `type` (`text`/`pdf`/`md`/`txt`), `storage_key`, `status` (`uploading`/`processing`/`ready`/`failed`), `answers` (jsonb, null except the builder's source), `created_at` | `storage_key` null for pasted text |
@@ -305,15 +305,15 @@ Limits run inside Postgres functions only `service_role` may execute: `create_pr
 | `GET /api/projects/:id/conversations/export` | CSV download (optional `q`, `filter=unhelpful`) |
 | `DELETE /api/conversations/:id`             | Delete a conversation and its messages |
 | `PATCH /api/projects/:id/config`                                    | Update config (402 if Free)         |
-| `POST /api/billing/subscribe`, `POST /api/billing/cancel`           | Start the Pro subscription (returns the Cashfree session ID) / cancel it |
+| `POST /api/billing/subscribe`, `POST /api/billing/cancel`           | Start the Pro subscription (returns the Razorpay subscription ID and public key ID) / cancel it |
 
-Checkout is Cashfree's hosted page; the two billing routes above only create and cancel the subscription.
+Checkout is Razorpay Checkout; the two billing routes above only create and cancel the subscription.
 
 ### System
 
 | Route                     | Purpose                                                                                |
 | ------------------------- | -------------------------------------------------------------------------------------- |
-| `POST /api/cashfree/webhook` | Signature verified; updates `accounts.plan`                                         |
+| `POST /api/razorpay/webhook` | Signature verified; updates `accounts.plan`                                         |
 | `GET /api/posthog-config` | PostHog's public project key and host, read at request time                          |
 
 Request and response types for every route live in `packages/shared`.
@@ -371,7 +371,7 @@ docs/
 | `CLERK_SECRET_KEY`                                                               | Server          | No      |
 | `OLLAMA_BASE_URL`, `OLLAMA_API_KEY`                                              | Server          | No      |
 | `GROQ_API_KEY` (optional `GROQ_CHAT_MODEL`)                                      | Server          | No      |
-| `CASHFREE_APP_ID`, `CASHFREE_SECRET_KEY` (also verifies the webhook unless `CASHFREE_WEBHOOK_SECRET` is set), `CASHFREE_ENV` (`sandbox` or `production`) | Server          | No      |
+| `RAZORPAY_KEY_ID` (`rzp_test_` = test mode, `rzp_live_` = live), `RAZORPAY_KEY_SECRET`, `RAZORPAY_PLAN_ID`, `RAZORPAY_WEBHOOK_SECRET` | Server          | No      |
 | `ARCJET_KEY`                                                                     | Server          | No      |
 | `POSTHOG_KEY`, `POSTHOG_HOST` (the `NEXT_PUBLIC_` names also work). Read at request time by `GET /api/posthog-config`; the key is public by design. | Client + server | Yes     |
 | `NEXT_PUBLIC_APP_URL`                                                            | Client + server | Yes     |

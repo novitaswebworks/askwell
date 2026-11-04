@@ -207,18 +207,14 @@ export const messageSchema = z.object({
 });
 export type Message = z.infer<typeof messageSchema>;
 
-// POST /api/billing/subscribe: Cashfree needs the owner's phone number.
-export const subscribeRequestSchema = z.object({
-  phone: z
-    .string()
-    .trim()
-    .regex(/^\+?[0-9][0-9 ()-]{6,19}$/, "Enter a valid phone number.")
-    .transform((v) => v.replace(/\D/g, ""))
-    .pipe(z.string().min(8).max(15)),
+// POST /api/billing/subscribe takes no body. The response carries what Razorpay
+// Checkout needs to open: our subscription ID, the public key ID, and prefill.
+export const subscribeResponseSchema = z.object({
+  subscriptionId: z.string().min(1),
+  keyId: z.string().min(1),
+  name: z.string(),
+  email: z.string(),
 });
-export type SubscribeRequest = z.infer<typeof subscribeRequestSchema>;
-
-export const subscribeResponseSchema = z.object({ sessionId: z.string().min(1) });
 export type SubscribeResponse = z.infer<typeof subscribeResponseSchema>;
 
 // GET /api/conversations/:id

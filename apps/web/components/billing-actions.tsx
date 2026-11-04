@@ -1,51 +1,85 @@
 "use client";
 
-import { load } from "@cashfreepayments/cashfree-js";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
-import { PRO_PRICE_INR } from "@askwell/shared";
+import { useState } from "react";
+import { PRO_PRICE_INR, type SubscribeResponse } from "@askwell/shared";
 
 const buttonStyles =
   "inline-flex h-11 items-center justify-center rounded-full px-6 text-sm font-medium transition-opacity disabled:opacity-50";
+
+const CHECKOUT_SRC = "https://checkout.razorpay.com/v1/checkout.js";
+
+interface CheckoutOptions {
+  key: string;
+  subscription_id: string;
+  name: string;
+  description: string;
+  prefill: { name: string; email: string };
+  handler: () => void;
+  modal: { ondismiss: () => void };
+}
+type RazorpayCtor = new (options: CheckoutOptions) => { open(): void; on(event: string, cb: (r: { error?: { description?: string } }) => void): void };
 
 async function errorMessage(res: Response) {
   const body = await res.json().catch(() => null);
   return body?.error?.message ?? "Something went wrong. Try again.";
 }
 
-// Upgrade and cancel. The card, UPI or bank details are entered on Cashfree's own
-// page; this component never sees them.
+// Razorpay's own script, loaded only when the owner clicks Upgrade.
+function loadCheckout(): Promise<RazorpayCtor | null> {
+  const existing = (window as unknown as { Razorpay?: RazorpayCtor }).Razorpay;
+  if (existing) return Promise.resolve(existing);
+  return new Promise((resolve) => {
+    const script = document.createElement("script");
+    script.src = CHECKOUT_SRC;
+    script.onload = () => resolve((window as unknown as { Razorpay?: RazorpayCtor }).Razorpay ?? null);
+    script.onerror = () => resolve(null);
+    document.body.appendChild(script);
+  });
+}
+
+// Upgrade and cancel. The card, UPI or bank details are entered in Razorpay
+// Checkout; this component never sees them.
 export function BillingActions({ plan, mode }: { plan: "free" | "pro"; mode: "sandbox" | "production" }) {
   const router = useRouter();
-  const [phone, setPhone] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function upgrade(e: FormEvent) {
-    e.preventDefault();
+  async function upgrade() {
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch("/api/billing/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone }),
-      });
+      const res = await fetch("/api/billing/subscribe", { method: "POST" });
       if (!res.ok) {
         setError(await errorMessage(res));
+        setBusy(false);
         return;
       }
-      const { sessionId } = (await res.json()) as { sessionId: string };
-      const cashfree = await load({ mode });
-      if (!cashfree) {
+      const sub = (await res.json()) as SubscribeResponse;
+      const Razorpay = await loadCheckout();
+      if (!Razorpay) {
         setError("Could not load the payment page. Check your connection and try again.");
+        setBusy(false);
         return;
       }
-      const result = await cashfree.subscriptionsCheckout({ subsSessionId: sessionId, redirectTarget: "_self" });
-      if (result?.error) setError(result.error.message ?? "The payment page could not open.");
+      const checkout = new Razorpay({
+        key: sub.keyId,
+        subscription_id: sub.subscriptionId,
+        name: "Askwell",
+        description: "Pro, monthly",
+        prefill: { name: sub.name, email: sub.email },
+        // The plan only ever changes through the signed webhook; this just takes
+        // the owner back to the Billing page to wait for it.
+        handler: () => window.location.assign("/dashboard/billing?checkout=return"),
+        modal: { ondismiss: () => setBusy(false) },
+      });
+      checkout.on("payment.failed", (r) => {
+        setError(r.error?.description ?? "The payment did not go through. Try again.");
+        setBusy(false);
+      });
+      checkout.open();
     } catch {
       setError("Network error. Check your connection and try again.");
-    } finally {
       setBusy(false);
     }
   }
@@ -71,7 +105,7 @@ export function BillingActions({ plan, mode }: { plan: "free" | "pro"; mode: "sa
   return (
     <div className="glass flex flex-col gap-4 p-5">
       {plan === "free" ? (
-        <form onSubmit={upgrade} className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3">
           <div>
             <h2 className="font-medium">Upgrade to Pro</h2>
             <p className="mt-1 text-sm text-muted">
@@ -79,30 +113,16 @@ export function BillingActions({ plan, mode }: { plan: "free" | "pro"; mode: "sa
               colours. Pay with UPI, an Indian card or an international Visa or Mastercard. Cancel any time.
             </p>
           </div>
-          <label htmlFor="phone" className="text-sm font-medium">
-            Mobile number
-          </label>
-          <input
-            id="phone"
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="For example 98765 43210"
-            disabled={busy}
-            className="h-11 max-w-sm rounded-full border border-border bg-glass-strong px-4 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          />
-          <p className="text-xs text-muted">Cashfree needs it to set up the monthly payment. We do not use it for anything else.</p>
           <button
-            type="submit"
-            disabled={busy || phone.replace(/\D/g, "").length < 8}
+            type="button"
+            onClick={upgrade}
+            disabled={busy}
             className={`${buttonStyles} self-start bg-accent text-accent-foreground hover:opacity-90`}
           >
             {busy ? "Opening payment…" : `Upgrade for ₹${PRO_PRICE_INR.toLocaleString("en-IN")} a month`}
           </button>
           {mode === "sandbox" && <p className="text-xs text-muted">Test mode: no real money moves.</p>}
-        </form>
+        </div>
       ) : (
         <div className="flex flex-col gap-3">
           <div>

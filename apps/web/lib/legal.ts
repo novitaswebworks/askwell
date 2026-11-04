@@ -62,7 +62,7 @@ export const TERMS: LegalDoc = {
         `Free: ${PLAN_LIMITS.free.maxProjects} project, ${PLAN_LIMITS.free.messagesPerMonth} messages a month and ${PLAN_LIMITS.free.maxKnowledgeSources} knowledge sources. No card needed.`,
         `Pro: ₹${PRO_PRICE_INR} a month, with ${PRO}.`,
         "A message is one question from a visitor. The count resets at the start of each month.",
-        "Pro is billed monthly in Indian rupees through Cashfree. We never see or store your card, UPI or bank details.",
+        "Pro is billed monthly in Indian rupees through Razorpay. We never see or store your card, UPI or bank details.",
         "Prices and limits can change. We will tell you before a change affects what you pay.",
         "Cancelling and refunds are described on the Cancellation and refunds page.",
       ],
@@ -125,7 +125,7 @@ export const PRIVACY: LegalDoc = {
         "Supabase: our database and file storage.",
         "Vercel: hosting.",
         "Groq and other AI model providers: when a visitor sends a message, the message, recent messages in that chat, and the matching passages from the owner's information are sent to an AI model to write the reply. A separate server of ours turns text into search vectors.",
-        "Cashfree: Pro payments. Card, UPI and bank details go to Cashfree, never to us.",
+        "Razorpay: Pro payments. Card, UPI and bank details go to Razorpay, never to us.",
         "Arcjet: rate limiting and abuse detection.",
         "PostHog: product usage analytics.",
       ],
@@ -182,7 +182,7 @@ export const REFUNDS: LegalDoc = {
     {
       heading: "How payments work",
       paragraphs: [
-        "Pro is billed every month in Indian rupees through Cashfree. Customers outside India can pay with an international Visa or Mastercard and are charged in rupees at their card issuer's exchange rate.",
+        "Pro is billed every month in Indian rupees through Razorpay. Customers outside India can pay with an international Visa or Mastercard and are charged in rupees at their card issuer's exchange rate.",
       ],
     },
     {
