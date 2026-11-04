@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Suspense } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { AllowedDomainsForm } from "@/components/allowed-domains-form";
@@ -73,22 +72,6 @@ async function InstallContent({ searchParams }: { searchParams: Promise<{ projec
         />
       ) : (
         <div className="flex max-w-3xl flex-col gap-6">
-          {projects.length > 1 && (
-            <nav aria-label="Project" className="flex flex-wrap gap-2">
-              {projects.map((p) => (
-                <Link
-                  key={p.id}
-                  href={`/dashboard/install?project=${p.id}`}
-                  aria-current={p.id === project.id ? "page" : undefined}
-                  className={`rounded-full px-4 py-2 text-sm ${
-                    p.id === project.id ? "bg-accent text-accent-foreground" : "glass"
-                  }`}
-                >
-                  {p.name}
-                </Link>
-              ))}
-            </nav>
-          )}
 
           <InstallStatus projectId={project.id} connection={connection} seenAt={seen?.data?.last_seen_at ?? null} />
 

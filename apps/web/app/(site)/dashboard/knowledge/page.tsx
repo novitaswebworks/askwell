@@ -1,5 +1,4 @@
 import { auth } from "@clerk/nextjs/server";
-import Link from "next/link";
 import { Suspense } from "react";
 import { getPlanLimits } from "@askwell/shared";
 import { AboutForm } from "@/components/about-form";
@@ -89,24 +88,6 @@ async function KnowledgeContent({ searchParams }: { searchParams: Promise<{ proj
         />
       ) : (
         <div className="flex flex-col gap-6">
-          {projects.length > 1 && (
-            <nav aria-label="Project selector" className="flex flex-wrap gap-2">
-              {projects.map((p) => (
-                <Link
-                  key={p.id}
-                  href={`/dashboard/knowledge?project=${p.id}`}
-                  aria-current={p.id === project.id ? "page" : undefined}
-                  className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-                    p.id === project.id
-                      ? "bg-foreground text-background shadow-xs"
-                      : "glass hover:text-foreground"
-                  }`}
-                >
-                  {p.name}
-                </Link>
-              ))}
-            </nav>
-          )}
 
           <AboutForm key={project.id} projectId={project.id} about={project.about} />
 
