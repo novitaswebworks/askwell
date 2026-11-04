@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Show, UserButton } from "@clerk/nextjs";
 import { CommandPalette } from "@/components/command-palette";
+import { ToastProvider } from "@/components/toast";
 import { ProjectSwitcher } from "@/components/project-switcher";
 import { createOwnerClient } from "@/lib/supabase/owner";
 import { DashboardNav } from "@/components/dashboard-nav";
@@ -113,7 +114,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </Link>
         </div>
       </aside>
-      <main className="flex-1 min-w-0">{children}</main>
+      <main className="flex-1 min-w-0">
+        <ToastProvider>{children}</ToastProvider>
+      </main>
     </div>
   );
 }
