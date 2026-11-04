@@ -9,6 +9,7 @@ import {
   type WidgetConfig,
   type WidgetPosition,
 } from "@askwell/shared";
+import { useToast } from "@/components/toast";
 import { readableTextColor } from "@/lib/widget-config";
 
 const COLOR_PRESETS = [
@@ -49,6 +50,7 @@ export function CustomizeManager({
 }) {
   const [config, setConfig] = useState<WidgetConfig>(initialConfig);
   const [busy, setBusy] = useState(false);
+  const toast = useToast();
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
 
@@ -86,10 +88,7 @@ export function CustomizeManager({
       }
       const updated = (await res.json()) as WidgetConfig;
       setConfig(updated);
-      setMessage({
-        kind: "ok",
-        text: "Saved. Changes can take up to about fifteen minutes to reach your website.",
-      });
+      toast("Saved. Changes can take up to about fifteen minutes to reach your website.");
     } catch {
       setMessage({ kind: "error", text: "Network error. Check your connection and try again." });
     } finally {

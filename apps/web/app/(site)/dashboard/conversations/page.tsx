@@ -68,23 +68,6 @@ async function ConversationsContent({ searchParams }: { searchParams: Promise<Se
 
   return (
     <div className="flex flex-col gap-4">
-      {projects.length > 1 && (
-        <nav aria-label="Project" className="flex flex-wrap gap-2">
-          {projects.map((p) => (
-            <Link
-              key={p.id}
-              href={`/dashboard/conversations?project=${p.id}`}
-              aria-current={p.id === project.id ? "page" : undefined}
-              className={`rounded-full px-4 py-2 text-sm ${
-                p.id === project.id ? "bg-accent text-accent-foreground" : "glass"
-              }`}
-            >
-              {p.name}
-            </Link>
-          ))}
-        </nav>
-      )}
-
       <div className="flex flex-wrap items-end justify-between gap-4">
         <UsageMeter usage={usage} />
         <RefreshButton />
