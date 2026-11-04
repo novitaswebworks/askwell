@@ -4,6 +4,7 @@ import type { SubscribeResponse } from "@askwell/shared";
 import { getAccountPlan } from "@/lib/accounts";
 import { track } from "@/lib/analytics";
 import { apiError } from "@/lib/api";
+import { billingEnabled } from "@/lib/plan-features";
 import { createProSubscription } from "@/lib/razorpay";
 import { requireEnv } from "@/lib/supabase/env";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -14,6 +15,8 @@ import { createServiceClient } from "@/lib/supabase/service";
 export async function POST() {
   const { userId } = await auth();
   if (!userId) return apiError("unauthorized", "Sign in to continue.");
+  // The page hides the Upgrade button while billing is closed; the server refuses too.
+  if (!billingEnabled()) return apiError("forbidden", "Paid plans are not open yet.");
 
   const service = createServiceClient();
   if ((await getAccountPlan(userId, service)) === "pro") {
