@@ -36,7 +36,7 @@
 - **🚀 Sub-Second Streaming:** Powered by Groq and the Vercel AI SDK for near-instant responses.
 - **🛡️ Built-in AI Security:** Protected by **Arcjet** for real-time prompt injection defense, rate limiting, and bot protection.
 - **🎨 Brand Customization:** Tailor colors, greeting messages, widget placement, and toggle branding badges.
-- **💳 Built-in Subscription Flow:** Out-of-the-box billing and quota management powered by Cashfree (UPI Autopay, cards, eNACH).
+- **💳 Built-in Subscription Flow:** Out-of-the-box billing and quota management powered by Razorpay Subscriptions (UPI, cards, eNACH).
 
 ---
 
@@ -89,7 +89,7 @@ askwell/
 | **Auth** | Clerk | Authentication with native JWT tokens passed to Supabase RLS |
 | **AI / RAG** | Groq (`llama-3.3-70b-versatile`) + Ollama | Ultra-low latency chat completions + embeddings |
 | **Security** | Arcjet | Token-bucket rate limiting and prompt injection shields |
-| **Payments** | Cashfree Payments | Hosted subscription checkout & webhook verification |
+| **Payments** | Razorpay Subscriptions | Checkout and webhook verification |
 | **Analytics** | PostHog | Telemetry, product analytics, and AI tracing |
 
 ---
@@ -143,11 +143,11 @@ OLLAMA_API_KEY=your-ollama-bearer-key
 # Security (Arcjet)
 ARCJET_KEY=ajkey_...
 
-# Payments (Cashfree)
-CASHFREE_APP_ID=your_cashfree_app_id
-CASHFREE_SECRET_KEY=your_cashfree_secret_key
-CASHFREE_ENV=sandbox
-CASHFREE_WEBHOOK_SECRET=your_webhook_secret
+# Payments (Razorpay)
+RAZORPAY_KEY_ID=rzp_test_your_key_id
+RAZORPAY_KEY_SECRET=your_key_secret
+RAZORPAY_PLAN_ID=plan_your_monthly_pro_plan
+RAZORPAY_WEBHOOK_SECRET=your_webhook_secret
 
 # Application
 NEXT_PUBLIC_APP_URL=http://localhost:3000

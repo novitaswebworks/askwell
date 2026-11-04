@@ -488,20 +488,24 @@ describe("knowledge", () => {
 });
 
 describe("billing", () => {
-  it("keeps the Cashfree subscription ID on accounts, unique, and server-only", async () => {
+  it("keeps the Razorpay subscription ID on accounts, unique, and server-only", async () => {
     await svc(() =>
-      db.exec(`insert into public.accounts (clerk_user_id, cashfree_subscription_id) values ('user_cf1', 'sub_1'), ('user_cf2', null), ('user_cf3', null)`),
+      db.exec(`insert into public.accounts (clerk_user_id, razorpay_subscription_id) values ('user_cf1', 'sub_1'), ('user_cf2', null), ('user_cf3', null)`),
     );
     await svc(async () => {
       await expect(
-        db.exec(`insert into public.accounts (clerk_user_id, cashfree_subscription_id) values ('user_cf4', 'sub_1')`),
+        db.exec(`insert into public.accounts (clerk_user_id, razorpay_subscription_id) values ('user_cf4', 'sub_1')`),
       ).rejects.toThrow(/duplicate key|unique/);
     });
     for (const role of ["anon", "authenticated"] as const) {
       await asRole(db, role, "user_cf1", async () => {
-        await expect(db.query("select cashfree_subscription_id from public.accounts")).rejects.toThrow(/permission denied/);
+        await expect(db.query("select razorpay_subscription_id from public.accounts")).rejects.toThrow(/permission denied/);
       });
     }
+  });
+
+  it("keeps the old Cashfree column until a later migration drops it", async () => {
+    await svc(() => db.exec(`insert into public.accounts (clerk_user_id, cashfree_subscription_id) values ('user_cf_old', 'sub_old')`));
   });
 });
 

@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { PLAN_LIMITS } from "@askwell/shared";
 import { BillingActions } from "@/components/billing-actions";
 import { getAccountPlan } from "@/lib/accounts";
-import { cashfreeMode } from "@/lib/cashfree";
+import { razorpayMode } from "@/lib/razorpay";
 
 function Skeleton() {
   return <div className="glass h-40 animate-pulse" aria-busy="true" aria-label="Loading" />;
@@ -47,12 +47,12 @@ async function BillingContent({ searchParams }: Props) {
 
       {checkout === "return" && plan === "free" && (
         <p role="status" className="glass p-4 text-sm">
-          Thanks. We are waiting for Cashfree to confirm your payment. This usually takes a few seconds; reload this
+          Thanks. We are waiting for Razorpay to confirm your payment. This usually takes a few seconds; reload this
           page if it still says Free. Some banks take a day or two to approve the monthly payment.
         </p>
       )}
 
-      <BillingActions plan={plan} mode={cashfreeMode()} />
+      <BillingActions plan={plan} mode={razorpayMode()} />
     </div>
   );
 }
