@@ -7,9 +7,9 @@ export function siteUrl(env: Record<string, string | undefined> = process.env): 
   return (env.NEXT_PUBLIC_APP_URL?.trim() || FALLBACK_SITE_URL).replace(/\/$/, "");
 }
 
-export const HOME_TITLE = `${APP_NAME}: AI chat assistant trained on your own content`;
+export const HOME_TITLE = `${APP_NAME}: AI chatbot for your website, trained on your pages`;
 export const HOME_DESCRIPTION =
-  "Add an AI support chat to any website in minutes. Askwell answers visitors from your own pages and documents, stays on topic, and is free to start.";
+  "Add an AI customer support chatbot to any website in minutes. Askwell answers visitors from your own pages and documents, stays on topic, and is free to start.";
 
 // Pages a search engine may list. Add each new public page here.
 export const PUBLIC_PATHS = ["/", "/terms", "/privacy", "/refunds", "/contact"] as const;
