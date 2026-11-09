@@ -1,4 +1,5 @@
 import { ClerkProvider } from "@clerk/nextjs";
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Newsreader } from "next/font/google";
 import { APP_NAME } from "@askwell/shared";
@@ -36,6 +37,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ClerkProvider signInUrl="/sign-in" signUpUrl="/sign-up">
           {children}
         </ClerkProvider>
+        {/* Page views for our own site only. The embedded chat (app/embed) runs on customers' sites and is left out. */}
+        <Analytics />
       </body>
     </html>
   );
