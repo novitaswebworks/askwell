@@ -1,6 +1,6 @@
 import "server-only";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import { generateText } from "ai";
+import { generateText, streamText } from "ai";
 import { requireEnv } from "@/lib/supabase/env";
 import { AiUnavailableError } from "./errors";
 import type { Generation } from "@/lib/analytics";
@@ -132,6 +132,74 @@ export async function generateAnswer(
         lastError = error;
         console.error(`[backup] ${backup.model} failed:`, error instanceof Error ? error.message : error);
       }
+    }
+  }
+  throw new AiUnavailableError(lastError ?? new Error("no time left"));
+}
+
+
+// Like generateAnswer, but yields the reply as it is written. A model that fails before its
+// first word is skipped for the next one, as in generateAnswer; once words have gone out a
+// failure ends the stream with an error, because a half-shown reply cannot be taken back.
+// shortcut: the model list and time sharing mirror generateAnswer; merge them if a third caller needs it.
+export async function* streamAnswer(
+  system: string,
+  prompt: string,
+  options: { maxOutputTokens?: number; timeoutMs?: number; onGeneration?: (g: Generation) => void } = {},
+): AsyncGenerator<string> {
+  const startedAll = Date.now();
+  const totalMs = options.timeoutMs ?? CHAT_TIMEOUT_MS;
+  const backup = backupProvider();
+  const groq = createOpenAICompatible({
+    name: "groq",
+    baseURL: "https://api.groq.com/openai/v1",
+    apiKey: requireEnv("GROQ_API_KEY", process.env.GROQ_API_KEY),
+  });
+  const candidates = [
+    ...chatModelNames().map((name) => ({ name, model: groq.chatModel(name), gptOss: name.startsWith("openai/gpt-oss") })),
+    ...(backup
+      ? [{ name: `backup:${backup.model}`, model: createOpenAICompatible({ name: "backup", baseURL: backup.baseURL, apiKey: backup.apiKey }).chatModel(backup.model), gptOss: false }]
+      : []),
+  ];
+
+  let lastError: unknown;
+  for (const [index, c] of candidates.entries()) {
+    const remaining = startedAll + totalMs - Date.now();
+    if (remaining < 500) break;
+    const attemptMs = Math.floor(Math.max(MIN_ATTEMPT_MS, remaining / (candidates.length - index)));
+    const startedAt = Date.now();
+    let spoke = false;
+    try {
+      const result = streamText({
+        model: c.model,
+        system,
+        prompt,
+        temperature: 0.2,
+        ...(c.gptOss ? { providerOptions: { groq: { reasoningEffort: "low" } } } : {}),
+        maxOutputTokens: options.maxOutputTokens ?? 800,
+        abortSignal: AbortSignal.timeout(Math.min(attemptMs, Math.floor(remaining))),
+        maxRetries: 0,
+      });
+      for await (const part of result.fullStream) {
+        if (part.type === "error") throw part.error instanceof Error ? part.error : new Error(String(part.error));
+        if (part.type === "text-delta" && part.text) {
+          spoke = true;
+          yield part.text;
+        }
+      }
+      if (!spoke) throw new Error("empty reply");
+      const usage = await result.usage;
+      options.onGeneration?.({
+        model: c.name,
+        inputTokens: usage?.inputTokens,
+        outputTokens: usage?.outputTokens,
+        latencyMs: Date.now() - startedAt,
+      });
+      return;
+    } catch (error) {
+      lastError = error;
+      console.error(`[stream] ${c.name} failed:`, error instanceof Error ? error.message : error);
+      if (spoke) throw new AiUnavailableError(error);
     }
   }
   throw new AiUnavailableError(lastError ?? new Error("no time left"));

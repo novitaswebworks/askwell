@@ -294,6 +294,7 @@ Limits run inside Postgres functions only `service_role` may execute: `create_pr
 | ------------------------ | ------------------------------------------------ | ------------------------------------------------- |
 | `GET /api/widget/config` | `key`                                            | Config, plan-applied (Free gets defaults + badge) |
 | `POST /api/widget/chat`  | `key`, `visitorId`, `conversationId?`, `message` | `conversationId`, `reply`                         |
+|                          | `Accept: application/x-ndjson` (the panel sends it) | The reply streams as lines: `{"t":"delta","text"}` while it is written, then `{"t":"done","data":{conversationId,reply,sources?,followUps?}}`, whose reply replaces the streamed text; `{"t":"error","message"}` if it fails after starting. Messages that need no model (small talk, off topic, no answer) and every error before the first word stay plain JSON. |
 | `POST /api/widget/rate`  | `key`, `conversationId`, `rating` (1, -1, 0 clears) | `rating`. Rates the latest answer of that conversation |
 | `POST /api/widget/lead`  | `key`, `email`, `name?`, `phone?`, `type`, `conversationId?` (missing when the first message was refused) | `leadId`. Rate limited (5 per minute per key and IP); the same details sent again within 10 minutes are not a new lead |
 

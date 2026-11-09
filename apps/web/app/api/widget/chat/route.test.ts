@@ -8,12 +8,16 @@ const getAccountPlan = vi.fn();
 vi.mock("@/lib/accounts", () => ({ getAccountPlan: (...a: unknown[]) => getAccountPlan(...a) }));
 const embedTexts = vi.fn();
 const generateAnswer = vi.fn();
+const streamAnswer = vi.fn();
 vi.mock("@/lib/ai/errors", () => {
   class AiUnavailableError extends Error {}
   return { AiUnavailableError };
 });
 vi.mock("@/lib/ai/ollama", () => ({ embedTexts: (...a: unknown[]) => embedTexts(...a) }));
-vi.mock("@/lib/ai/groq", () => ({ generateAnswer: (...a: unknown[]) => generateAnswer(...a) }));
+vi.mock("@/lib/ai/groq", () => ({
+  generateAnswer: (...a: unknown[]) => generateAnswer(...a),
+  streamAnswer: (...a: unknown[]) => streamAnswer(...a),
+}));
 const track = vi.fn();
 const trackGeneration = vi.fn();
 vi.mock("@/lib/analytics", () => ({ track: (...a: unknown[]) => track(...a), trackGeneration: (...a: unknown[]) => trackGeneration(...a) }));
@@ -331,5 +335,58 @@ describe("OPTIONS /api/widget/chat", () => {
       expect(res.status).toBe(200);
       await vi.waitFor(() => expect(notifyOwnerOfQuota).toHaveBeenCalled());
     });
+  });
+});
+
+
+describe("POST /api/widget/chat as a stream", () => {
+  const callStream = (b: unknown) =>
+    POST(new Request("http://x/api/widget/chat", { method: "POST", body: JSON.stringify(b), headers: { accept: "application/x-ndjson" } }));
+  const chunks = (parts: string[]) =>
+    streamAnswer.mockImplementation(async function* () {
+      for (const p of parts) yield p;
+    });
+  const events = async (res: Response) =>
+    (await res.text()).split("\n").filter(Boolean).map((l) => JSON.parse(l) as { t: string; text?: string; data?: { reply: string; followUps?: string[]; conversationId: string }; message?: string });
+
+  it("streams the reply, keeps the follow-ups out of it, and ends with the saved reply", async () => {
+    chunks(["Refunds take ", "5 days.\nFollow-up: ", "Is it free?"]);
+    const res = await callStream(body);
+    expect(res.headers.get("content-type")).toBe("application/x-ndjson");
+    const got = await events(res);
+    expect(got.filter((e) => e.t === "delta").map((e) => e.text).join("")).toBe("Refunds take 5 days.");
+    const done = got.at(-1)!;
+    expect(done).toMatchObject({ t: "done", data: { conversationId: CONVO, reply: "Refunds take 5 days.", followUps: ["Is it free?"] } });
+    expect(generateAnswer).not.toHaveBeenCalled();
+    expect(rpc).toHaveBeenCalledWith("save_chat_turn", expect.objectContaining({ p_bot_reply: "Refunds take 5 days." }));
+  });
+
+  it("replaces a streamed refusal with the standard no-answer wording", async () => {
+    chunks(["Sorry, I do not know. " + NO_ANSWER]);
+    const done = (await events(await callStream(body))).at(-1)!;
+    expect(done.data?.reply).toBe(NO_ANSWER);
+  });
+
+  it("still answers whole messages that need no model, as plain JSON", async () => {
+    understandMessage.mockResolvedValue({ type: "off_topic" });
+    const res = await callStream(body);
+    expect(res.headers.get("content-type")).toContain("application/json");
+    expect((await res.json()).reply).toBe(OFF_TOPIC_REPLY);
+    expect(streamAnswer).not.toHaveBeenCalled();
+  });
+
+  it("returns a normal error when the model fails before its first word", async () => {
+    streamAnswer.mockImplementation(async function* () {
+      throw new AiUnavailableError("down");
+    });
+    const res = await callStream(body);
+    expect(res.status).toBe(500);
+    expect(res.headers.get("content-type")).toContain("application/json");
+  });
+
+  it("ends with an error event when saving the turn fails", async () => {
+    chunks(["Hi there."]);
+    rpcs({ save_chat_turn: { data: null, error: { message: "db" } } });
+    expect((await events(await callStream(body))).at(-1)!.t).toBe("error");
   });
 });
