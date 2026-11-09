@@ -146,6 +146,9 @@ export default function Home() {
         <section className="hero-glow relative overflow-hidden">
           <div className="mx-auto grid w-full max-w-6xl items-center gap-14 px-4 pb-20 pt-16 md:px-8 lg:grid-cols-[1.1fr_0.9fr] lg:pb-32 lg:pt-24">
             <div className="rise">
+              <p className="mb-5 text-sm font-medium uppercase tracking-[0.14em] text-brand">
+                AI customer support chatbot for any website
+              </p>
               <h1 className="text-balance text-5xl font-semibold leading-[1.02] tracking-[-0.03em] md:text-7xl">
                 Your content, answering your customers.
               </h1>
@@ -173,7 +176,7 @@ export default function Home() {
           <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
             <div className="lg:sticky lg:top-28 lg:self-start">
               <h2 className="text-balance text-4xl font-semibold tracking-tight md:text-5xl">
-                Live in the time it takes to make coffee.
+                Add an AI chatbot to your website in minutes.
               </h2>
               <p className="mt-5 max-w-md text-lg text-muted">
                 No developers, no training runs, no dashboards to learn. Three steps, and the third is automatic.
