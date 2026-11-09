@@ -10,12 +10,14 @@ import {
   Document,
   Grid,
   Sliders,
+  Sparkles,
   Users,
 } from "@/components/site/icons";
 
 export const DASHBOARD_LINKS = [
   { href: "/dashboard", label: "Projects", icon: Grid },
   { href: "/dashboard/knowledge", label: "Knowledge", icon: Document },
+  { href: "/dashboard/test", label: "Test", icon: Sparkles },
   { href: "/dashboard/install", label: "Install", icon: Code },
   { href: "/dashboard/conversations", label: "Conversations", icon: Chat },
   { href: "/dashboard/leads", label: "Leads", icon: Users },
