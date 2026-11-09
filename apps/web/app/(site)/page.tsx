@@ -7,6 +7,7 @@ import { ButtonLink } from "@/components/button-link";
 import { Faq } from "@/components/site/faq";
 import { HeroChat } from "@/components/site/hero-chat";
 import { ArrowRight, Chat, Check, Code, Document, Globe, Shield } from "@/components/site/icons";
+import { OpenDemoButton } from "@/components/site/open-demo-button";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { UpcomingFeatures } from "@/components/upcoming-features";
@@ -96,6 +97,42 @@ export async function LandingWidget() {
       data-key={landingWidgetKey}
       strategy="afterInteractive"
     />
+  );
+}
+
+const DEMO_QUESTIONS = [
+  "How does Askwell learn from my website?",
+  "How much does Pro cost?",
+  "Can it answer in other languages?",
+];
+
+// The real widget, answering from Askwell's own knowledge. Shown only when the landing widget is
+// configured, so it never promises a chat that is not there.
+export async function LiveDemo() {
+  await connection();
+  if (!process.env.LANDING_WIDGET_KEY) return null;
+  return (
+    <section id="demo" className="mx-auto w-full max-w-6xl px-4 py-12 md:px-8">
+      <div className="grid items-center gap-8 rounded-3xl border border-border bg-glass p-8 md:p-12 lg:grid-cols-[1.1fr_0.9fr]">
+        <div>
+          <h2 className="text-balance text-3xl font-semibold tracking-tight md:text-4xl">Try it on this page.</h2>
+          <p className="mt-4 max-w-xl text-lg text-muted">
+            The chat in the corner is the real {APP_NAME} widget, answering from our own pages. Ask it something a
+            customer of yours might ask.
+          </p>
+          <div className="mt-6">
+            <OpenDemoButton />
+          </div>
+        </div>
+        <ul className="flex flex-col gap-3 text-sm">
+          {DEMO_QUESTIONS.map((q) => (
+            <li key={q} className="rounded-2xl border border-border bg-glass px-4 py-3">
+              {q}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
   );
 }
 
@@ -195,6 +232,10 @@ export default function Home() {
             </article>
           </div>
         </section>
+
+        <Suspense fallback={null}>
+          <LiveDemo />
+        </Suspense>
 
         <section id="pricing" className="mx-auto w-full max-w-6xl px-4 py-24 md:px-8">
           <h2 className="max-w-2xl text-balance text-4xl font-semibold tracking-tight md:text-5xl">

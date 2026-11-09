@@ -101,7 +101,7 @@ Policy pages: `/terms`, `/privacy`, `/refunds` (cancellation and refunds) and `/
 
 | Item      | Detail                                                                                      |
 | --------- | ------------------------------------------------------------------------------------------- |
-| Sections  | Hero, how it works (3 steps), live demo (the real widget), pricing, install snippet, footer |
+| Sections  | Hero, how it works (3 steps), live demo (a "Try it on this page" section with a button that opens the real widget; shown only when `LANDING_WIDGET_KEY` is set), pricing, install snippet, footer |
 | Widget    | Runs the app's own widget with a project about Askwell itself                               |
 | CTA       | "Start free" → sign up                                                                      |
 | Done when | Page is responsive, pricing matches section 5, widget opens and answers                     |
