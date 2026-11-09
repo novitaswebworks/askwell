@@ -45,7 +45,7 @@ describe("POST /api/projects/:id/test", () => {
   it("limits how often one owner can test", async () => {
     protectRate.mockResolvedValue(false);
     expect((await call({ message: "hi" })).status).toBe(429);
-    expect(protectRate).toHaveBeenCalledWith(expect.anything(), "user_1", "test", 10);
+    expect(protectRate).toHaveBeenCalledWith(expect.anything(), "user_1", "test", 10, false);
     expect(answerForOwner).not.toHaveBeenCalled();
   });
   it("returns the answer for the owner's own project", async () => {

@@ -30,7 +30,7 @@ export async function POST(req: Request, { params }: Context) {
   if (error) return apiError("internal", UNAVAILABLE_MESSAGE);
   if (!project) return apiError("not_found", "Project not found.");
 
-  if (!(await protectRate(req, userId, "test", 10))) {
+  if (!(await protectRate(req, userId, "test", 10, false))) {
     return apiError("rate_limited", "You are testing a bit too fast. Wait a moment and try again.");
   }
 

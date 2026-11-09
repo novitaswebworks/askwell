@@ -58,7 +58,7 @@ export function TestAssistant({ projectId, projectName }: { projectId: string; p
           maxLength={1000}
           placeholder={`Ask ${projectName} something a visitor might ask`}
           disabled={busy}
-          className="h-11 flex-1 rounded-full border border-border bg-glass-strong px-4 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className="ph-no-capture h-11 flex-1 rounded-full border border-border bg-glass-strong px-4 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent"
         />
         <button
           type="submit"
@@ -75,12 +75,12 @@ export function TestAssistant({ projectId, projectName }: { projectId: string; p
       )}
 
       {result && a && (
-        <div className="flex flex-col gap-4" aria-live="polite">
+        <div className="ph-no-capture flex flex-col gap-4" aria-live="polite">
           <section className="glass flex flex-col gap-2 p-5">
             <p className="text-xs text-muted">
               You asked: <span className="text-foreground">{result.asked}</span>
             </p>
-            <p className="ph-no-capture whitespace-pre-wrap break-words">{a.reply}</p>
+            <p className="whitespace-pre-wrap break-words">{a.reply}</p>
             <p className="text-xs text-muted">
               {KIND_LABEL[a.kind]}
               {a.understoodAs && a.understoodAs !== result.asked ? ` · understood as “${a.understoodAs}”` : ""}
