@@ -13,7 +13,7 @@ import { SiteHeader } from "@/components/site/site-header";
 import { UpcomingFeatures } from "@/components/upcoming-features";
 import { billingEnabled, planFeatures } from "@/lib/plan-features";
 import { buildJsonLd, jsonLdString } from "@/lib/seo";
-import { HOME_DESCRIPTION, HOME_TITLE, siteUrl } from "@/lib/site";
+import { HOME_DESCRIPTION, HOME_TITLE, landingWidgetKey, siteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: { absolute: HOME_TITLE },
@@ -88,13 +88,13 @@ function PlanCard({
 
 export async function LandingWidget() {
   await connection();
-  const landingWidgetKey = process.env.LANDING_WIDGET_KEY;
-  if (!landingWidgetKey) return null;
+  const key = landingWidgetKey();
+  if (!key) return null;
 
   return (
     <Script
       src="/widget.js"
-      data-key={landingWidgetKey}
+      data-key={key}
       strategy="afterInteractive"
     />
   );
@@ -110,7 +110,7 @@ const DEMO_QUESTIONS = [
 // configured, so it never promises a chat that is not there.
 export async function LiveDemo() {
   await connection();
-  if (!process.env.LANDING_WIDGET_KEY) return null;
+  if (!landingWidgetKey()) return null;
   return (
     <section id="demo" className="mx-auto w-full max-w-6xl px-4 py-12 md:px-8">
       <div className="grid items-center gap-8 rounded-3xl border border-border bg-glass p-8 md:p-12 lg:grid-cols-[1.1fr_0.9fr]">
