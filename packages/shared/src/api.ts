@@ -86,6 +86,29 @@ export const chatResponseSchema = z.object({
 });
 export type ChatResponse = z.infer<typeof chatResponseSchema>;
 
+// POST /api/projects/:id/test: the owner tries a question and sees how it was answered.
+export const testAnswerRequestSchema = z.object({
+  message: z.string().trim().min(1).max(MAX_MESSAGE_LENGTH),
+});
+export type TestAnswerRequest = z.infer<typeof testAnswerRequestSchema>;
+
+export const testAnswerResponseSchema = z.object({
+  kind: z.enum(["question", "human", "smalltalk", "off_topic"]),
+  reply: z.string(),
+  understoodAs: z.string().nullable(),
+  chunks: z.array(
+    z.object({
+      title: z.string(),
+      similarity: z.number(),
+      used: z.boolean(),
+      excerpt: z.string(),
+    }),
+  ),
+  followUps: z.array(z.string()),
+  ms: z.object({ understand: z.number(), search: z.number(), answer: z.number() }),
+});
+export type TestAnswerResponse = z.infer<typeof testAnswerResponseSchema>;
+
 // ---------------------------------------------------------------- owner routes
 
 export const projectSchema = z.object({

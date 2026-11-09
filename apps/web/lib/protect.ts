@@ -20,21 +20,23 @@ function build(key: string) {
 
 // Public routes other than chat (leads, ratings) have no message to check for injection, but they write
 // to the database with the service role, so they get a rate limit of their own per route + key + IP.
-const rateClients = new Map<number, ReturnType<typeof buildRate>>();
+const rateClients = new Map<string, ReturnType<typeof buildRate>>();
 
-function buildRate(key: string, max: number) {
-  return arcjet({ key, characteristics: ["publicKey", "ip.src"], rules: [fixedWindow({ mode: "LIVE", window: "1m", max })] });
+function buildRate(key: string, max: number, perIp: boolean) {
+  return arcjet({ key, characteristics: perIp ? ["publicKey", "ip.src"] : ["publicKey"], rules: [fixedWindow({ mode: "LIVE", window: "1m", max })] });
 }
 
 // Fails open like chat does. `route` keeps each route's counter separate from the others'.
-export async function protectRate(req: Request, publicKey: string, route: string, max: number): Promise<boolean> {
+// `perIp: false` counts by the key alone, for a signed-in caller who must not get a fresh allowance by changing IP.
+export async function protectRate(req: Request, publicKey: string, route: string, max: number, perIp = true): Promise<boolean> {
   const arcjetKey = process.env.ARCJET_KEY;
   if (!arcjetKey) return true;
   try {
-    let client = rateClients.get(max);
+    const clientKey = `${max}:${perIp}`;
+    let client = rateClients.get(clientKey);
     if (!client) {
-      client = buildRate(arcjetKey, max);
-      rateClients.set(max, client);
+      client = buildRate(arcjetKey, max, perIp);
+      rateClients.set(clientKey, client);
     }
     const decision = await Promise.race([
       client.protect(req, { publicKey: `${route}:${publicKey}` }),

@@ -10,6 +10,7 @@ import {
   updateProjectSchema,
   widgetConfigSchema,
   captureLeadRequestSchema,
+  testAnswerRequestSchema,
 } from "./api";
 import { MAX_KNOWLEDGE_FILE_BYTES, MAX_MESSAGE_LENGTH } from "./constants";
 
@@ -171,5 +172,13 @@ describe("saveAnswersSchema size", () => {
     const wide = { template: "business", items: Array.from({ length: 40 }, (_, i) => ({ question: `Q${i}?`, answer: "é".repeat(1500) })) }; // 2 bytes each
     expect(new TextEncoder().encode(JSON.stringify(wide)).length).toBeGreaterThan(95_000);
     expect(saveAnswersSchema.safeParse(wide).success).toBe(false);
+  });
+});
+
+describe("testAnswerRequestSchema", () => {
+  it("accepts a question and rejects an empty or oversize one", () => {
+    expect(testAnswerRequestSchema.safeParse({ message: "Do you ship?" }).success).toBe(true);
+    expect(testAnswerRequestSchema.safeParse({ message: "  " }).success).toBe(false);
+    expect(testAnswerRequestSchema.safeParse({ message: "a".repeat(MAX_MESSAGE_LENGTH + 1) }).success).toBe(false);
   });
 });
