@@ -17,11 +17,17 @@ describe("landing page (Home)", () => {
   });
 
   it("mounts widget script when LANDING_WIDGET_KEY is present", async () => {
-    process.env.LANDING_WIDGET_KEY = "pk_landing_test123";
+    process.env.LANDING_WIDGET_KEY = "pk_landingtest123";
     const widget = await LandingWidget();
     expect(widget).toBeDefined();
-    expect(widget?.props?.["data-key"]).toBe("pk_landing_test123");
+    expect(widget?.props?.["data-key"]).toBe("pk_landingtest123");
     expect(widget?.props?.src).toBe("/widget.js");
+    delete process.env.LANDING_WIDGET_KEY;
+  });
+
+  it("returns null for a key the widget loader would reject", async () => {
+    process.env.LANDING_WIDGET_KEY = "pk_landing_test123";
+    expect(await LandingWidget()).toBeNull();
     delete process.env.LANDING_WIDGET_KEY;
   });
 

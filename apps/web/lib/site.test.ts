@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import robots from "../app/robots";
 import sitemap from "../app/sitemap";
-import { FALLBACK_SITE_URL, HOME_DESCRIPTION, HOME_TITLE, PRIVATE_PATHS, siteUrl } from "./site";
+import { FALLBACK_SITE_URL, HOME_DESCRIPTION, HOME_TITLE, PRIVATE_PATHS, siteUrl, landingWidgetKey } from "./site";
 
 afterEach(() => {
   delete process.env.NEXT_PUBLIC_APP_URL;
@@ -44,5 +44,16 @@ describe("sitemap.xml", () => {
       "https://askwell.example/refunds",
       "https://askwell.example/contact",
     ]);
+  });
+});
+
+describe("landingWidgetKey", () => {
+  it("returns a valid public key, trimmed", () => {
+    expect(landingWidgetKey({ LANDING_WIDGET_KEY: " pk_abcdefgh1234 " })).toBe("pk_abcdefgh1234");
+  });
+  it("returns null when unset, empty or malformed", () => {
+    for (const v of [undefined, "", "   ", "pk_", "pk_short", "sk_abcdefgh1234", "pk_abc def ghi 12"]) {
+      expect(landingWidgetKey({ LANDING_WIDGET_KEY: v })).toBeNull();
+    }
   });
 });
