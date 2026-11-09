@@ -16,6 +16,7 @@ import {
   HUMAN_QUERY,
   MATCH_COUNT,
   NO_ANSWER,
+  NO_ANSWER_VARIANTS,
   OFF_TOPIC_REPLY,
   parseAnswerAndFollowUps,
   QUOTA_MESSAGE,
@@ -25,7 +26,7 @@ import {
   UNAVAILABLE_MESSAGE,
   type MatchedChunk,
 } from "@/lib/chat";
-import { encodeEvent, NDJSON, visibleReply, type StreamEvent } from "@/lib/chat-stream";
+import { encodeEvent, mayBeRefusal, NDJSON, visibleReply, type StreamEvent } from "@/lib/chat-stream";
 import { keywordQuery } from "@/lib/search-terms";
 import type { Turn } from "@/lib/understand";
 import { protectChat } from "@/lib/protect";
@@ -247,7 +248,8 @@ export async function POST(req: Request) {
         const take = (chunk: string) => {
           raw += chunk;
           const visible = visibleReply(raw);
-          if (visible.length > shown.length && visible.startsWith(shown)) {
+          // A refusal is not shown word by word: the final reply swaps in the standard wording.
+          if (visible.length > shown.length && visible.startsWith(shown) && !mayBeRefusal(visible, NO_ANSWER_VARIANTS)) {
             send({ t: "delta", text: visible.slice(shown.length) });
             shown = visible;
           }

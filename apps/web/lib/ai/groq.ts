@@ -150,23 +150,27 @@ export async function* streamAnswer(
   const startedAll = Date.now();
   const totalMs = options.timeoutMs ?? CHAT_TIMEOUT_MS;
   const backup = backupProvider();
-  const groq = createOpenAICompatible({
-    name: "groq",
-    baseURL: "https://api.groq.com/openai/v1",
-    apiKey: requireEnv("GROQ_API_KEY", process.env.GROQ_API_KEY),
-  });
+  // Like generateAnswer, a missing Groq key is not fatal when a backup is set: the backup is tried.
+  const groqKey = process.env.GROQ_API_KEY?.trim();
+  const groq = groqKey ? createOpenAICompatible({ name: "groq", baseURL: "https://api.groq.com/openai/v1", apiKey: groqKey }) : null;
   const candidates = [
-    ...chatModelNames().map((name) => ({ name, model: groq.chatModel(name), gptOss: name.startsWith("openai/gpt-oss") })),
+    ...(groq ? chatModelNames().map((name) => ({ name, model: groq.chatModel(name), gptOss: name.startsWith("openai/gpt-oss"), isBackup: false })) : []),
     ...(backup
-      ? [{ name: `backup:${backup.model}`, model: createOpenAICompatible({ name: "backup", baseURL: backup.baseURL, apiKey: backup.apiKey }).chatModel(backup.model), gptOss: false }]
+      ? [{ name: `backup:${backup.model}`, model: createOpenAICompatible({ name: "backup", baseURL: backup.baseURL, apiKey: backup.apiKey }).chatModel(backup.model), gptOss: false, isBackup: true }]
       : []),
   ];
+  // With a backup, Groq's models share part of the time and the backup keeps the rest, as in generateAnswer.
+  const groqDeadline = startedAll + (backup ? totalMs * GROQ_SHARE_WITH_BACKUP : totalMs);
+  const groqCount = candidates.filter((c) => !c.isBackup).length;
 
   let lastError: unknown;
   for (const [index, c] of candidates.entries()) {
-    const remaining = startedAll + totalMs - Date.now();
-    if (remaining < 500) break;
-    const attemptMs = Math.floor(Math.max(MIN_ATTEMPT_MS, remaining / (candidates.length - index)));
+    const remaining = (c.isBackup ? startedAll + totalMs : groqDeadline) - Date.now();
+    if (remaining < 500) {
+      if (c.isBackup) break;
+      continue; // Groq's share is used up; the backup may still have its time
+    }
+    const attemptMs = c.isBackup ? remaining : Math.floor(Math.max(MIN_ATTEMPT_MS, remaining / (groqCount - index)));
     const startedAt = Date.now();
     let spoke = false;
     try {

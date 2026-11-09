@@ -208,7 +208,9 @@ export function EmbedPanel() {
           }
         }
       } finally {
-        setStreamingId(null);
+        // Only this reply's own line: a newer reply (after "New chat") may already be streaming.
+        const own = lineId;
+        if (own !== null) setStreamingId((current) => (current === own ? null : current));
       }
     },
     [addBotLine, t, tell],

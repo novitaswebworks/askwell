@@ -363,8 +363,9 @@ describe("POST /api/widget/chat as a stream", () => {
 
   it("replaces a streamed refusal with the standard no-answer wording", async () => {
     chunks(["Sorry, I do not know. " + NO_ANSWER]);
-    const done = (await events(await callStream(body))).at(-1)!;
-    expect(done.data?.reply).toBe(NO_ANSWER);
+    const got = await events(await callStream(body));
+    expect(got.at(-1)!.data?.reply).toBe(NO_ANSWER);
+    expect(got.filter((e) => e.t === "delta")).toEqual([]); // the refusal is never shown word by word
   });
 
   it("still answers whole messages that need no model, as plain JSON", async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { encodeEvent, parseEvents, visibleReply } from "./chat-stream";
+import { encodeEvent, mayBeRefusal, parseEvents, visibleReply } from "./chat-stream";
 
 describe("parseEvents", () => {
   it("returns whole events and keeps the unfinished line for later", () => {
@@ -29,5 +29,17 @@ describe("visibleReply", () => {
   });
   it("never shows a reply that starts as a marker", () => {
     expect(visibleReply("Follow-up: x")).toBe("");
+  });
+});
+
+describe("mayBeRefusal", () => {
+  const refusals = ["I don't have that information right now."];
+  it("holds back a start of the refusal and a full refusal", () => {
+    expect(mayBeRefusal("I don", refusals)).toBe(true);
+    expect(mayBeRefusal("Sorry. I don't have that information right now.", refusals)).toBe(true);
+  });
+  it("lets other text through", () => {
+    expect(mayBeRefusal("I can help with that.", refusals)).toBe(false);
+    expect(mayBeRefusal("We ship worldwide.", refusals)).toBe(false);
   });
 });

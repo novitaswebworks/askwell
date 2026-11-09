@@ -1,6 +1,6 @@
 // The streamed form of a chat reply: one JSON object per line (application/x-ndjson).
 //   {"t":"delta","text":"..."}                      more of the reply
-//   {"t":"done","conversationId":..,"reply":..}     the final reply, which replaces the streamed text
+//   {"t":"done","data":{conversationId,reply,..}}   the final reply (a ChatResponse), which replaces the streamed text
 //   {"t":"error","message":".."}                    the stream failed after it started
 // Pure helpers shared by the route and the panel, so both are unit tested.
 
@@ -44,4 +44,10 @@ export function visibleReply(raw: string): string {
     if (tail && MARKERS.some((m) => m.startsWith(tail))) return text.slice(0, text.lastIndexOf("\n") + 1).trimEnd();
   }
   return text.trimEnd();
+}
+
+// True while the text so far could still turn into (or already is) the standard "no answer"
+// wording. It is held back, because the final reply replaces it with that wording anyway.
+export function mayBeRefusal(visible: string, refusals: string[]): boolean {
+  return refusals.some((r) => r.startsWith(visible) || visible.includes(r));
 }
