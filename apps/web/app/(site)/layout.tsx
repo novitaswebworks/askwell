@@ -25,6 +25,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
   title: { default: APP_NAME, template: `%s | ${APP_NAME}` },
   description: "An AI support chat widget for any website.",
+  // Ownership tags for Google Search Console and Bing Webmaster Tools, set per environment in Vercel.
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
+    other: process.env.BING_SITE_VERIFICATION ? { "msvalidate.01": process.env.BING_SITE_VERIFICATION } : undefined,
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
