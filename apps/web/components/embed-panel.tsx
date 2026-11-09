@@ -7,6 +7,7 @@ import { MESSAGE_SOURCE, getVisitorId, parseParentOrigin, type PanelMessage } fr
 import { LeadForm } from "@/components/embed-lead-form";
 import { RatingButtons } from "@/components/embed-rating";
 import { getStrings, localizeConfigText, resolveLang } from "@/lib/embed-i18n";
+import { NDJSON, parseEvents } from "@/lib/chat-stream";
 import { clearChat, loadChat, saveChat } from "@/lib/embed-storage";
 
 type Line = {
@@ -40,6 +41,8 @@ export function EmbedPanel() {
   const [lines, setLines] = useState<Line[]>([]);
   const [draft, setDraft] = useState("");
   const [typing, setTyping] = useState(false);
+  // The line being written while a reply streams in; the typing dots give way to it.
+  const [streamingId, setStreamingId] = useState<number | null>(null);
   const [showLeadForm, setShowLeadForm] = useState<{ open: boolean; type: "inquiry" | "handoff" } | null>(null);
   const [leadEmail, setLeadEmail] = useState("");
   const [leadName, setLeadName] = useState("");
@@ -149,6 +152,70 @@ export function EmbedPanel() {
     [tell],
   );
 
+  // A reply that arrives as it is written. The final "done" event carries the whole reply, which
+  // replaces what was shown (follow-ups removed, no-answer wording fixed) and makes it rateable.
+  const readReply = useCallback(
+    async (stream: ReadableStream<Uint8Array>, turn: number) => {
+      const reader = stream.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let lineId: number | null = null;
+      const finish = (reply: string, sources?: string[], followUps?: string[], rateable = false) => {
+        if (lineId === null) return addBotLine(reply, sources, followUps, rateable);
+        const id = lineId;
+        setLines((prev) => prev.map((l) => (l.id === id ? { ...l, body: reply, sources, followUps, rateable } : l)));
+        if (!open.current) {
+          unread.current += 1;
+          tell({ source: MESSAGE_SOURCE, type: "unread", count: unread.current });
+        }
+      };
+      try {
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (turn !== generation.current) {
+            void reader.cancel();
+            return; // "New chat" was pressed while this was on its way
+          }
+          buffer += decoder.decode(value, { stream: !done });
+          const parsed = parseEvents(done ? `${buffer}\n` : buffer);
+          buffer = parsed.rest;
+          for (const event of parsed.events) {
+            if (event.t === "delta") {
+              if (lineId === null) {
+                const id = nextId.current++;
+                lineId = id;
+                setStreamingId(id);
+                setLines((prev) => [...prev, { id, role: "bot", body: event.text }]);
+              } else {
+                const id = lineId;
+                setLines((prev) => prev.map((l) => (l.id === id ? { ...l, body: l.body + event.text } : l)));
+              }
+            } else if (event.t === "done") {
+              conversationId.current = event.data.conversationId;
+              finish(event.data.reply, event.data.sources, event.data.followUps, true);
+              if (event.data.reply.includes("leave your email") || event.data.reply.includes("temporarily unavailable")) {
+                setShowLeadForm({ open: true, type: "inquiry" });
+              }
+              return;
+            } else {
+              finish(event.message || t.errorGeneric);
+              return;
+            }
+          }
+          if (done) {
+            finish(t.errorGeneric); // the stream ended without a final reply
+            return;
+          }
+        }
+      } finally {
+        // Only this reply's own line: a newer reply (after "New chat") may already be streaming.
+        const own = lineId;
+        if (own !== null) setStreamingId((current) => (current === own ? null : current));
+      }
+    },
+    [addBotLine, t, tell],
+  );
+
   const sendMessage = useCallback(
     async (rawText: string) => {
       const body = rawText.trim().slice(0, MAX_MESSAGE_LENGTH);
@@ -162,7 +229,7 @@ export function EmbedPanel() {
         const post = (conversation: string | null) =>
           fetch("/api/widget/chat", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", Accept: `${NDJSON}, application/json` },
             body: JSON.stringify({
               key,
               visitorId: visitorId.current,
@@ -178,6 +245,10 @@ export function EmbedPanel() {
           // The old transcript belongs to a conversation the server no longer has: show only this message.
           setLines((prev) => prev.filter((l) => l.id === visitorLineId));
           res = await post(null);
+        }
+        if (res.ok && res.body && res.headers.get("content-type")?.includes(NDJSON)) {
+          await readReply(res.body, turn);
+          return;
         }
         const data: unknown = await res.json().catch(() => null);
         if (turn !== generation.current) return; // "New chat" was pressed while this was on its way
@@ -205,7 +276,7 @@ export function EmbedPanel() {
         if (turn === generation.current) setTyping(false);
       }
     },
-    [addBotLine, key, t, typing],
+    [addBotLine, key, readReply, t, typing],
   );
 
   // Thumbs on the latest answer. Shown at once; put back if the server says no.
@@ -411,7 +482,7 @@ export function EmbedPanel() {
             onDismiss={() => setShowLeadForm(null)}
           />
         )}
-        {typing && (
+        {typing && streamingId === null && (
           <div className="flex justify-start" aria-label={t.typing} role="status">
             <span className="glass flex gap-1 rounded-2xl px-4 py-3">
               {[0, 1, 2].map((i) => (
