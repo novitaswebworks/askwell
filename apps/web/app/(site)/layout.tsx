@@ -27,8 +27,8 @@ export const metadata: Metadata = {
   description: "An AI support chat widget for any website.",
   // Ownership tags for Google Search Console and Bing Webmaster Tools, set per environment in Vercel.
   verification: {
-    google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
-    other: process.env.BING_SITE_VERIFICATION ? { "msvalidate.01": process.env.BING_SITE_VERIFICATION } : undefined,
+    google: process.env.GOOGLE_SITE_VERIFICATION?.trim() || undefined,
+    other: process.env.BING_SITE_VERIFICATION?.trim() ? { "msvalidate.01": process.env.BING_SITE_VERIFICATION.trim() } : undefined,
   },
 };
 
