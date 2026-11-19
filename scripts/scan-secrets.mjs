@@ -14,7 +14,7 @@ export const PATTERNS = {
   "AWS access key": /AKIA[0-9A-Z]{16}/,
   "GitHub token": /gh[pousr]_[A-Za-z0-9]{36,}/,
   "Slack token": /xox[baprs]-[A-Za-z0-9-]{10,}/,
-  "Private key block": /-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----/,
+  "Private key block": /-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----/, // secret-scan:allow (this is the pattern itself)
 };
 
 // A Supabase legacy JWT is only a secret when its role is service_role (the anon one is public).
@@ -45,7 +45,7 @@ function selfTest() {
     ["GROQ_API_KEY=gsk_...", false],
     ["key = " + jwt("service_role"), true],
     ["key = " + jwt("anon"), false],
-    ["-----BEGIN PRIVATE KEY-----", true],
+    ["-----BEGIN PRIVATE KEY-----", true], // secret-scan:allow (a test input)
     ["NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_" + "a1B2c3D4e5F6g7H8i9J0k1L2m3N4", false],
     ["sk_test_" + "a1B2c3D4e5F6g7H8i9J0k1L2m3N4 secret-scan:allow", false],
   ];
