@@ -10,8 +10,8 @@
     "test": "vitest run --passWithNoTests"
   },
   "devDependencies": {
-    "esbuild": "^0.25.0",
-    "vitest": "^3.0.0"
+    "esbuild": "^0.28.2",
+    "vitest": "^5.1.0"
   },
   "dependencies": {
     "@askwell/shared": "workspace:*"

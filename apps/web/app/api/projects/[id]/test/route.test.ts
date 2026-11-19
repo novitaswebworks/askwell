@@ -48,6 +48,14 @@ describe("POST /api/projects/:id/test", () => {
     expect(protectRate).toHaveBeenCalledWith(expect.anything(), "user_1", "test", 10, false);
     expect(answerForOwner).not.toHaveBeenCalled();
   });
+  it("stops an owner who has used up the day's tests, with a clear message", async () => {
+    protectRate.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+    const res = await call({ message: "hi" });
+    expect(res.status).toBe(429);
+    expect((await res.json()).error.message).toMatch(/today/);
+    expect(protectRate).toHaveBeenLastCalledWith(expect.anything(), "user_1", "test-day", 100, false, "1d");
+    expect(answerForOwner).not.toHaveBeenCalled();
+  });
   it("returns the answer for the owner's own project", async () => {
     const res = await call({ message: "Do you ship?" });
     expect(res.status).toBe(200);

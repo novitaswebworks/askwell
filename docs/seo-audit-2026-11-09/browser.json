@@ -1,0 +1,544 @@
+[
+  {
+    "mobile": false,
+    "errors": [],
+    "title": "Askwell: AI chatbot for your website, trained on your pages",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "h1": [
+      "Your content, answering your customers."
+    ],
+    "text": "Askwell\nHow it works\nFeatures\nPricing\nFAQ\nSign in\nGet started\n\nAI CUSTOMER SUPPORT CHATBOT FOR ANY WEBSITE\n\nYour content, answering your customers.\n\nAskwell turns your own pages and documents into a chat assistant that replies in seconds, stays on topic, and says so when it doesn’t know.\n\nStart free\nSee how it works\n\nFree plan. No card needed. Live in a few minutes.\n\nAcme Travel\n\nReplies in seconds\n\nDo you arrange airport transfers?\n\nYes. Transfers are included with most of our packages. Tell me where you’re flying to and I’ll check for you.\n\nFrom your “Packages and perks” page\n\nWho won the football world cup?\n\nI can only help with questions about Acme Travel and its trips. Anything about your booking I can look up?\n\nType your message\nAdd an AI chatbot to your website in minutes.\n\nNo developers, no training runs, no dashboards to learn. Three steps, and the third is automatic.\n\nTeach it what you know\n\nPaste text or upload a PDF, Markdown or text file. Add a line about your business so it knows what is on topic.\n\nPaste one line on your site\n\nCopy a single script tag into your page. A chat button appears in the corner. No build step, no server.\n\nVisitors get real answers\n\nThey ask in their own words and get a short, friendly reply drawn from your content, in seconds.\n\nHelpful, and never out of its depth.\nStays on topic\n\nAsk it about the football, a poem or its own instructions and it politely steers back to your business. It greets people, handles thanks, and tells them how to reach you when they want a human.\n\nAny language\n\nVisitors write in theirs. Answers come back in it, even from English content.\n\nHonest about gaps\n\nIf your content doesn’t say, it doesn’t guess. It points people to your contact details.\n\nOne line to install\n<script src=\"https://askwell.novitasweb.works/widget.js\" data-key=\"pk_your_key\"></script>\nTry it on this page.\n\nThe chat in the corner is the real Askwell widget, answering from our own pages. Ask it something a customer of yours might ask.\n\nOpen the demo chat\nHow does Askwell learn from my website?\nHow much does Pro cost?\nCan it answer in other languages?\nStart free. Grow when you need to.\nFree\n\n$0\n\nFree forever · no card required\n\n1 project\n100 messages a month per project\n3 knowledge sources per project\nStandard widget look\n“Powered by” badge shown\nStart free\nPro\n\n₹999\n\nper month · opens soon\n\n5 projects\n2,000 messages a month per project\n25 knowledge sources per project\nYour colour, position, label and animation\nNo “Powered by” badge\nLeads captured from chats, with CSV export\nStart free, upgrade soon\nComing soon\n\nStreaming replies\n\nAnswers appear word by word instead of all at once.\n\nPublic help page\n\nA shareable page for each project, built from your knowledge.\n\nLive demo on the landing page\n\nTry Askwell on a real site before you sign up.\n\nQuestions, answered.\nWill it make things up?\nWhat if someone asks something unrelated?\nWhat can I teach it?\nWhich languages does it speak?\nHow do I add it to my website?\nWhat does the Free plan include?\nLet your content do the answering.\n\nSet it up today, and your next visitor gets an answer instead of a contact form.\n\nStart free\nAskwell\nHow it works\nPricing\nFAQ\nTerms\nPrivacy\nCancellation & refunds\nContact\nSign in\nSign up\n\n© Askwell\n\nDeveloped by Novitas WebWorks",
+    "head": "<meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><link rel=\"stylesheet\" href=\"/_next/static/immutable/chunks/1563t5k6svb_f.css\" data-precedence=\"next\"><link rel=\"preload\" as=\"script\" fetchpriority=\"low\" href=\"/_next/static/immutable/chunks/36rstizloo0ta.js\"><script src=\"/_next/static/immutable/chunks/12kjvp9sb4dt6.js\" async=\"\"></script><script src=\"/_next/static/immutable/chunks/0z6myqq43x8sq.js\" async=\"\"></script><script src=\"/_next/static/immutable/chunks/3w5qvpjq2xymw.js\" async=\"\"></script><script src=\"/_next/static/immutable/chunks/17885591hwr7j.js\" async=\"\"></script><script src=\"/_next/static/immutable/chunks/3obvlobxod67w.js\" async=\"\"></script><script src=\"/_next/static/immutable/chunks/3wgugv_t673jr.js\" async=\"\"></script><script src=\"/_next/static/immutable/chunks/turbopack-1byz1flvc-bu1.js\" async=\"\"></script><script src=\"/_next/static/immutable/chunks/099lxccc1k0k_.js\" async=\"\"></script><script src=\"/_next/static/immutable/chunks/2967vpn4gvufy.js\" async=\"\"></script><script src=\"/_next/static/immutable/chunks/0wo-_u96i-z8w.js\" async=\"\"></script><script src=\"/_next/static/immutable/chunks/039zu9zb8-mad.js\" async=\"\"></script><script src=\"https://clerk.askwell.novitasweb.works/npm/@clerk/clerk-js@6/dist/clerk.browser.js\" data-clerk-js-script=\"true\" async=\"\" crossorigin=\"anonymous\" data-clerk-publishable-key=\"pk_live_Y2xlcmsuYXNrd2VsbC5ub3ZpdGFzd2ViLndvcmtzJA\"></script><meta name=\"next-size-adjust\" content=\"\"><link rel=\"preload\" href=\"https://clerk.askwell.novitasweb.works/npm/@clerk/ui@1/dist/ui.browser.js\" as=\"script\" crossorigin=\"anonymous\"><title>Askwell: AI chatbot for your website, trained on your pages</title><meta name=\"description\" content=\"Add an AI customer support chatbot to any website in minutes. Askwell answers visitors from your own pages and documents, stays on topic, and is free to start.\"><link rel=\"canonical\" href=\"https://askwell.novitasweb.works\"><meta property=\"og:title\" content=\"Askwell: AI chatbot for your website, trained on your pages\"><meta property=\"og:description\" content=\"Add an AI customer support chatbot to any website in minutes. Askwell answers visitors from your own pages and documents, stays on topic, and is free to start.\"><meta property=\"og:url\" content=\"https://askwell.novitasweb.works\"><meta property=\"og:site_name\" content=\"Askwell\"><meta property=\"og:image\" content=\"https://askwell.novitasweb.works/opengraph-image-12o0cb?1ec607bbbf968fd7\"><meta property=\"og:image:type\" content=\"image/png\"><meta property=\"og:image:width\" content=\"1200\"><meta property=\"og:image:height\" content=\"630\"><meta property=\"og:image:alt\" content=\"Askwell: AI chat assistant trained on your own content\"><meta property=\"og:type\" content=\"website\"><meta name=\"twitter:card\" content=\"summary_large_image\"><meta name=\"twitter:title\" content=\"Askwell: AI chatbot for your website, trained on your pages\"><meta name=\"twitter:description\" content=\"Add an AI customer support chatbot to any website in minutes. Askwell answers visitors from your own pages and documents, stays on topic, and is free to start.\"><meta name=\"twitter:image\" content=\"https://askwell.novitasweb.works/twitter-image-12o0cb?e762982376bc2432\"><meta name=\"twitter:image:alt\" content=\"Askwell: AI chat assistant trained on your own content\"><meta name=\"twitter:image:type\" content=\"image/png\"><meta name=\"twitter:image:width\" content=\"1200\"><meta name=\"twitter:image:height\" content=\"630\"><link rel=\"icon\" href=\"/favicon.ico?favicon.1bwau1x5t_tqo.ico\" sizes=\"48x48\" type=\"image/x-icon\"><link rel=\"icon\" href=\"/icon?9c9bdc0c41c1e859\" type=\"image/png\" sizes=\"48x48\"><link rel=\"apple-touch-icon\" href=\"/apple-icon?7c66d3fc77a95c29\" type=\"image/png\" sizes=\"180x180\"><script src=\"/_next/static/immutable/chunks/0c0hxoamwjsbw.js\" nomodule=\"\"></script><link rel=\"preload\" href=\"/_next/static/immutable/media/07a39a8a4660cc7c-s.p.1v5bejj26fx9h.woff2\" as=\"font\" crossorigin=\"\" type=\"font/woff2\"><link rel=\"preload\" href=\"/_next/static/immutable/media/605ce01b664af129-s.p.0zr6hhvz-h9nw.woff2\" as=\"font\" crossorigin=\"\" type=\"font/woff2\"><link rel=\"preload\" href=\"/_next/static/immutable/media/75cb990346c55dc4-s.p.23oeb0afa3wba.woff2\" as=\"font\" crossorigin=\"\" type=\"font/woff2\"><script src=\"/927d9f87ef5a8b80/script.js\" data-sdkn=\"@vercel/analytics/next\" data-sdkv=\"2.0.1\" data-disable-auto-track=\"1\" data-view-endpoint=\"/927d9f87ef5a8b80/view\" data-event-endpoint=\"/927d9f87ef5a8b80/event\" data-session-endpoint=\"/927d9f87ef5a8b80/session\" defer=\"\"></script><script src=\"/_next/static/immutable/chunks/3-9rpt7iyezhe.js\"></script><script src=\"https://cdn.protect.clerk.com/ins_3LVPDInew0IwiS68b27yz6GN3kT/c/1-zagavdjkt6jt2lkzkjd6s2shfi-egpvp5wbexjulwnfucgq6qassy/bootstrap.js?v=6.41.0\" type=\"module\"></script>",
+    "audit": {
+      "lcp": [
+        {
+          "startTime": 796,
+          "size": 39375,
+          "tag": "H2"
+        },
+        {
+          "startTime": 800,
+          "size": 105996,
+          "tag": "H1"
+        }
+      ],
+      "shifts": [
+        0.00002731201171875,
+        0.00039323745539158957
+      ]
+    },
+    "navigation": [
+      {
+        "ttfb": 21.399999976158142,
+        "dcl": 719.4000000059605,
+        "load": 0
+      }
+    ],
+    "resources": [
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/media/07a39a8a4660cc7c-s.p.1v5bejj26fx9h.woff2",
+        "transfer": 23408,
+        "decoded": 23108,
+        "duration": 225.5
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/media/75cb990346c55dc4-s.p.23oeb0afa3wba.woff2",
+        "transfer": 58452,
+        "decoded": 58152,
+        "duration": 107.7999999821186
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/media/605ce01b664af129-s.p.0zr6hhvz-h9nw.woff2",
+        "transfer": 29588,
+        "decoded": 29288,
+        "duration": 198.7999999821186
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/chunks/1563t5k6svb_f.css",
+        "transfer": 11334,
+        "decoded": 53915,
+        "duration": 59.599999994039536
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/chunks/36rstizloo0ta.js",
+        "transfer": 4545,
+        "decoded": 14435,
+        "duration": 107.19999998807907
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/chunks/0z6myqq43x8sq.js",
+        "transfer": 7866,
+        "decoded": 27038,
+        "duration": 28.5
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/chunks/2967vpn4gvufy.js",
+        "transfer": 5176,
+        "decoded": 12809,
+        "duration": 28.69999998807907
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/chunks/099lxccc1k0k_.js",
+        "transfer": 4038,
+        "decoded": 14086,
+        "duration": 58.5
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/chunks/turbopack-1byz1flvc-bu1.js",
+        "transfer": 4903,
+        "decoded": 11255,
+        "duration": 59
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/chunks/12kjvp9sb4dt6.js",
+        "transfer": 10369,
+        "decoded": 31662,
+        "duration": 59.19999998807907
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/chunks/0wo-_u96i-z8w.js",
+        "transfer": 48233,
+        "decoded": 170641,
+        "duration": 59
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/chunks/3w5qvpjq2xymw.js",
+        "transfer": 66957,
+        "decoded": 207232,
+        "duration": 184.80000001192093
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/chunks/3wgugv_t673jr.js",
+        "transfer": 7543,
+        "decoded": 22236,
+        "duration": 203.80000001192093
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/chunks/3obvlobxod67w.js",
+        "transfer": 107825,
+        "decoded": 321845,
+        "duration": 203.5
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/chunks/17885591hwr7j.js",
+        "transfer": 37158,
+        "decoded": 131969,
+        "duration": 217.59999999403954
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/chunks/039zu9zb8-mad.js",
+        "transfer": 5482,
+        "decoded": 13194,
+        "duration": 225.09999999403954
+      },
+      {
+        "name": "https://clerk.askwell.novitasweb.works/npm/@clerk/ui@1/dist/ui.browser.js",
+        "transfer": 0,
+        "decoded": 0,
+        "duration": 598.2000000178814
+      },
+      {
+        "name": "https://clerk.askwell.novitasweb.works/npm/@clerk/clerk-js@6/dist/clerk.browser.js",
+        "transfer": 0,
+        "decoded": 0,
+        "duration": 650.5999999940395
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/media/77814b00d5ca94a4-s.0i3h3th1vs4m7.woff2",
+        "transfer": 16840,
+        "decoded": 16540,
+        "duration": 69.2000000178814
+      },
+      {
+        "name": "https://askwell.novitasweb.works/api/posthog-config",
+        "transfer": 394,
+        "decoded": 92,
+        "duration": 41.20000001788139
+      },
+      {
+        "name": "https://us-assets.i.posthog.com/static/1.444.0/exception-autocapture.js",
+        "transfer": 0,
+        "decoded": 0,
+        "duration": 2416.5
+      },
+      {
+        "name": "https://us-assets.i.posthog.com/array/phc_xBkSry8hw9thgAcobJ47Pmzsmw2kQcPrdws4insjUGrV/config.js",
+        "transfer": 0,
+        "decoded": 0,
+        "duration": 1718.7999999821186
+      },
+      {
+        "name": "https://askwell.novitasweb.works/widget.js",
+        "transfer": 3480,
+        "decoded": 7444,
+        "duration": 310
+      },
+      {
+        "name": "https://askwell.novitasweb.works/927d9f87ef5a8b80/script.js",
+        "transfer": 2376,
+        "decoded": 4522,
+        "duration": 28.19999998807907
+      },
+      {
+        "name": "https://askwell.novitasweb.works/sign-up?_rsc=5CB68i4pnAekjehf",
+        "transfer": 1040,
+        "decoded": 740,
+        "duration": 48.30000001192093
+      },
+      {
+        "name": "https://askwell.novitasweb.works/sign-in?_rsc=5CB68i4pnAekjehf",
+        "transfer": 1040,
+        "decoded": 740,
+        "duration": 96.59999999403954
+      },
+      {
+        "name": "https://askwell.novitasweb.works/sign-up?_rsc=ayzKfZ_EbKT9t-0m",
+        "transfer": 3368,
+        "decoded": 9147,
+        "duration": 52.099999994039536
+      },
+      {
+        "name": "https://askwell.novitasweb.works/sign-in?_rsc=kvssknEXWtbunrvJ",
+        "transfer": 3357,
+        "decoded": 9111,
+        "duration": 128.09999999403954
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/chunks/3-9rpt7iyezhe.js",
+        "transfer": 3744,
+        "decoded": 7801,
+        "duration": 115
+      },
+      {
+        "name": "https://askwell.novitasweb.works/api/widget/config?key=pk_2dcQjggZG54OZLORJ5w01M4h",
+        "transfer": 570,
+        "decoded": 378,
+        "duration": 180.7999999821186
+      },
+      {
+        "name": "https://clerk.askwell.novitasweb.works/v1/environment?__clerk_api_version=2026-08-20&_clerk_js_version=6.41.0",
+        "transfer": 0,
+        "decoded": 0,
+        "duration": 500.5
+      },
+      {
+        "name": "https://clerk.askwell.novitasweb.works/v1/client?__clerk_api_version=2026-08-20&_clerk_js_version=6.41.0",
+        "transfer": 0,
+        "decoded": 0,
+        "duration": 785.5999999940395
+      },
+      {
+        "name": "https://clerk.askwell.novitasweb.works/npm/@clerk/ui@1.42.0/dist/framework_ui_8f3fa6_1.42.0.js",
+        "transfer": 43575,
+        "decoded": 132706,
+        "duration": 53.19999998807907
+      },
+      {
+        "name": "https://clerk.askwell.novitasweb.works/npm/@clerk/ui@1.42.0/dist/ui-common_ui_8f3fa6_1.42.0.js",
+        "transfer": 134174,
+        "decoded": 486656,
+        "duration": 120.69999998807907
+      },
+      {
+        "name": "https://clerk.askwell.novitasweb.works/npm/@clerk/ui@1.42.0/dist/vendors_ui_8f3fa6_1.42.0.js",
+        "transfer": 38480,
+        "decoded": 109187,
+        "duration": 55.30000001192093
+      },
+      {
+        "name": "https://clerk.askwell.novitasweb.works/npm/@clerk/ui@1.42.0/dist/subscriptionDetails_ui_8f3fa6_1.42.0.js",
+        "transfer": 5266,
+        "decoded": 14936,
+        "duration": 54.900000005960464
+      }
+    ],
+    "smallLinks": [
+      "How it works",
+      "Pricing",
+      "FAQ",
+      "Terms",
+      "Privacy",
+      "Cancellation & refunds",
+      "Contact",
+      "Sign in",
+      "Sign up",
+      "Novitas WebWorks"
+    ]
+  },
+  {
+    "mobile": true,
+    "errors": [],
+    "title": "Askwell: AI chatbot for your website, trained on your pages",
+    "width": 390,
+    "scrollWidth": 390,
+    "h1": [
+      "Your content, answering your customers."
+    ],
+    "text": "Askwell\nSign in\nGet started\n\nAI CUSTOMER SUPPORT CHATBOT FOR ANY WEBSITE\n\nYour content, answering your customers.\n\nAskwell turns your own pages and documents into a chat assistant that replies in seconds, stays on topic, and says so when it doesn’t know.\n\nStart free\nSee how it works\n\nFree plan. No card needed. Live in a few minutes.\n\nAcme Travel\n\nReplies in seconds\n\nDo you arrange airport transfers?\n\nYes. Transfers are included with most of our packages. Tell me where you’re flying to and I’ll check for you.\n\nFrom your “Packages and perks” page\n\nWho won the football world cup?\n\nI can only help with questions about Acme Travel and its trips. Anything about your booking I can look up?\n\nType your message\nAdd an AI chatbot to your website in minutes.\n\nNo developers, no training runs, no dashboards to learn. Three steps, and the third is automatic.\n\nTeach it what you know\n\nPaste text or upload a PDF, Markdown or text file. Add a line about your business so it knows what is on topic.\n\nPaste one line on your site\n\nCopy a single script tag into your page. A chat button appears in the corner. No build step, no server.\n\nVisitors get real answers\n\nThey ask in their own words and get a short, friendly reply drawn from your content, in seconds.\n\nHelpful, and never out of its depth.\nStays on topic\n\nAsk it about the football, a poem or its own instructions and it politely steers back to your business. It greets people, handles thanks, and tells them how to reach you when they want a human.\n\nAny language\n\nVisitors write in theirs. Answers come back in it, even from English content.\n\nHonest about gaps\n\nIf your content doesn’t say, it doesn’t guess. It points people to your contact details.\n\nOne line to install\n<script src=\"https://askwell.novitasweb.works/widget.js\" data-key=\"pk_your_key\"></script>\nTry it on this page.\n\nThe chat in the corner is the real Askwell widget, answering from our own pages. Ask it something a customer of yours might ask.\n\nOpen the demo chat\nHow does Askwell learn from my website?\nHow much does Pro cost?\nCan it answer in other languages?\nStart free. Grow when you need to.\nFree\n\n$0\n\nFree forever · no card required\n\n1 project\n100 messages a month per project\n3 knowledge sources per project\nStandard widget look\n“Powered by” badge shown\nStart free\nPro\n\n₹999\n\nper month · opens soon\n\n5 projects\n2,000 messages a month per project\n25 knowledge sources per project\nYour colour, position, label and animation\nNo “Powered by” badge\nLeads captured from chats, with CSV export\nStart free, upgrade soon\nComing soon\n\nStreaming replies\n\nAnswers appear word by word instead of all at once.\n\nPublic help page\n\nA shareable page for each project, built from your knowledge.\n\nLive demo on the landing page\n\nTry Askwell on a real site before you sign up.\n\nQuestions, answered.\nWill it make things up?\nWhat if someone asks something unrelated?\nWhat can I teach it?\nWhich languages does it speak?\nHow do I add it to my website?\nWhat does the Free plan include?\nLet your content do the answering.\n\nSet it up today, and your next visitor gets an answer instead of a contact form.\n\nStart free\nAskwell\nHow it works\nPricing\nFAQ\nTerms\nPrivacy\nCancellation & refunds\nContact\nSign in\nSign up\n\n© Askwell\n\nDeveloped by Novitas WebWorks",
+    "head": "<meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><link rel=\"stylesheet\" href=\"/_next/static/immutable/chunks/1563t5k6svb_f.css\" data-precedence=\"next\"><link rel=\"preload\" as=\"script\" fetchpriority=\"low\" href=\"/_next/static/immutable/chunks/36rstizloo0ta.js\"><script src=\"/_next/static/immutable/chunks/12kjvp9sb4dt6.js\" async=\"\"></script><script src=\"/_next/static/immutable/chunks/0z6myqq43x8sq.js\" async=\"\"></script><script src=\"/_next/static/immutable/chunks/3w5qvpjq2xymw.js\" async=\"\"></script><script src=\"/_next/static/immutable/chunks/17885591hwr7j.js\" async=\"\"></script><script src=\"/_next/static/immutable/chunks/3obvlobxod67w.js\" async=\"\"></script><script src=\"/_next/static/immutable/chunks/3wgugv_t673jr.js\" async=\"\"></script><script src=\"/_next/static/immutable/chunks/turbopack-1byz1flvc-bu1.js\" async=\"\"></script><script src=\"/_next/static/immutable/chunks/099lxccc1k0k_.js\" async=\"\"></script><script src=\"/_next/static/immutable/chunks/2967vpn4gvufy.js\" async=\"\"></script><script src=\"/_next/static/immutable/chunks/0wo-_u96i-z8w.js\" async=\"\"></script><script src=\"/_next/static/immutable/chunks/039zu9zb8-mad.js\" async=\"\"></script><script src=\"https://clerk.askwell.novitasweb.works/npm/@clerk/clerk-js@6/dist/clerk.browser.js\" data-clerk-js-script=\"true\" async=\"\" crossorigin=\"anonymous\" data-clerk-publishable-key=\"pk_live_Y2xlcmsuYXNrd2VsbC5ub3ZpdGFzd2ViLndvcmtzJA\"></script><meta name=\"next-size-adjust\" content=\"\"><link rel=\"preload\" href=\"https://clerk.askwell.novitasweb.works/npm/@clerk/ui@1/dist/ui.browser.js\" as=\"script\" crossorigin=\"anonymous\"><title>Askwell: AI chatbot for your website, trained on your pages</title><meta name=\"description\" content=\"Add an AI customer support chatbot to any website in minutes. Askwell answers visitors from your own pages and documents, stays on topic, and is free to start.\"><link rel=\"canonical\" href=\"https://askwell.novitasweb.works\"><meta property=\"og:title\" content=\"Askwell: AI chatbot for your website, trained on your pages\"><meta property=\"og:description\" content=\"Add an AI customer support chatbot to any website in minutes. Askwell answers visitors from your own pages and documents, stays on topic, and is free to start.\"><meta property=\"og:url\" content=\"https://askwell.novitasweb.works\"><meta property=\"og:site_name\" content=\"Askwell\"><meta property=\"og:image\" content=\"https://askwell.novitasweb.works/opengraph-image-12o0cb?1ec607bbbf968fd7\"><meta property=\"og:image:type\" content=\"image/png\"><meta property=\"og:image:width\" content=\"1200\"><meta property=\"og:image:height\" content=\"630\"><meta property=\"og:image:alt\" content=\"Askwell: AI chat assistant trained on your own content\"><meta property=\"og:type\" content=\"website\"><meta name=\"twitter:card\" content=\"summary_large_image\"><meta name=\"twitter:title\" content=\"Askwell: AI chatbot for your website, trained on your pages\"><meta name=\"twitter:description\" content=\"Add an AI customer support chatbot to any website in minutes. Askwell answers visitors from your own pages and documents, stays on topic, and is free to start.\"><meta name=\"twitter:image\" content=\"https://askwell.novitasweb.works/twitter-image-12o0cb?e762982376bc2432\"><meta name=\"twitter:image:alt\" content=\"Askwell: AI chat assistant trained on your own content\"><meta name=\"twitter:image:type\" content=\"image/png\"><meta name=\"twitter:image:width\" content=\"1200\"><meta name=\"twitter:image:height\" content=\"630\"><link rel=\"icon\" href=\"/favicon.ico?favicon.1bwau1x5t_tqo.ico\" sizes=\"48x48\" type=\"image/x-icon\"><link rel=\"icon\" href=\"/icon?9c9bdc0c41c1e859\" type=\"image/png\" sizes=\"48x48\"><link rel=\"apple-touch-icon\" href=\"/apple-icon?7c66d3fc77a95c29\" type=\"image/png\" sizes=\"180x180\"><script src=\"/_next/static/immutable/chunks/0c0hxoamwjsbw.js\" nomodule=\"\"></script><link rel=\"preload\" href=\"/_next/static/immutable/media/07a39a8a4660cc7c-s.p.1v5bejj26fx9h.woff2\" as=\"font\" crossorigin=\"\" type=\"font/woff2\"><link rel=\"preload\" href=\"/_next/static/immutable/media/605ce01b664af129-s.p.0zr6hhvz-h9nw.woff2\" as=\"font\" crossorigin=\"\" type=\"font/woff2\"><link rel=\"preload\" href=\"/_next/static/immutable/media/75cb990346c55dc4-s.p.23oeb0afa3wba.woff2\" as=\"font\" crossorigin=\"\" type=\"font/woff2\"><script src=\"/927d9f87ef5a8b80/script.js\" data-sdkn=\"@vercel/analytics/next\" data-sdkv=\"2.0.1\" data-disable-auto-track=\"1\" data-view-endpoint=\"/927d9f87ef5a8b80/view\" data-event-endpoint=\"/927d9f87ef5a8b80/event\" data-session-endpoint=\"/927d9f87ef5a8b80/session\" defer=\"\"></script><script src=\"/_next/static/immutable/chunks/3-9rpt7iyezhe.js\"></script><script src=\"https://cdn.protect.clerk.com/ins_3LVPDInew0IwiS68b27yz6GN3kT/c/1-zagavdjkt6jt2lkzkjd6s2shfi-nmzz365z2sgcvts564vb62tuhi/bootstrap.js?v=6.41.0\" type=\"module\"></script>",
+    "audit": {
+      "lcp": [
+        {
+          "startTime": 140,
+          "size": 1495,
+          "tag": "A"
+        },
+        {
+          "startTime": 660,
+          "size": 10026,
+          "tag": "P"
+        },
+        {
+          "startTime": 1768,
+          "size": 47158,
+          "tag": "H1"
+        }
+      ],
+      "shifts": []
+    },
+    "navigation": [
+      {
+        "ttfb": 19.5,
+        "dcl": 545.5999999940395,
+        "load": 546.3000000119209
+      }
+    ],
+    "resources": [
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/media/07a39a8a4660cc7c-s.p.1v5bejj26fx9h.woff2",
+        "transfer": 0,
+        "decoded": 23108,
+        "duration": 0.7999999821186066
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/media/605ce01b664af129-s.p.0zr6hhvz-h9nw.woff2",
+        "transfer": 0,
+        "decoded": 29288,
+        "duration": 0.699999988079071
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/media/75cb990346c55dc4-s.p.23oeb0afa3wba.woff2",
+        "transfer": 0,
+        "decoded": 58152,
+        "duration": 0.699999988079071
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/chunks/1563t5k6svb_f.css",
+        "transfer": 0,
+        "decoded": 53915,
+        "duration": 0.8999999761581421
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/chunks/36rstizloo0ta.js",
+        "transfer": 0,
+        "decoded": 14435,
+        "duration": 1.399999976158142
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/chunks/0z6myqq43x8sq.js",
+        "transfer": 0,
+        "decoded": 27038,
+        "duration": 1.699999988079071
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/chunks/12kjvp9sb4dt6.js",
+        "transfer": 0,
+        "decoded": 31662,
+        "duration": 1.5
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/chunks/17885591hwr7j.js",
+        "transfer": 0,
+        "decoded": 131969,
+        "duration": 3.5999999940395355
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/chunks/3w5qvpjq2xymw.js",
+        "transfer": 0,
+        "decoded": 207232,
+        "duration": 3.699999988079071
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/chunks/3wgugv_t673jr.js",
+        "transfer": 0,
+        "decoded": 22236,
+        "duration": 4.699999988079071
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/chunks/turbopack-1byz1flvc-bu1.js",
+        "transfer": 0,
+        "decoded": 11255,
+        "duration": 5.199999988079071
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/chunks/099lxccc1k0k_.js",
+        "transfer": 0,
+        "decoded": 14086,
+        "duration": 5.300000011920929
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/chunks/2967vpn4gvufy.js",
+        "transfer": 0,
+        "decoded": 12809,
+        "duration": 5.5
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/chunks/039zu9zb8-mad.js",
+        "transfer": 0,
+        "decoded": 13194,
+        "duration": 6.5999999940395355
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/chunks/0wo-_u96i-z8w.js",
+        "transfer": 0,
+        "decoded": 170641,
+        "duration": 6.4000000059604645
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/chunks/3obvlobxod67w.js",
+        "transfer": 0,
+        "decoded": 321845,
+        "duration": 4.5999999940395355
+      },
+      {
+        "name": "https://clerk.askwell.novitasweb.works/npm/@clerk/ui@1/dist/ui.browser.js",
+        "transfer": 0,
+        "decoded": 0,
+        "duration": 37.599999994039536
+      },
+      {
+        "name": "https://clerk.askwell.novitasweb.works/npm/@clerk/clerk-js@6/dist/clerk.browser.js",
+        "transfer": 0,
+        "decoded": 0,
+        "duration": 38.400000005960464
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/media/77814b00d5ca94a4-s.0i3h3th1vs4m7.woff2",
+        "transfer": 0,
+        "decoded": 16540,
+        "duration": 0.4000000059604645
+      },
+      {
+        "name": "https://askwell.novitasweb.works/api/posthog-config",
+        "transfer": 0,
+        "decoded": 92,
+        "duration": 0.4000000059604645
+      },
+      {
+        "name": "https://us-assets.i.posthog.com/static/1.444.0/exception-autocapture.js",
+        "transfer": 0,
+        "decoded": 0,
+        "duration": 0.699999988079071
+      },
+      {
+        "name": "https://us-assets.i.posthog.com/array/phc_xBkSry8hw9thgAcobJ47Pmzsmw2kQcPrdws4insjUGrV/config.js",
+        "transfer": 0,
+        "decoded": 0,
+        "duration": 0.5999999940395355
+      },
+      {
+        "name": "https://askwell.novitasweb.works/widget.js",
+        "transfer": 300,
+        "decoded": 7444,
+        "duration": 28.899999976158142
+      },
+      {
+        "name": "https://askwell.novitasweb.works/icon?9c9bdc0c41c1e859",
+        "transfer": 1157,
+        "decoded": 857,
+        "duration": 43.70000001788139
+      },
+      {
+        "name": "https://askwell.novitasweb.works/927d9f87ef5a8b80/script.js",
+        "transfer": 0,
+        "decoded": 4522,
+        "duration": 0.5
+      },
+      {
+        "name": "https://askwell.novitasweb.works/api/widget/config?key=pk_2dcQjggZG54OZLORJ5w01M4h",
+        "transfer": 570,
+        "decoded": 378,
+        "duration": 58.69999998807907
+      },
+      {
+        "name": "https://askwell.novitasweb.works/sign-up?_rsc=5CB68i4pnAekjehf",
+        "transfer": 300,
+        "decoded": 740,
+        "duration": 50.400000005960464
+      },
+      {
+        "name": "https://askwell.novitasweb.works/sign-in?_rsc=5CB68i4pnAekjehf",
+        "transfer": 300,
+        "decoded": 740,
+        "duration": 56.099999994039536
+      },
+      {
+        "name": "https://askwell.novitasweb.works/sign-up?_rsc=ayzKfZ_EbKT9t-0m",
+        "transfer": 300,
+        "decoded": 9147,
+        "duration": 68.60000002384186
+      },
+      {
+        "name": "https://askwell.novitasweb.works/sign-in?_rsc=kvssknEXWtbunrvJ",
+        "transfer": 300,
+        "decoded": 9111,
+        "duration": 45.400000005960464
+      },
+      {
+        "name": "https://clerk.askwell.novitasweb.works/v1/environment?__clerk_api_version=2026-08-20&_clerk_js_version=6.41.0",
+        "transfer": 0,
+        "decoded": 0,
+        "duration": 31.900000005960464
+      },
+      {
+        "name": "https://clerk.askwell.novitasweb.works/v1/client?__clerk_api_version=2026-08-20&_clerk_js_version=6.41.0",
+        "transfer": 0,
+        "decoded": 0,
+        "duration": 420.90000000596046
+      },
+      {
+        "name": "https://askwell.novitasweb.works/_next/static/immutable/chunks/3-9rpt7iyezhe.js",
+        "transfer": 0,
+        "decoded": 7801,
+        "duration": 0.5
+      },
+      {
+        "name": "https://clerk.askwell.novitasweb.works/npm/@clerk/ui@1.42.0/dist/framework_ui_8f3fa6_1.42.0.js",
+        "transfer": 0,
+        "decoded": 132706,
+        "duration": 1.699999988079071
+      },
+      {
+        "name": "https://clerk.askwell.novitasweb.works/npm/@clerk/ui@1.42.0/dist/ui-common_ui_8f3fa6_1.42.0.js",
+        "transfer": 0,
+        "decoded": 486656,
+        "duration": 4.300000011920929
+      },
+      {
+        "name": "https://clerk.askwell.novitasweb.works/npm/@clerk/ui@1.42.0/dist/vendors_ui_8f3fa6_1.42.0.js",
+        "transfer": 0,
+        "decoded": 109187,
+        "duration": 1.0999999940395355
+      },
+      {
+        "name": "https://clerk.askwell.novitasweb.works/npm/@clerk/ui@1.42.0/dist/subscriptionDetails_ui_8f3fa6_1.42.0.js",
+        "transfer": 0,
+        "decoded": 14936,
+        "duration": 0.800000011920929
+      }
+    ],
+    "smallLinks": [
+      "How it works",
+      "Pricing",
+      "FAQ",
+      "Terms",
+      "Privacy",
+      "Cancellation & refunds",
+      "Contact",
+      "Sign in",
+      "Sign up",
+      "Novitas WebWorks"
+    ]
+  }
+]

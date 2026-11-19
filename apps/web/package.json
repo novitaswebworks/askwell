@@ -11,32 +11,32 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@ai-sdk/openai-compatible": "^3.0.82",
+    "@ai-sdk/openai-compatible": "^3.0.92",
     "@arcjet/next": "^1.15.0",
     "@askwell/shared": "workspace:*",
-    "@clerk/nextjs": "^7.9.23",
-    "@next/env": "^16.4.3",
-    "@supabase/supabase-js": "^2.118.0",
+    "@clerk/nextjs": "^7.10.0",
+    "@next/env": "^16.4.6",
+    "@supabase/supabase-js": "^2.119.0",
     "@vercel/analytics": "^2.0.1",
-    "ai": "^7.0.159",
+    "ai": "^7.0.173",
     "cheerio": "^1.2.0",
-    "next": "16.4.3",
-    "posthog-js": "^1.444.0",
-    "posthog-node": "^5.61.1",
-    "react": "19.3.0",
-    "react-dom": "19.3.0",
+    "next": "16.4.6",
+    "posthog-js": "^1.450.0",
+    "posthog-node": "^5.74.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
     "server-only": "^0.0.1",
-    "unpdf": "^2.1.0"
+    "unpdf": "^2.2.1"
   },
   "devDependencies": {
-    "@tailwindcss/turbopack": "^4",
-    "@types/node": "^20",
+    "@tailwindcss/turbopack": "^4.3.5",
+    "@types/node": "^22.20.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.4.3",
-    "tailwindcss": "^4",
-    "typescript": "^5",
-    "vitest": "^3.0.0"
+    "eslint-config-next": "16.4.6",
+    "tailwindcss": "^4.3.5",
+    "typescript": "^6.0.3",
+    "vitest": "^5.1.0"
   }
 }
