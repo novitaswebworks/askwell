@@ -9,15 +9,15 @@ const SELF = "scripts/scan-secrets.mjs";
 
 export const PATTERNS = {
   "Groq key": /gsk_[A-Za-z0-9]{20,}/,
-  "Clerk or Stripe secret key": /sk_(live|test)_[A-Za-z0-9]{20,}/,
+  "Clerk or Stripe secret or restricted key": /(sk|rk)_(live|test)_[A-Za-z0-9]{20,}/,
   "Supabase secret key": /sb_secret_[A-Za-z0-9_-]{20,}/,
   "Resend key": /\bre_[A-Za-z0-9]{24,}/,
   "Arcjet key": /ajkey_[A-Za-z0-9]{20,}/,
   "21st key": /21st_sk_[a-f0-9]{20,}/,
-  "AWS access key": /AKIA[0-9A-Z]{16}/,
-  "GitHub token": /gh[pousr]_[A-Za-z0-9]{36,}/,
+  "AWS access key (long-lived or temporary)": /(AKIA|ASIA)[0-9A-Z]{16}/,
+  "GitHub token": /(gh[pousr]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{22,})/,
   "Slack token": /xox[baprs]-[A-Za-z0-9-]{10,}/,
-  "Private key block": /-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----/, // secret-scan:allow (this is the pattern itself)
+  "Private key block": /-----BEGIN (RSA |EC |DSA |OPENSSH |ENCRYPTED )?PRIVATE KEY-----/, // secret-scan:allow (this is the pattern itself)
 };
 
 // A Supabase legacy JWT is only a secret when its role is service_role (the anon one is public).
@@ -49,6 +49,12 @@ function selfTest() {
     ["key = " + jwt("service_role"), true],
     ["key = " + jwt("anon"), false],
     ["-----BEGIN PRIVATE KEY-----", true], // secret-scan:allow (a test input)
+    ["-----BEGIN DSA PRIVATE KEY-----", true], // secret-scan:allow (a test input)
+    ["-----BEGIN ENCRYPTED PRIVATE KEY-----", true], // secret-scan:allow (a test input)
+    ["STRIPE=rk_live_" + "a1B2c3D4e5F6g7H8i9J0k1L2m3N4", true],
+    ["AWS_KEY=ASIA" + "ABCDEFGHIJKLMNOP", true],
+    ["GH=github_pat_" + "11ABCDEFG0abcdefghijkl_mnopqrstuvwxyz", true],
+    ["rk_live_short", false],
     ["NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_" + "a1B2c3D4e5F6g7H8i9J0k1L2m3N4", false],
     ["sk_test_" + "a1B2c3D4e5F6g7H8i9J0k1L2m3N4 secret-scan:allow", false],
   ];
