@@ -22,20 +22,23 @@ function build(key: string) {
 // to the database with the service role, so they get a rate limit of their own per route + key + IP.
 const rateClients = new Map<string, ReturnType<typeof buildRate>>();
 
-function buildRate(key: string, max: number, perIp: boolean) {
-  return arcjet({ key, characteristics: perIp ? ["publicKey", "ip.src"] : ["publicKey"], rules: [fixedWindow({ mode: "LIVE", window: "1m", max })] });
+export type RateWindow = "1m" | "1h" | "1d";
+
+function buildRate(key: string, max: number, perIp: boolean, window: RateWindow) {
+  return arcjet({ key, characteristics: perIp ? ["publicKey", "ip.src"] : ["publicKey"], rules: [fixedWindow({ mode: "LIVE", window, max })] });
 }
 
 // Fails open like chat does. `route` keeps each route's counter separate from the others'.
 // `perIp: false` counts by the key alone, for a signed-in caller who must not get a fresh allowance by changing IP.
-export async function protectRate(req: Request, publicKey: string, route: string, max: number, perIp = true): Promise<boolean> {
+// `window` is how long the count runs: a minute by default, or an hour or a day for a cap on total use.
+export async function protectRate(req: Request, publicKey: string, route: string, max: number, perIp = true, window: RateWindow = "1m"): Promise<boolean> {
   const arcjetKey = process.env.ARCJET_KEY;
   if (!arcjetKey) return true;
   try {
-    const clientKey = `${max}:${perIp}`;
+    const clientKey = `${max}:${perIp}:${window}`;
     let client = rateClients.get(clientKey);
     if (!client) {
-      client = buildRate(arcjetKey, max, perIp);
+      client = buildRate(arcjetKey, max, perIp, window);
       rateClients.set(clientKey, client);
     }
     const decision = await Promise.race([

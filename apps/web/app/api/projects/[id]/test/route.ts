@@ -13,6 +13,8 @@ export const maxDuration = 120;
 
 type Context = { params: Promise<{ id: string }> };
 
+const TESTS_PER_DAY = 100;
+
 // The owner tries a question and sees how it was answered. Nothing is saved and no message
 // is counted, so it is limited per owner instead.
 export async function POST(req: Request, { params }: Context) {
@@ -32,6 +34,11 @@ export async function POST(req: Request, { params }: Context) {
 
   if (!(await protectRate(req, userId, "test", 10, false))) {
     return apiError("rate_limited", "You are testing a bit too fast. Wait a moment and try again.");
+  }
+  // A cap on total use, because a test costs AI credits and anyone can sign up.
+  // shortcut: Arcjet counts it and fails open when Arcjet is down; a database counter would be exact. Upgrade if abuse shows up.
+  if (!(await protectRate(req, userId, "test-day", TESTS_PER_DAY, false, "1d"))) {
+    return apiError("rate_limited", "You have reached today's limit of tests. Try again tomorrow.");
   }
 
   try {
