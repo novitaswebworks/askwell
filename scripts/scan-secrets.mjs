@@ -4,6 +4,9 @@
 // Put `secret-scan:allow` on a line to let it through (for example a documented fake).
 import { execFileSync } from "node:child_process";
 
+// This file holds the patterns themselves (and test inputs shaped like keys), so it is left out of the scan.
+const SELF = "scripts/scan-secrets.mjs";
+
 export const PATTERNS = {
   "Groq key": /gsk_[A-Za-z0-9]{20,}/,
   "Clerk or Stripe secret key": /sk_(live|test)_[A-Za-z0-9]{20,}/,
@@ -59,7 +62,7 @@ function selfTest() {
 
 function scan(base) {
   // Every commit, not the net diff: a key added and then deleted in the same branch is still in its history.
-  const diff = execFileSync("git", ["log", "-p", "-U0", "--no-color", "--format=", `${base}..HEAD`], { encoding: "utf8", maxBuffer: 256 * 1024 * 1024 });
+  const diff = execFileSync("git", ["log", "-p", "-U0", "--no-color", "--format=", `${base}..HEAD`, "--", ".", `:(exclude)${SELF}`], { encoding: "utf8", maxBuffer: 256 * 1024 * 1024 });
   let file = "";
   const hits = [];
   for (const line of diff.split("\n")) {
